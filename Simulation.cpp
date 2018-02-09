@@ -3,6 +3,7 @@
 //
 
 #include "Simulation.h"
+#include "utils.h"
 
 Simulation::Simulation(int nx, int ny, float dx, float dy, float dt) {
     this->nx = nx;
@@ -45,47 +46,21 @@ void Simulation::cleanup() {
 }
 
 void Simulation::allocateArrays() {
-    u_x = new float *[nx+1];
-    for (int i = 0; i < nx+1; i++) {
-        u_x[i] = new float[ny];
-    }
+    u_x = initArray<float>(nx+1, ny);
+    u_y = initArray<float>(nx, ny+1);
 
-    u_y = new float *[nx];
-    for (int i = 0; i < nx; i++) {
-        u_y[i] = new float[ny+1];
-    }
+    p = initArray<float>(nx, ny);
+    solid_mask = initArray<short>(nx, ny);
+    air_mask = initArray<short>(nx, ny);
+    water_mask = initArray<short>(nx, ny);
+    divergence = initArray<float>(nx, ny);
+    Adiag = initArray<short>(nx, ny);
+    Aplusi = initArray<short>(nx, ny);
+    Aplusj = initArray<short>(nx, ny);
+    precon = initArray<double>(nx, ny);
 
-    p = new float *[nx];
-    solid_mask = new short *[nx];
-    air_mask = new short *[nx];
-    water_mask = new short *[nx];
-    divergence = new float *[nx];
-    Adiag = new short *[nx];
-    Aplusi = new short *[nx];
-    Aplusj = new short *[nx];
-    precon = new double *[nx];
-    for (int i = 0; i < nx; i++) {
-        p[i] = new float[ny];
-        solid_mask[i] = new short[ny];
-        air_mask[i] = new short[ny];
-        water_mask[i] = new short[ny];
-        divergence[i] = new float[ny];
-        Adiag[i] = new short[ny];
-        Aplusi[i] = new short[ny];
-        Aplusj[i] = new short[ny];
-        precon[i] = new double[ny];
-    }
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            p[i][j] = 0;
-            solid_mask[i][j] = 0;
-            air_mask[i][j] = 0;
-            water_mask[i][j] = 0;
-            divergence[i][j] = 0;
-            Adiag[i][j] = 0;
-            Aplusi[i][j] = 0;
-            Aplusj[i][j] = 0;
-            precon[i][j] = 0;
             if (i == 0 || j == ny-1 || i == nx-1) {
                 solid_mask[i][j] = 1;
             } else if (j == 0) {
@@ -96,10 +71,11 @@ void Simulation::allocateArrays() {
         }
     }
 
-    particles = new float*[nx*ny];
+    particles = initArray<float>(nx*ny, 2);
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            particles[i*ny+j] = new float[2] {(float) j * dx, (float) i * dy};
+            particles[i*ny+j][0] = i * dx;
+            particles[i*ny+j][1] = j * dy;
         }
     }
 }
@@ -126,7 +102,11 @@ void Simulation::applyBodyForces() {
 void Simulation::computeDivergence() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            divergence[i][j] = rdx * (u_x[i+1][j] - u_x[i][j] + u_y[i][j+1] - u_y[i][j]);
+            if (water_mask[i][j]) {
+                divergence[i][j] = rdx * (u_x[i + 1][j] - u_x[i][j] + u_y[i][j + 1] - u_y[i][j]);
+            } else {
+                divergence[i][j] = 0;
+            }
         }
     }
 }
