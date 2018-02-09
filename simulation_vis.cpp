@@ -12,7 +12,7 @@ void Simulation::show() {
     for (int i=0; i < nx; i++) {
         cout << "\t[";
         for (int j=0; j < ny; j++) {
-            cout << precon[i][j] << ",";
+            cout << p[i][j] << ",";
         }
         cout << "],\n";
     }

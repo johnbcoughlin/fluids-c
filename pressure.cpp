@@ -6,10 +6,13 @@
 #include <iostream>
 #include <cmath>
 #include "utils.h"
+#include <time.h>
 
 using namespace std;
 
 void Simulation::correctPressure() {
+    clock_t t = clock();
+
     updateLaplacian();
     calculatePreconditioner();
 
@@ -20,20 +23,10 @@ void Simulation::correctPressure() {
     float **z = initArray<float>(nx, ny);
     float **s = initArray<float>(nx, ny);
 
-    cout << "here";
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             r[i][j] = divergence[i][j] * (dx * dx / dt);
         }
-    }
-
-    cout << "precon:\n";
-    for (int i = 0; i < nx; i++) {
-        cout << "[";
-        for (int j = 0; j < nx; j++) {
-            cout << precon[i][j] << ",";
-        }
-        cout << "]\n,";
     }
 
     applyPreconditioner(r, z);
@@ -44,7 +37,9 @@ void Simulation::correctPressure() {
     }
 
     float sigma = dot(r, z, nx, ny);
-    for (int iteration = 0; iteration < 30; iteration++) {
+
+    clock_t iter_t = clock();
+    for (int iteration = 0; iteration < 100; iteration++) {
         applyLaplacian(s, z);
         float alpha = sigma / dot(z, s, nx, ny);
 
@@ -53,6 +48,19 @@ void Simulation::correctPressure() {
                 p[i][j] += s[i][j] * alpha;
                 r[i][j] -= z[i][j] * alpha;
             }
+        }
+
+        float max_residual = 0;
+        for (int i = 0; i < nx; i++) {
+            for (int j = 0; j < ny; j++) {
+                if (abs(r[i][j]) > max_residual) {
+                    max_residual = abs(r[i][j]);
+                }
+            }
+        }
+        if (max_residual < 1.0e-15) {
+            cout << "breaking after " << iteration << "iterations.\n";
+            break;
         }
 
         applyPreconditioner(r, z);
@@ -67,17 +75,19 @@ void Simulation::correctPressure() {
                 s[i][j] = z[i][j] + beta * s[i][j];
             }
         }
-        cout << "after correction r:\n";
-        for (int i = 0; i < nx; i++) {
-            cout << "[";
-            for (int j = 0; j < nx; j++) {
-                cout << r[i][j] << ",";
-            }
-            cout << "]\n,";
-        }
     }
+    iter_t = clock() - iter_t;
+    printf("Pressure correction iterations: %dus\n", (int) iter_t);
 
+    releaseArray(r, nx);
     releaseArray(z, nx);
+    releaseArray(s, nx);
+
+    releaseArray(this->p, nx);
+
+    t = clock() - t;
+    printf("Pressure correction total: %d\n", (int) t);
+    this->p = p;
 }
 
 
@@ -122,7 +132,7 @@ void Simulation::updateLaplacian() {
 }
 
 void Simulation::calculatePreconditioner() {
-    double tau = 0.0;
+    double tau = 0.97;
     double epsilon = 1.0e-30;
 
     for (int i = 0; i < nx; i++) {

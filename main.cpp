@@ -19,10 +19,12 @@ int main() {
 }
 
 int runSimulation() {
-    Simulation *sim = new Simulation(4, 4, 1.0, 1.0, 0.01);
-    sim->step();
-    sim->show();
-    sim->cleanup();
+    while (true) {
+        Simulation *sim = new Simulation(40, 40, 1.0, 1.0, 0.01);
+        sim->step();
+//        sim->show();
+        sim->cleanup();
+    }
 
     return 0;
 }
