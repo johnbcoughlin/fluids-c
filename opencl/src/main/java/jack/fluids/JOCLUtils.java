@@ -3,7 +3,9 @@ package jack.fluids;
 import org.jocl.Pointer;
 import org.jocl.cl_device_id;
 
+import static org.jocl.CL.CL_SUCCESS;
 import static org.jocl.CL.clGetDeviceInfo;
+import static org.jocl.CL.stringFor_errorCode;
 
 public class JOCLUtils {
   /**
@@ -26,5 +28,11 @@ public class JOCLUtils {
 
     // Create a string from the buffer (excluding the trailing \0 byte)
     return new String(buffer, 0, buffer.length - 1);
+  }
+
+  public static void check(int[] errorCode) {
+    if (errorCode[0] != CL_SUCCESS) {
+      throw new RuntimeException(stringFor_errorCode(errorCode[0]));
+    }
   }
 }

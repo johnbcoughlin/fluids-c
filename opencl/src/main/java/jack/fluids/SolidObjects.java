@@ -2,6 +2,7 @@ package jack.fluids;
 
 import org.jocl.*;
 
+import static jack.fluids.JOCLUtils.check;
 import static org.jocl.CL.*;
 
 public class SolidObjects {
@@ -28,9 +29,4 @@ public class SolidObjects {
     return result;
   }
 
-  public static void check(int[] errorCode) {
-    if (errorCode[0] != CL_SUCCESS) {
-      throw new RuntimeException(stringFor_errorCode(errorCode[0]));
-    }
-  }
 }
