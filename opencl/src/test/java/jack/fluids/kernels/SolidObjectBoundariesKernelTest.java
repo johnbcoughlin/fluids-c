@@ -20,8 +20,6 @@ public class SolidObjectBoundariesKernelTest {
 
   ComputeSolidObjectBoundariesKernel kernel;
 
-  private static final int gpuDeviceIndex = 1;
-
   @Before
   public void before() {
     int numPlatformsArray[] = new int[1];
@@ -33,7 +31,7 @@ public class SolidObjectBoundariesKernelTest {
 
     cl_platform_id platform = platforms[0];
 
-    long deviceType = CL_DEVICE_TYPE_ALL;
+    long deviceType = CL_DEVICE_TYPE_GPU;
     int numDevicesArray[] = new int[1];
 
     clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
@@ -50,7 +48,7 @@ public class SolidObjectBoundariesKernelTest {
       }
     }, null, error_code_ret);
     check(error_code_ret);
-    queue = clCreateCommandQueue(context, devices[gpuDeviceIndex],
+    queue = clCreateCommandQueue(context, devices[0],
         CL_QUEUE_PROFILING_ENABLE, error_code_ret);
 
     kernel = new ComputeSolidObjectBoundariesKernel(context, queue, devices);

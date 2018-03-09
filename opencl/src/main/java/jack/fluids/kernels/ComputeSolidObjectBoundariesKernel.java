@@ -85,8 +85,9 @@ public class ComputeSolidObjectBoundariesKernel {
 
     check(error_code_ret);
     clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {invMeshSize}));
-    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_mem, Pointer.to(vertexBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(pointCountBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_uint, Pointer.to(new int[] {Math.max(16, invMeshSize / 4)}));
+    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(vertexBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, Pointer.to(pointCountBuffer));
 
     cl_event kernel_event = new cl_event();
     clEnqueueNDRangeKernel(queue, countBoundaryPointsKernel, 1, null,
@@ -108,6 +109,7 @@ public class ComputeSolidObjectBoundariesKernel {
     clEnqueueReadBuffer(queue, pointCountPrefixSumBuffer,
         CL_TRUE, 0, segmentCount * Sizeof.cl_uint, Pointer.to(prefixSums), 0, null, null);
     int totalPointCount = prefixSums.array()[segmentCount - 1];
+    System.out.println(totalPointCount);
 
     // finally, write boundary points
     cl_mem boundaryPointBuffer = boundaryPointVerticesBuffer.requestSubBuffer(

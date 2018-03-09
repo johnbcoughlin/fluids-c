@@ -49,12 +49,13 @@ public class CLSimulation {
     long shareGroup = CGL.CGLGetShareGroup(CGL.CGLGetCurrentContext());
     contextProperties.addProperty(CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE, shareGroup);
 
-    long deviceType = CL_DEVICE_TYPE_ALL;
-    int gpuDeviceIndex = 1;
+    long deviceType = CL_DEVICE_TYPE_GPU;
+    int gpuDeviceIndex = 0;
 
     int numDevicesArray[] = new int[1];
     clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
     int numDevices = numDevicesArray[0];
+    System.out.println(numDevices);
 
     cl_device_id devices[] = new cl_device_id[numDevices];
     clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
