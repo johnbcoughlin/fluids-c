@@ -2,9 +2,11 @@
 
 void __kernel count_boundary_points(
     unsigned int inv_mesh_size,
-    unsigned int max_intersections,
     __global float* vertices,
-    __global int* per_segment_boundary_point_counts
+    __global int* per_segment_boundary_point_counts,
+    __global int* boundary_point_counts_prefix_sum,
+    __global float* boundary_points,
+    int write_points
 ) {
     unsigned int i = get_global_id(0);
     float ax = vertices[2 * i] * inv_mesh_size;
@@ -32,7 +34,7 @@ void __kernel count_boundary_points(
             if (x < 0.0 || x > float(inv_mesh_size)) {
                 continue;
             }
-            float y = y_start + y_distance * (x - x_start) / x_distance;
+            float y = ay + y_distance * (x - ax) / x_distance;
             if (y < 0.0 || y > float(inv_mesh_size)) {
                 continue;
             }
@@ -49,7 +51,7 @@ void __kernel count_boundary_points(
             if (y < 0.0 || y > float(inv_mesh_size)) {
                 continue;
             }
-            float x = x_start + x_distance * (y - y_start) / y_distance;
+            float x = ax + x_distance * (y - ay) / y_distance;
             if (x < 0.0 || x > float(inv_mesh_size)) {
                 continue;
             }
@@ -60,48 +62,63 @@ void __kernel count_boundary_points(
     }
 
     // now iterate through the horizontal and vertical intersections and order them
-    float points[100];
-    int ipoint = 0;
+    int ipoint;
+    if (write_points) {
+        ipoint = (i == 0 ? 0 : boundary_point_counts_prefix_sum[i-1]);
+    } else {
+        ipoint = 0;
+    }
     int ivert = 0;
     int ihoriz = 0;
+    float xvert, yvert, xhoriz, yhoriz;
     while (ivert < vert_count && ihoriz < horiz_count) {
-        float xvert = verticals[2 * ivert];
-        float yvert = verticals[2 * ivert + 1];
-        float xhoriz = verticals[2 * ihoriz];
-        float yhoriz = verticals[2 * ihoriz + 1];
+        xvert = verticals[2 * ivert];
+        yvert = verticals[2 * ivert + 1];
+        xhoriz = horizontals[2 * ihoriz];
+        yhoriz = horizontals[2 * ihoriz + 1];
 
         // first check to see if the points are far enough apart
         if ((xhoriz - xvert) * (xhoriz - xvert) + (yhoriz - yvert) * (yhoriz * yvert) < epsilon * epsilon) {
             // if they're too close, skip the horizontal intersection
             ihoriz += 1;
         } else if ((x_pos && xvert <= xhoriz) || (!x_pos && xvert >= xhoriz)) {
-            points[2 * ipoint] = xvert;
-            points[2 * ipoint + 1] = yvert;
+            if (write_points) {
+                boundary_points[2 * ipoint] = xvert;
+                boundary_points[2 * ipoint + 1] = yvert;
+            }
             ivert += 1;
+            ipoint += 1;
         } else if ((x_pos && xvert > xhoriz) || (!x_pos && xvert < xhoriz)) {
-            points[2 * ipoint] = xhoriz;
-            points[2 * ipoint + 1] = yhoriz;
+            if (write_points) {
+                boundary_points[2 * ipoint] = xhoriz;
+                boundary_points[2 * ipoint + 1] = yhoriz;
+            }
             ihoriz += 1;
+            ipoint += 1;
         }
-        ipoint += 1;
     }
     while (ivert < vert_count) {
-        float xvert = verticals[2 * ivert];
-        float yvert = verticals[2 * ivert + 1];
-        points[2 * ipoint] = xvert;
-        points[2 * ipoint + 1] = yvert;
+        xvert = verticals[2 * ivert];
+        yvert = verticals[2 * ivert + 1];
+        if (write_points) {
+            boundary_points[2 * ipoint] = xvert;
+            boundary_points[2 * ipoint + 1] = yvert;
+        }
         ivert += 1;
         ipoint += 1;
     }
     while (ihoriz < horiz_count) {
-        float xhoriz = verticals[2 * ihoriz];
-        float yhoriz = verticals[2 * ihoriz + 1];
-        points[2 * ipoint] = xhoriz;
-        points[2 * ipoint + 1] = yhoriz;
+        xhoriz = horizontals[2 * ihoriz];
+        yhoriz = horizontals[2 * ihoriz + 1];
+        if (write_points) {
+            boundary_points[2 * ipoint] = xhoriz;
+            boundary_points[2 * ipoint + 1] = yhoriz;
+        }
         ihoriz += 1;
         ipoint += 1;
     }
-
-    per_segment_boundary_point_counts[i] = ipoint;
+    if (write_points == 0) {
+        per_segment_boundary_point_counts[i] = ipoint;
+    }
 }
 

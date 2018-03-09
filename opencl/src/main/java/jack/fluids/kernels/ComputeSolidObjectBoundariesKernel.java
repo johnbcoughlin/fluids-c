@@ -85,15 +85,15 @@ public class ComputeSolidObjectBoundariesKernel {
 
     check(error_code_ret);
     clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {invMeshSize}));
-    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_uint, Pointer.to(new int[] {Math.max(16, invMeshSize / 4)}));
-    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(vertexBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, Pointer.to(pointCountBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_mem, Pointer.to(vertexBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(pointCountBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, null);
+    clSetKernelArg(countBoundaryPointsKernel, 4, Sizeof.cl_mem, null);
+    clSetKernelArg(countBoundaryPointsKernel, 5, Sizeof.cl_int, Pointer.to(new int[] {0}));
 
     cl_event kernel_event = new cl_event();
     clEnqueueNDRangeKernel(queue, countBoundaryPointsKernel, 1, null,
         new long[]{segmentCount}, new long[]{1}, 0, null, kernel_event);
-
-    IntBuffer kernel_error_code = IntBuffer.allocate(1);
 
     // now do a (serial) prefix sum to compute the write offsets of boundary points for each segment.
     cl_mem pointCountPrefixSumBuffer = boundaryPointCountPrefixSumBuffers.get(objectIndex);
@@ -114,13 +114,15 @@ public class ComputeSolidObjectBoundariesKernel {
     // finally, write boundary points
     cl_mem boundaryPointBuffer = boundaryPointVerticesBuffer.requestSubBuffer(
         Sizeof.cl_float * 2 * totalPointCount, CL_MEM_READ_WRITE);
-    clSetKernelArg(writeBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {invMeshSize}));
-    clSetKernelArg(writeBoundaryPointsKernel, 1, Sizeof.cl_mem, Pointer.to(vertexBuffer));
-    clSetKernelArg(writeBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(pointCountPrefixSumBuffer));
-    clSetKernelArg(writeBoundaryPointsKernel, 3, Sizeof.cl_mem, Pointer.to(boundaryPointBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {invMeshSize}));
+    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_mem, Pointer.to(vertexBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, null);
+    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, Pointer.to(pointCountPrefixSumBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 4, Sizeof.cl_mem, Pointer.to(boundaryPointBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 5, Sizeof.cl_int, Pointer.to(new int[] {1}));
 
     kernel_event = new cl_event();
-    clEnqueueNDRangeKernel(queue, writeBoundaryPointsKernel, 1, null,
+    clEnqueueNDRangeKernel(queue, countBoundaryPointsKernel, 1, null,
         new long[]{segmentCount}, new long[]{1}, 0, null, kernel_event);
     clFinish(queue);
 
