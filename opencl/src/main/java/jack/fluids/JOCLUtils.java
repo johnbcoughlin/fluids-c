@@ -1,11 +1,8 @@
 package jack.fluids;
 
-import org.jocl.Pointer;
-import org.jocl.cl_device_id;
+import org.jocl.*;
 
-import static org.jocl.CL.CL_SUCCESS;
-import static org.jocl.CL.clGetDeviceInfo;
-import static org.jocl.CL.stringFor_errorCode;
+import static org.jocl.CL.*;
 
 public class JOCLUtils {
   /**
@@ -30,9 +27,32 @@ public class JOCLUtils {
     return new String(buffer, 0, buffer.length - 1);
   }
 
+  public static String obtainBuildLogs(cl_program program) {
+    int numDevices[] = new int[1];
+    clGetProgramInfo(program, CL_PROGRAM_NUM_DEVICES, Sizeof.cl_uint, Pointer.to(numDevices), null);
+    cl_device_id devices[] = new cl_device_id[numDevices[0]];
+    clGetProgramInfo(program, CL.CL_PROGRAM_DEVICES, numDevices[0] * Sizeof.cl_device_id, Pointer.to(devices), null);
+
+    StringBuffer sb = new StringBuffer();
+    for (int i=0; i<devices.length; i++) {
+      sb.append("Build log for device "+i+":\n");
+      long logSize[] = new long[1];
+      CL.clGetProgramBuildInfo(program, devices[i], CL.CL_PROGRAM_BUILD_LOG, 0, null, logSize);
+      byte logData[] = new byte[(int)logSize[0]];
+      CL.clGetProgramBuildInfo(program, devices[i], CL.CL_PROGRAM_BUILD_LOG, logSize[0], Pointer.to(logData), null);
+      sb.append(new String(logData, 0, logData.length-1));
+      sb.append("\n");
+    }
+    return sb.toString();
+  }
+
   public static void check(int[] errorCode) {
-    if (errorCode[0] != CL_SUCCESS) {
-      throw new RuntimeException(stringFor_errorCode(errorCode[0]));
+    check(errorCode[0]);
+  }
+
+  public static void check(int errorCode) {
+    if (errorCode != CL_SUCCESS) {
+      throw new RuntimeException(stringFor_errorCode(errorCode));
     }
   }
 }

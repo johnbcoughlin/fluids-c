@@ -1,7 +1,6 @@
 package jack.fluids;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.jogamp.opengl.GL4;
 import jack.fluids.kernels.ComputeSolidObjectBoundariesKernel;
@@ -132,10 +131,8 @@ public class CLSimulation {
     System.out.println(endTime[0] - startTime[0] + "ns");
 
     cl_mem objectVertices = new SolidObjects(context, queue).initVertexBuffer();
-    ComputeSolidObjectBoundariesKernel objectBoundariesKernel = new ComputeSolidObjectBoundariesKernel(
-        ImmutableList.of(objectVertices),
-        ImmutableList.of(100),
-        context, queue, devices, 128, 128);
+    ComputeSolidObjectBoundariesKernel objectBoundariesKernel =
+        new ComputeSolidObjectBoundariesKernel(context, queue, devices);
 
     objectBoundariesKernel.compile();
 
