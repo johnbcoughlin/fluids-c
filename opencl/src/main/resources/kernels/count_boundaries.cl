@@ -20,7 +20,7 @@ void __kernel count_boundary_points(
     float y_inc = y_pos > 0.0 ? 1.0 : -1.0;
 
     float x_start = x_pos ? ceil(ax) : floor(ax);
-    float x_end = x_pos ? floor(bx) : ceil(ax);
+    float x_end = x_pos ? floor(bx) : ceil(bx);
     float x_distance = bx - ax;
     float y_start = y_pos ? ceil(ay) : floor(ay);
     float y_end = y_pos ? floor(by) : ceil(by);
@@ -28,9 +28,9 @@ void __kernel count_boundary_points(
     float epsilon = 1.0e-3;
 
     int vert_count = 0;
-    float verticals[100];
+    float verticals[128];
     if (fabs(x_distance) > epsilon) {
-        for (float x = x_start; (x_pos && x <= x_end) || (!x_pos && x >= x_end); x += x_inc) {
+        for (float x = x_start; (x_pos && x < bx) || (!x_pos && x > bx); x += x_inc) {
             if (x < 0.0 || x > float(inv_mesh_size)) {
                 continue;
             }
@@ -41,13 +41,17 @@ void __kernel count_boundary_points(
             verticals[2 * vert_count] = x;
             verticals[2 * vert_count + 1] = y;
             vert_count += 1;
+            if (vert_count > 64) {
+                per_segment_boundary_point_counts[i] = -1;
+                return;
+            }
         }
     }
 
     int horiz_count = 0;
     float horizontals[100];
     if (fabs(y_distance) > epsilon) {
-        for (float y = y_start; (y_pos && y <= y_end) || (!y_pos && y >= y_end); y += y_inc) {
+        for (float y = y_start; (y_pos && y < by) || (!y_pos && y > by); y += y_inc) {
             if (y < 0.0 || y > float(inv_mesh_size)) {
                 continue;
             }
@@ -58,6 +62,10 @@ void __kernel count_boundary_points(
             horizontals[2 * horiz_count] = x;
             horizontals[2 * horiz_count + 1] = y;
             horiz_count += 1;
+            if (horiz_count > 64) {
+                per_segment_boundary_point_counts[i] = -1;
+                return;
+            }
         }
     }
 
@@ -78,7 +86,7 @@ void __kernel count_boundary_points(
         yhoriz = horizontals[2 * ihoriz + 1];
 
         // first check to see if the points are far enough apart
-        if ((xhoriz - xvert) * (xhoriz - xvert) + (yhoriz - yvert) * (yhoriz * yvert) < epsilon * epsilon) {
+        if ((xhoriz - xvert) * (xhoriz - xvert) + (yhoriz - yvert) * (yhoriz - yvert) < epsilon * epsilon) {
             // if they're too close, skip the horizontal intersection
             ihoriz += 1;
         } else if ((x_pos && xvert <= xhoriz) || (!x_pos && xvert >= xhoriz)) {
@@ -88,7 +96,7 @@ void __kernel count_boundary_points(
             }
             ivert += 1;
             ipoint += 1;
-        } else if ((x_pos && xvert > xhoriz) || (!x_pos && xvert < xhoriz)) {
+        } else if ((x_pos && xvert >= xhoriz) || (!x_pos && xvert <= xhoriz)) {
             if (write_points) {
                 boundary_points[2 * ipoint] = xhoriz;
                 boundary_points[2 * ipoint + 1] = yhoriz;

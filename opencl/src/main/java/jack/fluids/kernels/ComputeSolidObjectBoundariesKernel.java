@@ -12,6 +12,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static jack.fluids.JOCLUtils.check;
 import static org.jocl.CL.*;
@@ -94,6 +95,13 @@ public class ComputeSolidObjectBoundariesKernel {
     cl_event kernel_event = new cl_event();
     clEnqueueNDRangeKernel(queue, countBoundaryPointsKernel, 1, null,
         new long[]{segmentCount}, new long[]{1}, 0, null, kernel_event);
+
+    IntBuffer perSegmentCounts = IntBuffer.allocate(segmentCount);
+    clEnqueueReadBuffer(queue, pointCountBuffer,
+        CL_TRUE, 0, segmentCount * Sizeof.cl_uint, Pointer.to(perSegmentCounts), 0, null, null);
+    if (IntStream.of(perSegmentCounts.array()).anyMatch(c -> c < 0)) {
+      throw new IllegalArgumentException("too many intersections in one segment");
+    }
 
     // now do a (serial) prefix sum to compute the write offsets of boundary points for each segment.
     cl_mem pointCountPrefixSumBuffer = boundaryPointCountPrefixSumBuffers.get(objectIndex);
