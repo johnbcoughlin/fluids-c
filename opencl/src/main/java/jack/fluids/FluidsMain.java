@@ -10,7 +10,7 @@ import com.jogamp.opengl.util.Animator;
 
 public class FluidsMain {
   public static void main(String[] args) {
-    GLProfile profile = GLProfile.get(GLProfile.GL3);
+    GLProfile profile = GLProfile.get(GLProfile.GL4);
     System.out.println(profile);
     GLCapabilities capabilities = new GLCapabilities(profile);
     GLWindow window = GLWindow.create(capabilities);

@@ -16,7 +16,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.jocl.CL.*;
 
 public class SolidObjectBoundariesKernelTest {
-  cl_program program;
   cl_context context;
   cl_command_queue queue;
   int[] error_code_ret = new int[1];

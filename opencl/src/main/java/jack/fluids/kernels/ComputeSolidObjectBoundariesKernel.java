@@ -27,7 +27,6 @@ public class ComputeSolidObjectBoundariesKernel {
   private cl_program program;
   private cl_kernel countBoundaryPointsKernel;
   private cl_kernel prefixSumKernel;
-  private cl_kernel writeBoundaryPointsKernel;
 
   private boolean compiled;
 
@@ -44,17 +43,15 @@ public class ComputeSolidObjectBoundariesKernel {
   public void compile() {
     String countPoints = kernel("count_boundaries.cl");
     String prefixSum = kernel("serial_prefix_sum.cl");
-    String writePoints = kernel("write_boundaries.cl");
-    program = clCreateProgramWithSource(context, 3,
-        new String[] {countPoints, prefixSum, writePoints},
-        new long[] {countPoints.length(), prefixSum.length(), writePoints.length()},
+    program = clCreateProgramWithSource(context, 2,
+        new String[] {countPoints, prefixSum},
+        new long[] {countPoints.length(), prefixSum.length()},
         error_code_ret);
     buildProgramSafely();
     countBoundaryPointsKernel = clCreateKernel(program, "count_boundary_points", error_code_ret);
     check(error_code_ret);
     prefixSumKernel = clCreateKernel(program, "serial_prefix_sum", error_code_ret);
     check(error_code_ret);
-    writeBoundaryPointsKernel = clCreateKernel(program, "write_boundary_points", error_code_ret);
     check(error_code_ret);
     this.compiled = true;
   }
