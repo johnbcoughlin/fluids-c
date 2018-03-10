@@ -1,0 +1,10 @@
+#version 410
+
+in vec4 a_coords;
+
+out vec4 v_coords;
+
+void main() {
+  gl_Position = a_coords;
+  v_coords = a_coords;
+}

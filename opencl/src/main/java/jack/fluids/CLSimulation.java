@@ -15,7 +15,7 @@ import java.util.Arrays;
 import static org.jocl.CL.*;
 
 public class CLSimulation {
-  private static final long CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE = 0x10000000L;
+  public static final long CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE = 0x10000000L;
 
   private final GL4 gl;
   private final int nx;
@@ -74,7 +74,7 @@ public class CLSimulation {
     String kernelSrc = kernel();
     cl_program cl_program = clCreateProgramWithSource(context, 1,
         new String[]{kernelSrc}, new long[]{(long) kernelSrc.length()}, error_code_ret);
-    clBuildProgram(cl_program, 2, devices, null, null, null);
+    clBuildProgram(cl_program, 1, devices, null, null, null);
 
     // assemble buffers
     int n = 10;
