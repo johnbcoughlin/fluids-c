@@ -46,6 +46,12 @@ public class JOCLUtils {
     return sb.toString();
   }
 
+  public static String getEventStatus(cl_event event) {
+    long[] result = new long[1];
+    clGetEventInfo(event, CL_EVENT_COMMAND_EXECUTION_STATUS, Sizeof.cl_ulong, Pointer.to(result), null);
+    return CL.stringFor_errorCode((int) result[0]);
+  }
+
   public static void check(int[] errorCode) {
     check(errorCode[0]);
   }

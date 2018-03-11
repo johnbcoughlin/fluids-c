@@ -2,23 +2,27 @@ package jack.fluids.glutils;
 
 import com.google.common.base.Throwables;
 import com.google.common.io.CharStreams;
-import com.jogamp.opengl.GL3;
+import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL4;
+import com.jogamp.opengl.GLAutoDrawable;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.FloatBuffer;
 
 public class QuadRender {
+  private final GLAutoDrawable drawable;
   private final GL4 gl;
   private final int texture;
 
+  private int vao;
   private int buffer;
   private int program;
   private int uniformLocation;
 
-  public QuadRender(GL4 gl, int texture) {
-    this.gl = gl;
+  public QuadRender(GLAutoDrawable drawable, int texture) {
+    this.drawable = drawable;
+    this.gl = drawable.getGL().getGL4();
     this.texture = texture;
   }
 
@@ -29,28 +33,35 @@ public class QuadRender {
 
     gl.glUseProgram(program);
     buffer = GLUtils.createBuffer(gl);
-    System.out.println(buffer);
-    System.out.println(GLUtils.createBuffer(gl));
-    System.out.println(GLUtils.createBuffer(gl));
-    System.out.println(GLUtils.createBuffer(gl));
-    System.out.println(GLUtils.createBuffer(gl));
-    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, 1);
+
+    vao = GLUtils.createVAO(gl);
+    gl.glBindVertexArray(vao);
+    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, buffer);
     gl.glBufferData(GL4.GL_ARRAY_BUFFER, Float.BYTES * 12, quadVertices(), GL4.GL_STATIC_DRAW);
+    int coordsAttributeLocation = gl.glGetAttribLocation(program, "a_coords");
+    gl.glEnableVertexAttribArray(coordsAttributeLocation);
+    gl.glVertexAttribPointer(coordsAttributeLocation, 2, gl.GL_FLOAT, false, 0, 0);
+    gl.glBindVertexArray(0);
 
     uniformLocation = gl.glGetUniformLocation(program, "u_texture");
+    GLUtils.check(gl);
   }
 
   public void draw() {
     gl.glUseProgram(program);
 
-    gl.glUniform1ui(uniformLocation, 0);
-    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, buffer);
+    gl.glBindVertexArray(vao);
+
+    gl.glUniform1i(uniformLocation, 0);
+    gl.glClearColor(1.0f, 0.6f, 0.4f, 0.5f);
+
+    gl.glActiveTexture(GL.GL_TEXTURE0);
     gl.glBindTexture(GL4.GL_TEXTURE_2D, texture);
 
-    gl.glClearColor(1.0f, 0.6f, 0.4f, 0.5f);
-    gl.glClear(GL3.GL_COLOR_BUFFER_BIT);
+    gl.glDrawArrays(GL4.GL_TRIANGLES, 0, 6);
+    gl.glBindVertexArray(0);
 
-//    gl.glDrawArrays(GL4.GL_TRIANGLES, 0, 6);
+    drawable.swapBuffers();
   }
 
   public static FloatBuffer quadVertices() {

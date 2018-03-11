@@ -1,28 +1,24 @@
 package jack.fluids.kernels;
 
+import com.jogamp.newt.event.KeyEvent;
+import com.jogamp.newt.event.KeyListener;
+import com.jogamp.newt.event.WindowAdapter;
+import com.jogamp.newt.event.WindowEvent;
 import com.jogamp.newt.opengl.GLWindow;
-import com.jogamp.opengl.GLCapabilities;
-import com.jogamp.opengl.GLContext;
-import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.*;
 import com.jogamp.opengl.util.Animator;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class GLWindowRule implements TestRule {
-  private final GLEventListener eventListener;
-  private final CompletableFuture<Void> initializationFuture;
-  private final CompletableFuture<Void> testCompletionFuture;
+  private final AtomicReference<GLAutoDrawable> drawableReference;
 
-  public GLWindowRule(GLEventListener eventListener,
-                      CompletableFuture<Void> initializationFuture,
-                      CompletableFuture<Void> testCompletionFuture) {
-    this.eventListener = eventListener;
-    this.initializationFuture = initializationFuture;
-    this.testCompletionFuture = testCompletionFuture;
+  public GLWindowRule(AtomicReference<GLAutoDrawable> drawableReference) {
+    this.drawableReference = drawableReference;
   }
 
   @Override
@@ -37,24 +33,64 @@ public class GLWindowRule implements TestRule {
         GLWindow window = GLWindow.create(capabilities);
 
         window.setTitle(description.getDisplayName());
-        window.setSize(400, 400);
+        window.setSize(500, 500);
         window.setContextCreationFlags(GLContext.CTX_OPTION_DEBUG);
         window.setVisible(true);
 
-        window.addGLEventListener(eventListener);
-
         final Animator animator = new Animator(window);
-        animator.start();
-        initializationFuture.join();
-        window.invokeOnCurrentThread(() -> {
-          try {
-            statement.evaluate();
-          } catch (Throwable throwable) {
-            throwable.printStackTrace();
+
+        CompletableFuture<Void> completionFuture = new CompletableFuture<>();
+        window.addGLEventListener(new GLEventListener() {
+          @Override
+          public void init(GLAutoDrawable drawable) {
+            drawable.setAutoSwapBufferMode(false);
+            drawableReference.set(drawable);
+            try {
+              statement.evaluate();
+            } catch (Throwable throwable) {
+              animator.stop();
+              completionFuture.completeExceptionally(throwable);
+            }
+          }
+
+          @Override
+          public void dispose(GLAutoDrawable drawable) {
+          }
+
+          @Override
+          public void display(GLAutoDrawable drawable) {
+          }
+
+          @Override
+          public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
           }
         });
-        testCompletionFuture.join();
-        animator.stop();
+
+        window.addKeyListener(new KeyListener() {
+          @Override
+          public void keyPressed(KeyEvent e) {
+            if (e.getKeyChar() == 'w') {
+              animator.stop();
+              completionFuture.complete(null);
+            }
+          }
+
+          @Override
+          public void keyReleased(KeyEvent e) {
+
+          }
+        });
+
+        animator.start();
+
+        window.addWindowListener(new WindowAdapter() {
+          @Override
+          public void windowDestroyed(WindowEvent e) {
+            animator.stop();
+            completionFuture.complete(null);
+          }
+        });
+        completionFuture.join();
       }
     };
   }

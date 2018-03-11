@@ -56,7 +56,8 @@ public class SmoothSignedDistanceFunctionKernel {
 
   public void smooth(
       TwoPhaseBuffer twoPhaseBuffer,
-      int nx, int ny) {
+      int nx, int ny,
+      cl_event[] waitList) {
     if (!compiled) {
       throw new RuntimeException("not compiled yet");
     }
@@ -64,11 +65,16 @@ public class SmoothSignedDistanceFunctionKernel {
     clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(twoPhaseBuffer.front()));
     clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(twoPhaseBuffer.back()));
     clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {1}));
-    clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {0}));
-    clEnqueueNDRangeKernel(queue, kernel, 2, null,
-        new long[] {nx, ny, 1},
+    clSetKernelArg(kernel, 3, Sizeof.cl_int, Pointer.to(new int[] {0}));
+    cl_event event = new cl_event();
+    clEnqueueNDRangeKernel(queue, kernel, 2,
+        new long[] {0, 0, 0},
+        new long[] {10, 10, 1},
         new long[] {1, 1, 1},
-        0, null, null);
+//        null,
+        waitList.length, waitList, event);
+    clFinish(queue);
+    System.out.println("foo" + JOCLUtils.getEventStatus(event));
 
   }
 
