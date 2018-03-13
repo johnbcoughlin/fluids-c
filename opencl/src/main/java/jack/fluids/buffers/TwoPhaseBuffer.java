@@ -19,7 +19,7 @@ public class TwoPhaseBuffer {
     return back;
   }
 
-  void swap() {
+  public void swap() {
     cl_mem tmp = front;
     front = back;
     back = tmp;

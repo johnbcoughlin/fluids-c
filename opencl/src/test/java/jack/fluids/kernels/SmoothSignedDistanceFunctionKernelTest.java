@@ -88,30 +88,34 @@ public class SmoothSignedDistanceFunctionKernelTest {
     int width = 10;
     int height = 10;
     float[] imageData = new float[4 * width * height];
-//    for (int j = 0; j < height; j++) {
-//      for (int i = 0; i < width; i++) {
-//        if (i == 4) {
-//          imageData[4 * j * width + 4 * i + 0] = 4.5f;
-//          imageData[4 * j * width + 4 * i + 1] = j;
-//          imageData[4 * j * width + 4 * i + 2] = -0.5f;
-//        } else if (i == 5) {
-//          imageData[4 * j * width + 4 * i + 0] = 4.5f;
-//          imageData[4 * j * width + 4 * i + 1] = j;
-//          imageData[4 * j * width + 4 * i + 2] = 0.5f;
-//        } else {
-//          imageData[4 * j * width + 4 * i + 2] = 100.0f;
-//        }
-//        imageData[4 * j * width + 4 * i + 3] = 1.0f;
-//      }
-//    }
+    for (int j = 0; j < height; j++) {
+      for (int i = 0; i < width; i++) {
+        if (i == 4) {
+          imageData[4 * j * width + 4 * i + 0] = 4.5f;
+          imageData[4 * j * width + 4 * i + 1] = 5.0f;
+          imageData[4 * j * width + 4 * i + 2] = (float) Math.pow((5.0f - j), 4);
+          imageData[4 * j * width + 4 * i + 3] = 1.0f;
+        } else if (i == 5) {
+          imageData[4 * j * width + 4 * i + 0] = 4.5f;
+          imageData[4 * j * width + 4 * i + 1] = 5.0f;
+          imageData[4 * j * width + 4 * i + 2] = (float) Math.pow((5.0f - j), 4);
+          imageData[4 * j * width + 4 * i + 3] = -1.0f;
+        } else {
+          imageData[4 * j * width + 4 * i + 0] = 0.0f;
+          imageData[4 * j * width + 4 * i + 1] = 0.0f;
+          imageData[4 * j * width + 4 * i + 2] = 1000.0f;
+          imageData[4 * j * width + 4 * i + 3] = 0.0f;
+        }
+      }
+    }
 
 
-    int texture1 = GLUtils.createTextureWithData(gl, width, height, FloatBuffer.allocate(400));
-    int texture2 = GLUtils.createTextureWithData(gl, width, height, FloatBuffer.allocate(400));
+    int texture1 = GLUtils.createTextureWithData(gl, width, height, FloatBuffer.wrap(imageData));
+    int texture2 = GLUtils.createTextureWithData(gl, width, height, FloatBuffer.wrap(imageData));
     GLUtils.check(gl);
-//    quadRender = new QuadRender(drawable.get(), texture1);
-//    quadRender.setup();
-//    quadRender.draw();
+    quadRender = new QuadRender(drawable.get(), texture1);
+    quadRender.setup();
+    quadRender.draw();
 
     cl_mem image1 = clCreateFromGLTexture(context, CL_MEM_READ_WRITE, GL4.GL_TEXTURE_2D, 0, texture1, error_code_ret);
     check(error_code_ret);
@@ -119,7 +123,6 @@ public class SmoothSignedDistanceFunctionKernelTest {
     check(error_code_ret);
     cl_event acquire = new cl_event();
     clEnqueueAcquireGLObjects(queue, 2, new cl_mem[] {image1, image2}, 0, null, acquire);
-//    clEnqueueAcquireGLObjects(queue, 1, new cl_mem[] {image2}, 0, null, acquire);
 
     clFinish(queue);
     TwoPhaseBuffer twoPhaseBuffer = new TwoPhaseBuffer(image1, image2);

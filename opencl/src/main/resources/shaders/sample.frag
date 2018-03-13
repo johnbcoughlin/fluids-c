@@ -8,6 +8,6 @@ out vec4 outColor;
 
 void main() {
   vec2 texcoords = (v_coords.xy / 2.0) + 0.5;
-  vec3 val = texture(u_texture, texcoords).xyz;
-  outColor = vec4(texture(u_texture, texcoords).xyz * 100.0, 1.0);
+  vec4 val = texture(u_texture, texcoords);
+  outColor = vec4(sqrt(val.z) / 10.0, 1.0 - val.w, val.w, 1.0);
 }

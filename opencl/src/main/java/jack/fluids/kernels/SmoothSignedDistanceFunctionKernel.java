@@ -1,6 +1,7 @@
 package jack.fluids.kernels;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import jack.fluids.JOCLUtils;
 import jack.fluids.buffers.TwoPhaseBuffer;
@@ -8,6 +9,7 @@ import org.jocl.*;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 
 import static jack.fluids.JOCLUtils.check;
 import static org.jocl.CL.*;
@@ -37,8 +39,8 @@ public class SmoothSignedDistanceFunctionKernel {
   public void compile() {
     String src = kernel("eikonal.cl");
     program = clCreateProgramWithSource(context, 1,
-        new String[] {src},
-        new long[] {src.length()},
+        new String[]{src},
+        new long[]{src.length()},
         error_code_ret);
     buildProgramSafely();
     kernel = clCreateKernel(program, "iterate_eikonal", error_code_ret);
@@ -61,21 +63,30 @@ public class SmoothSignedDistanceFunctionKernel {
     if (!compiled) {
       throw new RuntimeException("not compiled yet");
     }
+    List<Integer> dxs = ImmutableList.of(
+        1, 1, 1, -1, -1, -1, 0, 0, 0, 0, 0, 0);
 
-    clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(twoPhaseBuffer.front()));
-    clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(twoPhaseBuffer.back()));
-    clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[] {1}));
-    clSetKernelArg(kernel, 3, Sizeof.cl_int, Pointer.to(new int[] {0}));
-    cl_event event = new cl_event();
-    clEnqueueNDRangeKernel(queue, kernel, 2,
-        new long[] {0, 0, 0},
-        new long[] {10, 10, 1},
-        new long[] {1, 1, 1},
-//        null,
-        waitList.length, waitList, event);
+    List<Integer> dys = ImmutableList.of(
+        0, 0, 0, 0, 0, 0, 1, 1, 1, -1, -1, -1);
+
+    for (int k = 0; k < 2; k++) {
+      for (int i = 0; i < dxs.size(); i++) {
+        int dx = dxs.get(i);
+        int dy = dys.get(i);
+        clSetKernelArg(kernel, 0, Sizeof.cl_mem, Pointer.to(twoPhaseBuffer.front()));
+        clSetKernelArg(kernel, 1, Sizeof.cl_mem, Pointer.to(twoPhaseBuffer.back()));
+        clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[]{dx}));
+        clSetKernelArg(kernel, 3, Sizeof.cl_int, Pointer.to(new int[]{dy}));
+        cl_event event = new cl_event();
+        clEnqueueNDRangeKernel(queue, kernel, 2,
+            new long[]{0, 0, 0},
+            new long[]{10, 10, 1},
+            new long[]{2, 2, 1},
+            0, null, event);
+        twoPhaseBuffer.swap();
+      }
+    }
     clFinish(queue);
-    System.out.println("foo" + JOCLUtils.getEventStatus(event));
-
   }
 
   String kernel(String fileName) {
