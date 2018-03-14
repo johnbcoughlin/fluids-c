@@ -30,10 +30,11 @@ public class MarchingSquaresKernel extends AbstractKernel {
     clEnqueueNDRangeKernel(session.queue(),
         countVerticesKernel, 2,
         new long[] {0, 0, 0},
-        new long[] {width - 1, height - 1, 1},
+        new long[] {hp.width(0), hp.height(0), 1},
         new long[] {1, 1, 1},
         0, null, null);
 
+    // roll up the histogram pyramid and get the top value
   }
 
   @Override
