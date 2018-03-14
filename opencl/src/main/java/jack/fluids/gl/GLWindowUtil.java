@@ -1,4 +1,4 @@
-package jack.fluids.glutils;
+package jack.fluids.gl;
 
 import com.jogamp.newt.event.WindowAdapter;
 import com.jogamp.newt.event.WindowEvent;

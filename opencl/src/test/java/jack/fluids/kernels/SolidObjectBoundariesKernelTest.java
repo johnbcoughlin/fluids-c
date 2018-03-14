@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static jack.fluids.JOCLUtils.check;
+import static jack.fluids.cl.JOCLUtils.check;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.jocl.CL.*;

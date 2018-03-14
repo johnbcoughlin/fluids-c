@@ -1,4 +1,4 @@
-package jack.fluids;
+package jack.fluids.cl;
 
 import org.jocl.*;
 

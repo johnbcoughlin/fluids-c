@@ -4,8 +4,8 @@ import com.jogamp.opengl.GL4;
 import com.jogamp.opengl.GLAutoDrawable;
 import jack.fluids.CLSimulation;
 import jack.fluids.buffers.TwoPhaseBuffer;
-import jack.fluids.glutils.GLUtils;
-import jack.fluids.glutils.QuadRender;
+import jack.fluids.gl.GLUtils;
+import jack.fluids.gl.QuadRender;
 import jogamp.opengl.macosx.cgl.CGL;
 import org.jocl.*;
 import org.junit.After;
@@ -18,7 +18,7 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static jack.fluids.JOCLUtils.check;
+import static jack.fluids.cl.JOCLUtils.check;
 import static org.jocl.CL.*;
 
 public class SmoothSignedDistanceFunctionKernelTest {

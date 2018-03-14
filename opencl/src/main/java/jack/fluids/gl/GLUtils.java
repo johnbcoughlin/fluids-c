@@ -1,4 +1,4 @@
-package jack.fluids.glutils;
+package jack.fluids.gl;
 
 import com.google.common.base.Charsets;
 import com.jogamp.opengl.GL;

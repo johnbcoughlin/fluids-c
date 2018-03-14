@@ -9,7 +9,8 @@ import com.jogamp.newt.event.WindowEvent;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.util.Animator;
-import jack.fluids.glutils.GLUtils;
+import jack.fluids.cl.JOCLUtils;
+import jack.fluids.gl.GLUtils;
 import jogamp.opengl.macosx.cgl.CGL;
 import org.jocl.*;
 
@@ -19,7 +20,7 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 
 import static jack.fluids.CLSimulation.CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE;
-import static jack.fluids.JOCLUtils.check;
+import static jack.fluids.cl.JOCLUtils.check;
 import static org.jocl.CL.*;
 
 public class TestMain implements GLEventListener {

@@ -1,6 +1,6 @@
 package jack.fluids.buffers;
 
-import jack.fluids.JOCLUtils;
+import jack.fluids.cl.JOCLUtils;
 import org.jocl.cl_buffer_region;
 import org.jocl.cl_mem;
 

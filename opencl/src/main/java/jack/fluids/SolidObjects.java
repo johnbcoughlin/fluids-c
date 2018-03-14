@@ -4,7 +4,7 @@ import org.jocl.*;
 
 import java.util.Arrays;
 
-import static jack.fluids.JOCLUtils.check;
+import static jack.fluids.cl.JOCLUtils.check;
 import static org.jocl.CL.*;
 
 public class SolidObjects {

@@ -1,4 +1,4 @@
-package jack.fluids.glutils;
+package jack.fluids.gl;
 
 import com.google.common.base.Throwables;
 import com.google.common.io.CharStreams;

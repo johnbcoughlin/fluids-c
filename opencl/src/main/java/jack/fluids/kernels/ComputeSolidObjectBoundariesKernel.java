@@ -2,7 +2,7 @@ package jack.fluids.kernels;
 
 import com.google.common.base.Throwables;
 import com.google.common.io.CharStreams;
-import jack.fluids.JOCLUtils;
+import jack.fluids.cl.JOCLUtils;
 import jack.fluids.buffers.SplitBuffer;
 import org.jocl.*;
 
@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static jack.fluids.JOCLUtils.check;
+import static jack.fluids.cl.JOCLUtils.check;
 import static org.jocl.CL.*;
 
 public class ComputeSolidObjectBoundariesKernel {
