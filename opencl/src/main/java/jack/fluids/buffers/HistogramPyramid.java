@@ -20,8 +20,16 @@ public class HistogramPyramid {
     this.heights = heights;
   }
 
+  public int levelCount() {
+    return levels.size();
+  }
+
   public cl_mem bottom() {
     return levels.get(0);
+  }
+
+  public cl_mem level(int level) {
+    return levels.get(level);
   }
 
   public int width(int level) {

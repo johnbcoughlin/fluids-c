@@ -7,8 +7,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 public class MarchingSquaresKernelTest {
   private static final int[] error_code_ret = new int[1];
 
@@ -46,7 +44,17 @@ public class MarchingSquaresKernelTest {
 
     kernel.march(phi, hp, width, height);
 
-    int[] actual = session.readInt2DImage(hp.bottom(), hp.width(0), hp.height(0));
-    System.out.println(Arrays.toString(actual));
+    for (int i = 0; i < hp.levelCount(); i++) {
+      int[] actual = session.readInt2DImage(hp.level(i), hp.width(i), hp.height(i));
+      int rowLength = hp.width(i);
+      System.out.print("[\t");
+      for (int j = 0; j < actual.length / rowLength; j++) {
+        for (int k = 0; k < rowLength; k++) {
+          System.out.print(actual[j * rowLength + k] + "\t");
+        }
+        System.out.print("\n\t");
+      }
+      System.out.println("");
+    }
   }
 }

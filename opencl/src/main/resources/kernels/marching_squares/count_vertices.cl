@@ -15,9 +15,9 @@ void __kernel count_vertices(
 ) {
     const int2 pos = {get_global_id(0), get_global_id(1)};
     float phi0 = read_imagef(phi, sampler, pos).x;
-    float phi1 = read_imagef(phi, sampler, pos + int2(0, 1)).x;
-    float phi2 = read_imagef(phi, sampler, pos + int2(1, 0)).x;
-    float phi3 = read_imagef(phi, sampler, pos + int2(1, 1)).x;
+    float phi1 = read_imagef(phi, sampler, pos + (int2)(0, 1)).x;
+    float phi2 = read_imagef(phi, sampler, pos + (int2)(1, 0)).x;
+    float phi3 = read_imagef(phi, sampler, pos + (int2)(1, 1)).x;
 
     int key = 0;
     key += phi0 > 0 ? 8 : 0;

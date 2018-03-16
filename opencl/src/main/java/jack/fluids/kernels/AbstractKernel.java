@@ -4,7 +4,8 @@ import com.google.common.base.Throwables;
 import com.google.common.io.CharStreams;
 import jack.fluids.cl.JOCLUtils;
 import jack.fluids.cl.Session;
-import org.jocl.*;
+import org.jocl.cl_kernel;
+import org.jocl.cl_program;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,7 +31,8 @@ public abstract class AbstractKernel {
 
   public void compile() {
     String[] sources = kernelSources();
-    program = clCreateProgramWithSource(session.context(), 1,
+    program = clCreateProgramWithSource(session.context(),
+        sources.length,
         sources,
         Stream.of(sources).mapToLong(String::length).toArray(),
         error_code_ret);

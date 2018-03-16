@@ -71,6 +71,7 @@ public class Session {
 
   private cl_mem create2DImageFromEmpty(int width, int height, cl_image_format image_format) {
     cl_image_desc image_desc = imageDesc2DFloat(width, height);
+    image_desc.image_row_pitch = 0;
     cl_mem result = clCreateImage(
         context,
         CL_MEM_READ_WRITE,
@@ -159,6 +160,7 @@ public class Session {
       }
     }, null, error_code_ret);
     check(error_code_ret);
+    cl_queue_properties queue_properties = new cl_queue_properties();
     cl_command_queue queue = clCreateCommandQueue(context, devices[0],
         CL_QUEUE_PROFILING_ENABLE, error_code_ret);
 
