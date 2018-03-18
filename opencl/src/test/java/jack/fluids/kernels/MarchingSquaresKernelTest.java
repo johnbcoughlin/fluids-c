@@ -1,14 +1,30 @@
 package jack.fluids.kernels;
 
+import com.jogamp.opengl.GL4;
+import com.jogamp.opengl.GLAutoDrawable;
 import jack.fluids.buffers.HistogramPyramid;
+import jack.fluids.buffers.SharedVBO;
 import jack.fluids.cl.Session;
+import jack.fluids.gl.LineRender;
+import jogamp.opengl.macosx.cgl.CGL;
 import org.jocl.cl_mem;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MarchingSquaresKernelTest {
   private static final int[] error_code_ret = new int[1];
+
+  private final AtomicReference<GLAutoDrawable> drawable = new AtomicReference<>();
+  GL4 gl;
+
+  @Rule
+  public final TestRule rule = new GLWindowRule(drawable);
 
   Session session;
 
@@ -16,8 +32,10 @@ public class MarchingSquaresKernelTest {
 
   @Before
   public void before() {
-    session = Session.create();
-    kernel = new MarchingSquaresKernel(session);
+    gl = drawable.get().getGL().getGL4();
+    long shareGroup = CGL.CGLGetShareGroup(CGL.CGLGetCurrentContext());
+    session = Session.createFromGL();
+    kernel = new MarchingSquaresKernel(session, gl);
     kernel.compile();
   }
 
@@ -27,7 +45,47 @@ public class MarchingSquaresKernelTest {
   }
 
   @Test
-  public void test() {
+  public void testCircle() {
+    int width = 50;
+    int height = 50;
+    float[] phiData = new float[width * height];
+    for (int j = 0; j < height; j++) {
+      for (int i = 0; i < width; i++) {
+        phiData[j * width + i] = (float) Math.sqrt(
+            Math.pow(width / 2.0 - i, 2) + Math.pow(height / 2.0 - j, 2)) - width / 4.0f;
+      }
+    }
+
+    cl_mem phi = session.createFloat2DImageFromBuffer(phiData, width, height);
+    HistogramPyramid hp = HistogramPyramid.create(session, width, height);
+    System.out.println(hp);
+
+    SharedVBO vbo = kernel.march(phi, hp, width, height);
+
+    LineRender render = new LineRender(
+        drawable.get(),
+        gl,
+        vbo.glBufferName(),
+        vbo.length() / 2,
+        width,
+        height
+    );
+    render.setup();
+    render.draw();
+
+    float[] floats = session.readFloatBuffer(vbo);
+
+    System.out.println(Arrays.toString(floats));
+    System.out.println(floats.length);
+    for (int i = 0; i < floats.length; i += 4) {
+      System.out.print(", ");
+      System.out.print(floats[i]);
+    }
+    System.out.println();
+  }
+
+  @Test
+  public void drawHourglass() {
     int width = 10;
     int height = 10;
     float[] phiData = new float[width * height];
@@ -37,13 +95,9 @@ public class MarchingSquaresKernelTest {
             Math.pow(5.0f - i, 2) + Math.pow(5.0f - j, 2)) - 3.0f;
       }
     }
+  }
 
-    cl_mem phi = session.createFloat2DImageFromBuffer(phiData, width, height);
-    HistogramPyramid hp = HistogramPyramid.create(session, width, height);
-    System.out.println(hp);
-
-    kernel.march(phi, hp, width, height);
-
+  private void printHistogramPyramid(HistogramPyramid hp) {
     for (int i = 0; i < hp.levelCount(); i++) {
       int[] actual = session.readInt2DImage(hp.level(i), hp.width(i), hp.height(i));
       int rowLength = hp.width(i);

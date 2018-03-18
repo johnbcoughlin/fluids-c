@@ -3,13 +3,13 @@ __constant sampler_t sampler =
     CLK_ADDRESS_CLAMP_TO_EDGE |
     CLK_FILTER_NEAREST;
 
-__constant int vertex_count_lookup[] = {
-    0, 2, 2, 2, 2, 2,
-    4, 2, 2, 4, 2, 2,
-    2, 2, 2, 0
+__constant int segment_count_lookup[] = {
+    0, 1, 1, 1, 1, 1,
+    2, 1, 1, 2, 1, 1,
+    1, 1, 1, 0
 };
 
-void __kernel count_vertices(
+void __kernel count_segments(
     __read_only image2d_t phi,
     __write_only image2d_t hp_0
 ) {
@@ -25,5 +25,5 @@ void __kernel count_vertices(
     key += phi2 > 0 ? 2 : 0;
     key += phi3 > 0 ? 1 : 0;
 
-    write_imagei(hp_0, pos, vertex_count_lookup[key]);
+    write_imagei(hp_0, pos, segment_count_lookup[key]);
 }

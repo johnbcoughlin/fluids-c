@@ -20,6 +20,13 @@ public class GLUtils {
     return ret[0];
   }
 
+  public static int createBufferWithData(GL4 gl, int length, FloatBuffer data) {
+    int buffer = createBuffer(gl);
+    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, buffer);
+    gl.glBufferData(GL4.GL_ARRAY_BUFFER, length * Float.BYTES, data, GL4.GL_STATIC_DRAW);
+    return buffer;
+  }
+
   public static int createTexture(GL4 gl) {
     int[] ret = new int[1];
     gl.glGenTextures(1, ret, 0);

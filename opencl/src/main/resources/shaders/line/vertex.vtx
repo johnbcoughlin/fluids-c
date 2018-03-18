@@ -1,0 +1,9 @@
+#version 410
+
+in vec4 a_coords;
+
+uniform mat4 toClipcoords;
+
+void main() {
+    gl_Position = toClipcoords * a_coords;
+}

@@ -1,6 +1,9 @@
 package jack.fluids.cl;
 
 import jack.fluids.CLSimulation;
+import jack.fluids.buffers.FloatBuffer1D;
+import jack.fluids.buffers.SharedVBO;
+import jack.fluids.buffers.SizedBuffer1D;
 import jogamp.opengl.macosx.cgl.CGL;
 import org.jocl.*;
 
@@ -41,6 +44,12 @@ public class Session {
     Stream.of(device_ids).forEach(CL::clReleaseDevice);
     clReleaseCommandQueue(queue);
     clReleaseContext(context);
+  }
+
+  public SharedVBO createSharedFloatBuffer(int length, int glBuffer) {
+    cl_mem result = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, glBuffer, error_code_ret);
+    check(error_code_ret);
+    return SharedVBO.of(length, glBuffer, result);
   }
 
   public cl_mem createFloat2DImageFromBuffer(
@@ -84,6 +93,12 @@ public class Session {
     return result;
   }
 
+  public FloatBuffer1D createFloatBuffer(int length) {
+    cl_mem result = clCreateBuffer(context, CL_MEM_READ_WRITE, Sizeof.cl_float * length, null, error_code_ret);
+    check(error_code_ret);
+    return FloatBuffer1D.of(result, length);
+  }
+
   public float[] readFloat2DImage(cl_mem image, int width, int height) {
     FloatBuffer buf = FloatBuffer.allocate(width * height);
     read2DImage(image, width, height, Sizeof.cl_float, buf);
@@ -107,6 +122,14 @@ public class Session {
         null,
         null);
     clFinish(queue);
+  }
+
+  public float[] readFloatBuffer(SizedBuffer1D buffer) {
+    FloatBuffer buf = FloatBuffer.allocate(buffer.length());
+    clEnqueueReadBuffer(queue, buffer.buffer(), CL_TRUE, 0, buffer.length() * Sizeof.cl_float, Pointer.to(buf),
+        0, null, null);
+    clFinish(queue);
+    return buf.array();
   }
 
   public static cl_image_format imageFormatFloat() {

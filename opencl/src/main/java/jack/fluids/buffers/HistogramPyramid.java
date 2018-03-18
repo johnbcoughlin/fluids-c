@@ -28,6 +28,10 @@ public class HistogramPyramid {
     return levels.get(0);
   }
 
+  public cl_mem top() {
+    return levels.get(levels.size() - 1);
+  }
+
   public cl_mem level(int level) {
     return levels.get(level);
   }
