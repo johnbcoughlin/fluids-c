@@ -71,6 +71,10 @@ public class MarchingSquaresKernel extends AbstractKernel {
     for (int i = 0; i < hp.levelCount(); i++) {
       check(clSetKernelArg(generateSegmentsKernel, i + 3, Sizeof.cl_mem, Pointer.to(hp.level(i))));
     }
+    for (int i = hp.levelCount(); i < 12; i++) {
+      // just has to be some valid image. will be ignored.
+      check(clSetKernelArg(generateSegmentsKernel, i + 3, Sizeof.cl_mem, Pointer.to(hp.top())));
+    }
     check(clEnqueueNDRangeKernel(session.queue(),
         generateSegmentsKernel, 1,
         new long[]{0, 0, 0},
@@ -88,6 +92,7 @@ public class MarchingSquaresKernel extends AbstractKernel {
         kernelSource("marching_squares/lookup.cl"),
         kernelSource("marching_squares/count_segments.cl"),
         kernelSource("marching_squares/roll_up_histogram.cl"),
+        kernelSource("marching_squares/traverse_hp.cl"),
         kernelSource("marching_squares/generate_segments.cl")
     };
   }

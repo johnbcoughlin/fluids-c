@@ -46,8 +46,8 @@ public class MarchingSquaresKernelTest {
 
   @Test
   public void testCircle() {
-    int width = 50;
-    int height = 50;
+    int width = 100;
+    int height = 100;
     float[] phiData = new float[width * height];
     for (int j = 0; j < height; j++) {
       for (int i = 0; i < width; i++) {
@@ -86,15 +86,40 @@ public class MarchingSquaresKernelTest {
 
   @Test
   public void drawHourglass() {
-    int width = 10;
-    int height = 10;
+    int width = 60;
+    int height = 60;
     float[] phiData = new float[width * height];
     for (int j = 0; j < height; j++) {
       for (int i = 0; i < width; i++) {
-        phiData[j * width + i] = (float) Math.sqrt(
-            Math.pow(5.0f - i, 2) + Math.pow(5.0f - j, 2)) - 3.0f;
+        phiData[j * width + i] = (float) ((i - (width / 3)) * (j - (height / 3)));
       }
     }
+    cl_mem phi = session.createFloat2DImageFromBuffer(phiData, width, height);
+    HistogramPyramid hp = HistogramPyramid.create(session, width, height);
+    System.out.println(hp);
+
+    SharedVBO vbo = kernel.march(phi, hp, width, height);
+
+    LineRender render = new LineRender(
+        drawable.get(),
+        gl,
+        vbo.glBufferName(),
+        vbo.length() / 2,
+        width,
+        height
+    );
+    render.setup();
+    render.draw();
+
+    float[] floats = session.readFloatBuffer(vbo);
+
+    System.out.println(Arrays.toString(floats));
+    System.out.println(floats.length);
+    for (int i = 0; i < floats.length; i += 4) {
+      System.out.print(", ");
+      System.out.print(floats[i]);
+    }
+    System.out.println();
   }
 
   private void printHistogramPyramid(HistogramPyramid hp) {
