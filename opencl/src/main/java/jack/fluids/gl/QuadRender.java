@@ -54,6 +54,7 @@ public class QuadRender {
 
     gl.glUniform1i(uniformLocation, 0);
     gl.glClearColor(1.0f, 0.6f, 0.4f, 0.5f);
+    gl.glClear(GL4.GL_COLOR_BUFFER_BIT);
 
     gl.glActiveTexture(GL.GL_TEXTURE0);
     gl.glBindTexture(GL4.GL_TEXTURE_2D, texture);

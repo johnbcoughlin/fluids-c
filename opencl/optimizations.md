@@ -8,6 +8,12 @@
 - Bottom levels of histogram pyramids can use smaller datatypes to hold counts.
 - explicitly pull upper levels of histogram pyramid into local memory
 - pull boxes of lower levels into local memory as well
+- Use vstoren to store segments and vertices
+
+## Winding Numbers
+
+- Unroll loop over the vbo
+- Copy image instead of always writing the current value.
 
 ## GL
 

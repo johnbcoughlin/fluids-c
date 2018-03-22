@@ -112,8 +112,8 @@ public class TestMain implements GLEventListener {
         new cl_image_format[] {image_format},
         10, 10, 4 * Sizeof.cl_float * 100, Pointer.to(imageData), error_code_ret);
 
-    int texture1 = GLUtils.createTextureWithData(drawable.getGL().getGL4(), 10, 10, FloatBuffer.allocate(400));
-    int texture2 = GLUtils.createTextureWithData(drawable.getGL().getGL4(), 10, 10, FloatBuffer.allocate(400));
+    int texture1 = GLUtils.createTextureWithData4f(drawable.getGL().getGL4(), 10, 10, FloatBuffer.allocate(400));
+    int texture2 = GLUtils.createTextureWithData4f(drawable.getGL().getGL4(), 10, 10, FloatBuffer.allocate(400));
 
     cl_mem image2 = clCreateFromGLTexture(context, CL_MEM_READ_WRITE, GL4.GL_TEXTURE_2D, 0, texture1, error_code_ret);
     check(error_code_ret);

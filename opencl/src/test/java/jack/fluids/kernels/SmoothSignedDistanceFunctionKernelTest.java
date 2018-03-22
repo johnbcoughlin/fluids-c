@@ -40,7 +40,6 @@ public class SmoothSignedDistanceFunctionKernelTest {
   @Before
   public void before() {
     this.gl = drawable.get().getGL().getGL4();
-    System.out.println(gl);
     int numPlatformsArray[] = new int[1];
     clGetPlatformIDs(0, null, numPlatformsArray);
     int numPlatforms = numPlatformsArray[0];
@@ -110,8 +109,8 @@ public class SmoothSignedDistanceFunctionKernelTest {
     }
 
 
-    int texture1 = GLUtils.createTextureWithData(gl, width, height, FloatBuffer.wrap(imageData));
-    int texture2 = GLUtils.createTextureWithData(gl, width, height, FloatBuffer.wrap(imageData));
+    int texture1 = GLUtils.createTextureWithData4f(gl, width, height, FloatBuffer.wrap(imageData));
+    int texture2 = GLUtils.createTextureWithData4f(gl, width, height, FloatBuffer.wrap(imageData));
     GLUtils.check(gl);
     quadRender = new QuadRender(drawable.get(), texture1);
     quadRender.setup();

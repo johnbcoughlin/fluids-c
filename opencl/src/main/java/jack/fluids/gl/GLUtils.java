@@ -33,7 +33,7 @@ public class GLUtils {
     return ret[0];
   }
 
-  public static int createTextureWithData(GL4 gl, int width, int height, FloatBuffer data) {
+  public static int createTextureWithData4f(GL4 gl, int width, int height, FloatBuffer data) {
     int texture = createTexture(gl);
     gl.glBindTexture(GL_TEXTURE_2D, texture);
     gl.glTexImage2D(GL_TEXTURE_2D, 0, GL4.GL_RGBA32F, width, height, 0, gl.GL_RGBA, gl.GL_FLOAT, data);
@@ -41,6 +41,24 @@ public class GLUtils {
 		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    return texture;
+  }
+
+  public static int createTextureWithData1i(GL4 gl, int width, int height, IntBuffer data) {
+    int texture = createTexture(gl);
+    check(gl);
+    gl.glBindTexture(GL_TEXTURE_2D, texture);
+    check(gl);
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL4.GL_R32I, width, height, 0, gl.GL_RED_INTEGER, gl.GL_INT, data);
+    check(gl);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    check(gl);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    check(gl);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    check(gl);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    check(gl);
     return texture;
   }
 
@@ -53,6 +71,7 @@ public class GLUtils {
   public static int loadShader(GL4 gl, int type, String source) {
     int shader = gl.glCreateShader(type);
     gl.glShaderSource(shader, 1, new String[]{source}, new int[]{source.length()}, 0);
+    check(gl);
     gl.glCompileShader(shader);
     check(gl);
     IntBuffer sizeBuffer = IntBuffer.allocate(1);
