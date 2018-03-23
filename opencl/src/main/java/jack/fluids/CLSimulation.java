@@ -3,7 +3,6 @@ package jack.fluids;
 import com.google.common.base.Throwables;
 import com.google.common.io.CharStreams;
 import com.jogamp.opengl.GL4;
-import jack.fluids.kernels.ComputeSolidObjectBoundariesKernel;
 import jogamp.opengl.macosx.cgl.CGL;
 import org.jocl.*;
 
@@ -130,12 +129,6 @@ public class CLSimulation {
     clGetEventProfilingInfo(kernel_event, CL_PROFILING_COMMAND_START, Sizeof.cl_ulong, startTimePtr, null);
     clGetEventProfilingInfo(kernel_event, CL_PROFILING_COMMAND_END, Sizeof.cl_ulong, endTimePtr, null);
     System.out.println(endTime[0] - startTime[0] + "ns");
-
-    cl_mem objectVertices = new SolidObjects(context, queue).initVertexBuffer();
-    ComputeSolidObjectBoundariesKernel objectBoundariesKernel =
-        new ComputeSolidObjectBoundariesKernel(context, queue, devices);
-
-    objectBoundariesKernel.compile();
 
     clReleaseMemObject(memObjects[0]);
     clReleaseMemObject(memObjects[1]);

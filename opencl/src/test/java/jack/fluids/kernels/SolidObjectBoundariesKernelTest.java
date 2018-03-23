@@ -1,7 +1,10 @@
 package jack.fluids.kernels;
 
 import com.google.common.collect.ImmutableList;
+import jack.fluids.buffers.FloatBuffer1D;
+import jack.fluids.buffers.IntBuffer1D;
 import jack.fluids.buffers.SplitBuffer;
+import jack.fluids.cl.Session;
 import org.assertj.core.data.Offset;
 import org.jocl.*;
 import org.junit.After;
@@ -16,61 +19,31 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.jocl.CL.*;
 
 public class SolidObjectBoundariesKernelTest {
-  cl_context context;
-  cl_command_queue queue;
   int[] error_code_ret = new int[1];
 
+  Session session;
   ComputeSolidObjectBoundariesKernel kernel;
 
-  cl_mem vertexBuffer;
-  cl_mem boundaryPointCountBuffer;
-  cl_mem boundaryPointCountPrefixSumBuffer;
+  FloatBuffer1D vertexBuffer;
+  IntBuffer1D boundaryPointCountBuffer;
+  IntBuffer1D boundaryPointCountPrefixSumBuffer;
   cl_mem boundaryPointsBuffer;
   SplitBuffer boundaryPointsSplitBuffer;
 
   @Before
   public void before() {
-    int numPlatformsArray[] = new int[1];
-    clGetPlatformIDs(0, null, numPlatformsArray);
-    int numPlatforms = numPlatformsArray[0];
-
-    cl_platform_id platforms[] = new cl_platform_id[numPlatforms];
-    clGetPlatformIDs(numPlatforms, platforms, null);
-
-    cl_platform_id platform = platforms[0];
-
-    long deviceType = CL_DEVICE_TYPE_GPU;
-    int numDevicesArray[] = new int[1];
-
-    clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
-    int numDevices = numDevicesArray[0];
-
-    cl_device_id devices[] = new cl_device_id[numDevices];
-    clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
-
-    cl_context_properties contextProperties = new cl_context_properties();
-    contextProperties.addProperty(CL_CONTEXT_PLATFORM, platform);
-
-    context = clCreateContext(contextProperties, numDevices, devices, new CreateContextFunction() {
-      public void function(String s, Pointer pointer, long l, Object o) {
-      }
-    }, null, error_code_ret);
-    check(error_code_ret);
-    queue = clCreateCommandQueue(context, devices[0],
-        CL_QUEUE_PROFILING_ENABLE, error_code_ret);
-
-    kernel = new ComputeSolidObjectBoundariesKernel(context, queue, devices);
+    session = Session.create();
+    kernel = new ComputeSolidObjectBoundariesKernel(session);
     kernel.compile();
   }
 
   @After
   public void after() {
-    clReleaseMemObject(vertexBuffer);
-    clReleaseMemObject(boundaryPointCountBuffer);
-    clReleaseMemObject(boundaryPointCountPrefixSumBuffer);
+    clReleaseMemObject(vertexBuffer.buffer());
+    clReleaseMemObject(boundaryPointCountBuffer.buffer());
+    clReleaseMemObject(boundaryPointCountPrefixSumBuffer.buffer());
     clReleaseMemObject(boundaryPointsBuffer);
-    clReleaseCommandQueue(queue);
-    clReleaseContext(context);
+    session.release();
   }
 
   @Test
@@ -243,37 +216,23 @@ public class SolidObjectBoundariesKernelTest {
   }
 
   private float[] boundaryPointsFor(int segmentCount, float[] vertices, int invMeshSize) {
-    vertexBuffer = createVertexBuffer(vertices);
-    boundaryPointCountBuffer = createIntBuffer(segmentCount);
-    boundaryPointCountPrefixSumBuffer = createIntBuffer(segmentCount);
+    vertexBuffer = session.createFloatBuffer(vertices);
+    boundaryPointCountBuffer = session.createIntBuffer(segmentCount);
+    boundaryPointCountPrefixSumBuffer = session.createIntBuffer(segmentCount);
     createSplitBuffer(1000);
     return kernel.compute(
-        ImmutableList.of(vertexBuffer),
+        ImmutableList.of(vertexBuffer.buffer()),
         ImmutableList.of(segmentCount),
-        ImmutableList.of(boundaryPointCountBuffer),
-        ImmutableList.of(boundaryPointCountPrefixSumBuffer),
+        ImmutableList.of(boundaryPointCountBuffer.buffer()),
+        ImmutableList.of(boundaryPointCountPrefixSumBuffer.buffer()),
         boundaryPointsSplitBuffer,
         invMeshSize);
   }
 
   void createSplitBuffer(long size) {
-    boundaryPointsBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE,
+    boundaryPointsBuffer = clCreateBuffer(session.context(), CL_MEM_READ_WRITE,
         Sizeof.cl_float * size, null, error_code_ret);
     check(error_code_ret);
-    boundaryPointsSplitBuffer = new SplitBuffer(boundaryPointsBuffer, Sizeof.cl_float * 1000);
-  }
-
-  cl_mem createVertexBuffer(float[] floats) {
-    cl_mem result = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_float * floats.length, Pointer.to(floats), error_code_ret);
-    check(error_code_ret);
-    return result;
-  }
-
-  cl_mem createIntBuffer(int size) {
-    cl_mem result = clCreateBuffer(context, CL_MEM_READ_WRITE,
-        Sizeof.cl_int * size, null, error_code_ret);
-    check(error_code_ret);
-    return result;
+    boundaryPointsSplitBuffer = new SplitBuffer(boundaryPointsBuffer, Sizeof.cl_float * size);
   }
 }

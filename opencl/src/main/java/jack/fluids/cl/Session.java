@@ -2,6 +2,7 @@ package jack.fluids.cl;
 
 import jack.fluids.CLSimulation;
 import jack.fluids.buffers.FloatBuffer1D;
+import jack.fluids.buffers.IntBuffer1D;
 import jack.fluids.buffers.SharedVBO;
 import jack.fluids.buffers.SizedBuffer1D;
 import jogamp.opengl.macosx.cgl.CGL;
@@ -97,6 +98,27 @@ public class Session {
     cl_mem result = clCreateBuffer(context, CL_MEM_READ_WRITE, Sizeof.cl_float * length, null, error_code_ret);
     check(error_code_ret);
     return FloatBuffer1D.of(result, length);
+  }
+
+  public FloatBuffer1D createFloatBuffer(float[] data) {
+    cl_mem result = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_float * data.length, Pointer.to(data), error_code_ret);
+    check(error_code_ret);
+    return FloatBuffer1D.of(result, data.length);
+  }
+
+  public IntBuffer1D createIntBuffer(int length) {
+    cl_mem result = clCreateBuffer(context, CL_MEM_READ_WRITE,
+        Sizeof.cl_int * length, null, error_code_ret);
+    check(error_code_ret);
+    return IntBuffer1D.of(result, length);
+  }
+
+  public IntBuffer1D createIntBuffer(int[] data) {
+    cl_mem result = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        Sizeof.cl_int * data.length, Pointer.to(data), error_code_ret);
+    check(error_code_ret);
+    return IntBuffer1D.of(result, data.length);
   }
 
   public float[] readFloat2DImage(cl_mem image, int width, int height) {
