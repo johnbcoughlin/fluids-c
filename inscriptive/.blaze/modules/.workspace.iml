@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.system.id="Blaze" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../../../inscriptive">
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/benchmark/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/build/tools/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/acl/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/acl/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/admin/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/bigquery/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/bigquery/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/cli/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/cli/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/entitystore/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/entitystore/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/entitystore/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/client/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/client/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/server/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/server/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/server/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/shared/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/shared/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/grpc/tests/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/health/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/injection/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/lifecycle/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/lifecycle/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/lifecycle/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/math/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/math/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/math/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/metrics/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/protojson/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/protojson/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/pubsub/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/pubsub/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/pubsub/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/sql/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/sql/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/sql/testing/src/main/java/com/inscriptive/common/postgres" isTestSource="false" packagePrefix="com.inscriptive.common.sql" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/storage/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/storage/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/task/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/task/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/task/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/test/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/vault/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/vault/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/crawler/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/crawler/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/dataset/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/dataset/api/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/dataset/api/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/dataset/jooq/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/dataset/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/dataset/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/deploy/tools/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/fetch/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/fetch/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/foyer/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/foyer/src/main/java/com/inscriptive/foyer/handlers/metrics" isTestSource="false" packagePrefix="com.inscriptive.foyer.netty.metrics" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/foyer/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ingestion/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ingestion/api/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ingestion/jooq/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ingestion/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ingestion/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/marketmap/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/marketmap/api/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/marketmap/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/marketmap/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ns/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ns/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/ns/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/api/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/api/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/api/testing/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/jooq/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/vendor/hbase-utils/src/main/java" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../../inscriptive/bazel-bin" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../../inscriptive/bazel-genfiles" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../../inscriptive/bazel-inscriptive" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../../inscriptive/bazel-out" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../../inscriptive/bazel-testlogs" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_80d58c4" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_8bc061e" level="project" />
+    <orderEntry type="library" name="libguava_f99db766" level="project" />
+    <orderEntry type="library" name="metrics-servlets-3.1.2-ijar_2565aa2" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_5e194d05" level="project" />
+    <orderEntry type="library" name="liblib-gen_4fd56e6a" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_2206deb5" level="project" />
+    <orderEntry type="library" name="orientdb-graphdb-2.2.33-ijar_6a368c2e" level="project" />
+    <orderEntry type="library" name="zendesk-java-client-0.5.2-ijar_cb4e85f0" level="project" />
+    <orderEntry type="library" name="liblib_446143e4" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_4c68e86b" level="project" />
+    <orderEntry type="library" name="liblib-gen_23075b7" level="project" />
+    <orderEntry type="library" name="rxjava-reactive-streams-1.1.0-ijar_1b082710" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_bcd4b6cd" level="project" />
+    <orderEntry type="library" name="lucene-queryparser-6.4.2-ijar_56eae2e2" level="project" />
+    <orderEntry type="library" name="okhttp-ws-3.2.0-ijar_e8fd86b0" level="project" />
+    <orderEntry type="library" name="ST4-4.0.8-ijar_5f431530" level="project" />
+    <orderEntry type="library" name="stripe-java-5.21.0-ijar_d2bc6d90" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_50fc1d4d" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_9a0dd6a" level="project" />
+    <orderEntry type="library" name="netty-common-4.1.14.Final-ijar_5ae1497b" level="project" />
+    <orderEntry type="library" name="grpc-context-1.6.1-ijar_2d6ec791" level="project" />
+    <orderEntry type="library" name="liblib-gen_b6d2faa1" level="project" />
+    <orderEntry type="library" name="netty-handler-proxy-4.1.14.Final-ijar_76a88641" level="project" />
+    <orderEntry type="library" name="liblib-gen_ef67d450" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_446143e4" level="project" />
+    <orderEntry type="library" name="commons-math3-3.3-ijar_5629e0d0" level="project" />
+    <orderEntry type="library" name="lucene-analyzers-common-6.4.2-ijar_68bb6c50" level="project" />
+    <orderEntry type="library" name="liblib-gen_9f58426b" level="project" />
+    <orderEntry type="library" name="liblib-gen_47da70d9" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_69d6f6fb" level="project" />
+    <orderEntry type="library" name="postgresql-9.4.1212.jre7-ijar_a947ea76" level="project" />
+    <orderEntry type="library" name="jetty-server-9.4.0.v20161208-ijar_3306ad16" level="project" />
+    <orderEntry type="library" name="guice-assistedinject-4.0-ijar_ff2f5b04" level="project" />
+    <orderEntry type="library" name="jcommander-1.35-ijar_5a9e0b6a" level="project" />
+    <orderEntry type="library" name="liblib-gen_37d47fb3" level="project" />
+    <orderEntry type="library" name="t-digest-3.2-ijar_b06a9aec" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_69d6ee65" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_a1069ea9" level="project" />
+    <orderEntry type="library" name="liblib-gen_2f9a75b9" level="project" />
+    <orderEntry type="library" name="liblib-gen_d3653db8" level="project" />
+    <orderEntry type="library" name="okio-1.6.0-ijar_42fad792" level="project" />
+    <orderEntry type="library" name="netty-transport-4.1.14.Final-ijar_1f37fe31" level="project" />
+    <orderEntry type="library" name="guice-servlet-4.0-ijar_7ba2b630" level="project" />
+    <orderEntry type="library" name="okhttp-3.2.0-ijar_64dfd16" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_47da70d9" level="project" />
+    <orderEntry type="library" name="json-20140107-ijar_cf668e5e" level="project" />
+    <orderEntry type="library" name="protobuf-java-3.0.0-ijar_b8a38210" level="project" />
+    <orderEntry type="library" name="jetty-servlets-9.4.0.v20161208-ijar_2efc462c" level="project" />
+    <orderEntry type="library" name="poi-ooxml-3.12-ijar_b2863010" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_12b33e4" level="project" />
+    <orderEntry type="library" name="liblib-gen_65adbf96" level="project" />
+    <orderEntry type="library" name="httpcore-4.4.1-ijar_3ba88b5c" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_2ef4bf75" level="project" />
+    <orderEntry type="library" name="liblib-gen_d10c4c8d" level="project" />
+    <orderEntry type="library" name="google-auth-library-oauth2-http-0.6.0-ijar_47e642b0" level="project" />
+    <orderEntry type="library" name="google-oauth-client-1.21.0-ijar_8e356d70" level="project" />
+    <orderEntry type="library" name="stream-lib-3.0.0-ijar_33d78fda" level="project" />
+    <orderEntry type="library" name="liblib-hjar_d107232d" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_d10f7b0a" level="project" />
+    <orderEntry type="library" name="error_prone_annotations-2.0.11-ijar_241c8394" level="project" />
+    <orderEntry type="library" name="liblib-gen_8bc061e" level="project" />
+    <orderEntry type="library" name="liblib-gen_2ef4bf75" level="project" />
+    <orderEntry type="library" name="netty-codec-socks-4.1.14.Final-ijar_9013714e" level="project" />
+    <orderEntry type="library" name="liblib-gen_9a0dd6a" level="project" />
+    <orderEntry type="library" name="liblib-gen_83d152d6" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_9f58426b" level="project" />
+    <orderEntry type="library" name="aopalliance-1.0-ijar_1f3f9b70" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_d10c4c8d" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_47da70d9" level="project" />
+    <orderEntry type="library" name="smile-data-1.5.1-ijar_153d2890" level="project" />
+    <orderEntry type="library" name="liblib-gen_97eeffc1" level="project" />
+    <orderEntry type="library" name="liblib-gen_50fc1d4d" level="project" />
+    <orderEntry type="library" name="metrics-healthchecks-3.1.2-ijar_e7030294" level="project" />
+    <orderEntry type="library" name="liblib-gen_f99dd481" level="project" />
+    <orderEntry type="library" name="liblib-gen_c55bc668" level="project" />
+    <orderEntry type="library" name="liblib-gen_8f54eedb" level="project" />
+    <orderEntry type="library" name="libjsr305_f99db766" level="project" />
+    <orderEntry type="library" name="liblib-gen_69d6f6fb" level="project" />
+    <orderEntry type="library" name="flyway-core-3.2.1-ijar_cab272d0" level="project" />
+    <orderEntry type="library" name="junit-4.12-ijar_9f967a10" level="project" />
+    <orderEntry type="library" name="libassertj-core_f99db766" level="project" />
+    <orderEntry type="library" name="jsr305-3.0.0-ijar_4498ac89" level="project" />
+    <orderEntry type="library" name="metrics-core-3.1.2-ijar_95dc7a44" level="project" />
+    <orderEntry type="library" name="force-wsc-partner-ijar_50de2b5c" level="project" />
+    <orderEntry type="library" name="liblib-gen_21914d69" level="project" />
+    <orderEntry type="library" name="JLargeArrays-1.2-ijar_8a720a64" level="project" />
+    <orderEntry type="library" name="log4j-api-2.5-ijar_2ddfb670" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_2f9a75b9" level="project" />
+    <orderEntry type="library" name="liblib-gen_5e194d05" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_38cfb595" level="project" />
+    <orderEntry type="library" name="libvalue_f99db766" level="project" />
+    <orderEntry type="library" name="netty-codec-4.1.14.Final-ijar_5239369e" level="project" />
+    <orderEntry type="library" name="liblib-gen_e12b11cc" level="project" />
+    <orderEntry type="library" name="httpclient-4.3.6-ijar_72cf39b4" level="project" />
+    <orderEntry type="library" name="concurrentlinkedhashmap-lru-1.4.1-ijar_42181550" level="project" />
+    <orderEntry type="library" name="netty-handler-4.1.14.Final-ijar_d09c34d2" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_50e0ecc" level="project" />
+    <orderEntry type="library" name="jackson-annotations-2.3.2-ijar_c1580410" level="project" />
+    <orderEntry type="library" name="snakeyaml-1.20-ijar_602a30b0" level="project" />
+    <orderEntry type="library" name="liblib-gen_1f581bba" level="project" />
+    <orderEntry type="library" name="google-http-client-1.22.0-ijar_5ca02d86" level="project" />
+    <orderEntry type="library" name="parboiled-java-1.1.8-ijar_bc5fb130" level="project" />
+    <orderEntry type="library" name="libhamcrest-core_f99db766" level="project" />
+    <orderEntry type="library" name="asm-analysis-5.2-ijar_affbbce" level="project" />
+    <orderEntry type="library" name="jna-4.5.0-ijar_85097af0" level="project" />
+    <orderEntry type="library" name="liblib_c81a08ce" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_d10c4c8d" level="project" />
+    <orderEntry type="library" name="google-api-services-gmail-v1-rev83-1.23.0-ijar_9bac6ad0" level="project" />
+    <orderEntry type="library" name="opencensus-api-0.5.1-ijar_94a43b1c" level="project" />
+    <orderEntry type="library" name="netty-tcnative-boringssl-static-1.1.33.Fork22-ijar_d9743914" level="project" />
+    <orderEntry type="library" name="liblib-gen_1d422e51" level="project" />
+    <orderEntry type="library" name="jsr305-3.0.1-ijar_db60452c" level="project" />
+    <orderEntry type="library" name="liblib_d10f8a17" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_69d733a9" level="project" />
+    <orderEntry type="library" name="tika-core-1.8-ijar_16523e30" level="project" />
+    <orderEntry type="library" name="blueprints-core-2.6.0-ijar_a66e50d0" level="project" />
+    <orderEntry type="library" name="grpc-netty-1.6.1-ijar_cd2902c4" level="project" />
+    <orderEntry type="library" name="liblib-gen_3df02745" level="project" />
+    <orderEntry type="library" name="liblib-gen_a1e7fc28" level="project" />
+    <orderEntry type="library" name="liblib-gen_7328c3c5" level="project" />
+    <orderEntry type="library" name="grpc-auth-1.11.0-ijar_c64dc0f0" level="project" />
+    <orderEntry type="library" name="gson-2.8.0-ijar_3b055ea4" level="project" />
+    <orderEntry type="library" name="liblib-gen_243f5d5d" level="project" />
+    <orderEntry type="library" name="google-auth-library-credentials-0.6.0-ijar_2a01acb0" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_d10f8a17" level="project" />
+    <orderEntry type="library" name="google-cloud-bigquery-0.8.0-beta-ijar_aa220c50" level="project" />
+    <orderEntry type="library" name="compiler-0.9.0-ijar_7b2e244c" level="project" />
+    <orderEntry type="library" name="log4j-core-2.5-ijar_60cfa756" level="project" />
+    <orderEntry type="library" name="HikariCP-2.5.1-ijar_52f72644" level="project" />
+    <orderEntry type="library" name="grpc-context-1.11.0-ijar_b7331baa" level="project" />
+    <orderEntry type="library" name="liblib-gen_16254ef2" level="project" />
+    <orderEntry type="library" name="mockwebserver-3.2.0-ijar_dc3070" level="project" />
+    <orderEntry type="library" name="JTransforms-3.0-ijar_dd593070" level="project" />
+    <orderEntry type="library" name="liblib-gen_2d19d11e" level="project" />
+    <orderEntry type="library" name="liblib-gen_804d8bb4" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_50e0ecc" level="project" />
+    <orderEntry type="library" name="liblib-gen_3a1d730a" level="project" />
+    <orderEntry type="library" name="orientdb-client-2.2.33-ijar_d3d7a0b0" level="project" />
+    <orderEntry type="library" name="yamlbeans-1.09-ijar_90758750" level="project" />
+    <orderEntry type="library" name="log4j-slf4j-impl-2.5-ijar_c6abdc50" level="project" />
+    <orderEntry type="library" name="jose4j-0.5.0-ijar_80d82c28" level="project" />
+    <orderEntry type="library" name="liblib-gen_80d58c4" level="project" />
+    <orderEntry type="library" name="liblib_a1069ea9" level="project" />
+    <orderEntry type="library" name="jetty-http-9.4.0.v20161208-ijar_f782e420" level="project" />
+    <orderEntry type="library" name="javax.inject-1-ijar_48ad7342" level="project" />
+    <orderEntry type="library" name="mysql-connector-java-5.1.38-ijar_6e23e030" level="project" />
+    <orderEntry type="library" name="jetty-servlet-9.4.0.v20161208-ijar_a35ae2d0" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_4143f589" level="project" />
+    <orderEntry type="library" name="netty-codec-http2-4.1.14.Final-ijar_c0c6bf49" level="project" />
+    <orderEntry type="library" name="mailjet-client-4.0.5-ijar_1f81969e" level="project" />
+    <orderEntry type="library" name="proto-google-common-protos-0.1.9-ijar_7aedad7f" level="project" />
+    <orderEntry type="library" name="liblib-gen_38cfb595" level="project" />
+    <orderEntry type="library" name="gax-0.0.22-ijar_f26dca50" level="project" />
+    <orderEntry type="library" name="liblib-gen_50e0ecc" level="project" />
+    <orderEntry type="library" name="commons-lang3-3.4-ijar_5287c110" level="project" />
+    <orderEntry type="library" name="commons-beanutils-1.7.0-ijar_2ef84010" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_69d6ee65" level="project" />
+    <orderEntry type="library" name="jetty-security-9.4.0.v20161208-ijar_d81e0f90" level="project" />
+    <orderEntry type="library" name="concurrent-trees-2.6.0-ijar_b4d0b28" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_80d58c4" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_c55bc668" level="project" />
+    <orderEntry type="library" name="googleapis-ijar_6f6d754a" level="project" />
+    <orderEntry type="library" name="http-client-java-0.89-ijar_6afdf8cc" level="project" />
+    <orderEntry type="library" name="google-cloud-storage-0.8.0-beta-ijar_2cc5e4e4" level="project" />
+    <orderEntry type="library" name="assertj-core-3.0.0-ijar_7030a6c2" level="project" />
+    <orderEntry type="library" name="jooq-3.9.1-ijar_da1c1cdc" level="project" />
+    <orderEntry type="library" name="libST4_f99db766" level="project" />
+    <orderEntry type="library" name="google-http-client-appengine-1.22.0-ijar_3e15548e" level="project" />
+    <orderEntry type="library" name="liblib-gen_8b7675b" level="project" />
+    <orderEntry type="library" name="parboiled-core-1.1.8-ijar_af0d896a" level="project" />
+    <orderEntry type="library" name="netty-all-4.1.22.Final-ijar_172eb050" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_95c4838c" level="project" />
+    <orderEntry type="library" name="asm-tree-5.2-ijar_c780d9d2" level="project" />
+    <orderEntry type="library" name="commons-csv-1.0-ijar_9f9a7b0" level="project" />
+    <orderEntry type="library" name="gson-2.7-ijar_5c1d5c12" level="project" />
+    <orderEntry type="library" name="smile-core-1.5.1-ijar_ade7063a" level="project" />
+    <orderEntry type="library" name="jetty-io-9.4.0.v20161208-ijar_18c8f5c" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_a1e7fc28" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_1d1fb12f" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_2206deb5" level="project" />
+    <orderEntry type="library" name="commons-beanutils-core-1.7.0-ijar_e8138cf6" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_9a0dd6a" level="project" />
+    <orderEntry type="library" name="liblib-gen_d4fd8130" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_83d152d6" level="project" />
+    <orderEntry type="library" name="jul-to-slf4j-1.7.9-ijar_7b64a3c8" level="project" />
+    <orderEntry type="library" name="metrics-jetty9-3.1.2-ijar_4ed423c" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_3df02745" level="project" />
+    <orderEntry type="library" name="guice-multibindings-4.0-ijar_7b2f09f0" level="project" />
+    <orderEntry type="library" name="liblib-gen_f76a291e" level="project" />
+    <orderEntry type="library" name="libjunit_f99db766" level="project" />
+    <orderEntry type="library" name="ejml-0.25-ijar_8f98e096" level="project" />
+    <orderEntry type="library" name="protobuf-java-3.4.0-ijar_8b493147" level="project" />
+    <orderEntry type="library" name="orientdb-core-2.2.33-ijar_2db6d130" level="project" />
+    <orderEntry type="library" name="guice-4.0-ijar_6814a470" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_4c68e86b" level="project" />
+    <orderEntry type="library" name="async-http-client-1.9.40-ijar_4601bfb0" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_38cfb595" level="project" />
+    <orderEntry type="library" name="grpc-protobuf-lite-1.6.1-ijar_a858e4c4" level="project" />
+    <orderEntry type="library" name="poi-3.12-ijar_f2acc6d0" level="project" />
+    <orderEntry type="library" name="smile-math-1.5.1-ijar_7e2001cc" level="project" />
+    <orderEntry type="library" name="grpc-protobuf-1.6.1-ijar_1f0af681" level="project" />
+    <orderEntry type="library" name="force-wsc-42.0.0-ijar_a645a30" level="project" />
+    <orderEntry type="library" name="liblib-gen_12c97ee5" level="project" />
+    <orderEntry type="library" name="liblib_4143f589" level="project" />
+    <orderEntry type="library" name="instrumentation-api-0.4.3-ijar_ab29e18b" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_97eeffc1" level="project" />
+    <orderEntry type="library" name="guava-19.0-ijar_3c774350" level="project" />
+    <orderEntry type="library" name="liblib-gen_69d6ee65" level="project" />
+    <orderEntry type="library" name="netty-resolver-4.1.14.Final-ijar_787e0516" level="project" />
+    <orderEntry type="library" name="guava-19.0-ijar_ecb3e810" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_ef67d450" level="project" />
+    <orderEntry type="library" name="netty-codec-http-4.1.14.Final-ijar_508a09a1" level="project" />
+    <orderEntry type="library" name="grpc-netty-1.11.0-ijar_d2f77e90" level="project" />
+    <orderEntry type="library" name="commons-logging-1.2-ijar_6ae66190" level="project" />
+    <orderEntry type="library" name="jsqlparser-0.9.6-ijar_26d8dd94" level="project" />
+    <orderEntry type="library" name="slf4j-api-1.7.9-ijar_86f16f90" level="project" />
+    <orderEntry type="library" name="liblib-gen_12b33e4" level="project" />
+    <orderEntry type="library" name="joda-money-0.11-ijar_aeb9ae94" level="project" />
+    <orderEntry type="library" name="grpc-stub-1.11.0-ijar_edd359b0" level="project" />
+    <orderEntry type="library" name="liblib-gen_95c4838c" level="project" />
+    <orderEntry type="library" name="liblib-gen_fd96ca71" level="project" />
+    <orderEntry type="library" name="liblib-gen_d10f7b0a" level="project" />
+    <orderEntry type="library" name="liblib-gen_7c489e72" level="project" />
+    <orderEntry type="library" name="liblib-gen_4c68e86b" level="project" />
+    <orderEntry type="library" name="protobuf-java-util-3.3.1-ijar_583aeb12" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_2ef4bf75" level="project" />
+    <orderEntry type="library" name="commons-codec-1.10-ijar_a37e57b0" level="project" />
+    <orderEntry type="library" name="grpc-core-1.6.1-ijar_b557f595" level="project" />
+    <orderEntry type="library" name="google-cloud-core-0.8.0-ijar_9d9bf1b0" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_8b7675b" level="project" />
+    <orderEntry type="library" name="liblib-gen_6d60e706" level="project" />
+    <orderEntry type="library" name="liblib-gen_bb9f400b" level="project" />
+    <orderEntry type="library" name="lucene-core-6.4.2-ijar_915c890" level="project" />
+    <orderEntry type="library" name="grpc-stub-1.6.1-ijar_40de2f24" level="project" />
+    <orderEntry type="library" name="reactive-streams-1.0.0-ijar_492fb668" level="project" />
+    <orderEntry type="library" name="jetty-util-9.4.0.v20161208-ijar_a8cafa94" level="project" />
+    <orderEntry type="library" name="mockito-core-1.10.19-ijar_26cf6956" level="project" />
+    <orderEntry type="library" name="jna-platform-4.5.0-ijar_410c35b8" level="project" />
+    <orderEntry type="library" name="liblib-gen_d0956bd5" level="project" />
+    <orderEntry type="library" name="javax.servlet-api-3.1.0-ijar_c72952b0" level="project" />
+    <orderEntry type="library" name="libjavax.inject_f99db766" level="project" />
+    <orderEntry type="library" name="netty-buffer-4.1.14.Final-ijar_85e68150" level="project" />
+    <orderEntry type="library" name="liblib-gen_1d1fb12f" level="project" />
+    <orderEntry type="library" name="protobuf-java-util-3.0.0-ijar_eac167a4" level="project" />
+    <orderEntry type="library" name="liblib-gen_bd3fde8e" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_12b33e4" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_3a1d730a" level="project" />
+    <orderEntry type="library" name="liblib-gen_5744f351" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_bcd4b6cd" level="project" />
+    <orderEntry type="library" name="google-http-client-gson-1.23.0-ijar_71dd55d0" level="project" />
+    <orderEntry type="library" name="grpc-core-1.11.0-ijar_ada9abd0" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_1d422e51" level="project" />
+    <orderEntry type="library" name="liblib-gen_e3afe9aa" level="project" />
+    <orderEntry type="library" name="google-api-client-1.23.0-ijar_20d65990" level="project" />
+    <orderEntry type="library" name="tika-parsers-1.8-ijar_cd01b08e" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_3df02745" level="project" />
+    <orderEntry type="library" name="liblib-gen_69d733a9" level="project" />
+    <orderEntry type="library" name="liblib-gen_bcd4b6cd" level="project" />
+    <orderEntry type="library" name="unit_tests-filtered-gen_f99dd481" level="project" />
+    <orderEntry type="library" name="liblib_2206deb5" level="project" />
+    <orderEntry type="library" name="TestRunner_deploy_520a8188" level="project" />
+    <orderEntry type="library" name="value-2.5.6-ijar_7a9f5cf0" level="project" />
+    <orderEntry type="library" name="google-api-services-admin-directory-directory_v1-rev93-1.23.0-ijar_c549ecb0" level="project" />
+    <orderEntry type="library" name="asm-5.2-ijar_637e8030" level="project" />
+    <orderEntry type="library" name="quartz-2.2.1-ijar_35508844" level="project" />
+    <orderEntry type="library" name="rxjava-1.1.8-ijar_b948541e" level="project" />
+    <orderEntry type="library" name="hamcrest-core-1.3-ijar_5afa9d30" level="project" />
+  </component>
+</module>

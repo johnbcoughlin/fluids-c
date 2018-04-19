@@ -1,7 +1,8 @@
 // Returns an error code of -1 if there are too many horizontal or vertical intersections.
 
 void __kernel count_boundary_points(
-    unsigned int inv_mesh_size,
+    unsigned int width,
+    unsigned int height,
     __global float* vertices,
     __global int* per_segment_boundary_point_counts,
     __global int* boundary_point_counts_prefix_sum,
@@ -9,10 +10,10 @@ void __kernel count_boundary_points(
     int write_points
 ) {
     unsigned int i = get_global_id(0);
-    float ax = vertices[2 * i] * inv_mesh_size;
-    float ay = vertices[2 * i + 1] * inv_mesh_size;
-    float bx = vertices[2 * i + 2] * inv_mesh_size;
-    float by = vertices[2 * i + 3] * inv_mesh_size;
+    float ax = vertices[2 * i];
+    float ay = vertices[2 * i + 1];
+    float bx = vertices[2 * i + 2];
+    float by = vertices[2 * i + 3];
 
     bool x_pos = bx - ax > 0.0;
     bool y_pos = by - ay > 0.0;
@@ -31,11 +32,11 @@ void __kernel count_boundary_points(
     float verticals[128];
     if (fabs(x_distance) > epsilon) {
         for (float x = x_start; (x_pos && x < bx) || (!x_pos && x > bx); x += x_inc) {
-            if (x < 0.0 || x > float(inv_mesh_size)) {
+            if (x < 0.0 || x > float(width)) {
                 continue;
             }
             float y = ay + y_distance * (x - ax) / x_distance;
-            if (y < 0.0 || y > float(inv_mesh_size)) {
+            if (y < 0.0 || y > float(height)) {
                 continue;
             }
             verticals[2 * vert_count] = x;
@@ -52,11 +53,11 @@ void __kernel count_boundary_points(
     float horizontals[100];
     if (fabs(y_distance) > epsilon) {
         for (float y = y_start; (y_pos && y < by) || (!y_pos && y > by); y += y_inc) {
-            if (y < 0.0 || y > float(inv_mesh_size)) {
+            if (y < 0.0 || y > float(height)) {
                 continue;
             }
             float x = ax + x_distance * (y - ay) / y_distance;
-            if (x < 0.0 || x > float(inv_mesh_size)) {
+            if (x < 0.0 || x > float(width)) {
                 continue;
             }
             horizontals[2 * horiz_count] = x;

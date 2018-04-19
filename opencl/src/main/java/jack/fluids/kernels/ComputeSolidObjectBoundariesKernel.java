@@ -1,5 +1,6 @@
 package jack.fluids.kernels;
 
+import jack.fluids.buffers.FloatBuffer1D;
 import jack.fluids.buffers.SplitBuffer;
 import jack.fluids.cl.Session;
 import org.jocl.*;
@@ -25,8 +26,8 @@ public class ComputeSolidObjectBoundariesKernel extends AbstractKernel {
   @Override
   protected String[] kernelSources() {
     return new String[] {
-        kernelSource("count_boundaries.cl"),
-        kernelSource("serial_prefix_sum.cl")
+        kernelSource("solid_objects/count_boundaries.cl"),
+        kernelSource("solid_objects/serial_prefix_sum.cl")
     };
   }
 
@@ -36,13 +37,14 @@ public class ComputeSolidObjectBoundariesKernel extends AbstractKernel {
     prefixSumKernel = kernel("serial_prefix_sum");
   }
 
-  public float[] compute(
+  public FloatBuffer1D compute(
       List<cl_mem> solidObjectVertexBuffers,
       List<Integer> segmentCounts,
       List<cl_mem> perSegmentBoundaryCountBuffers,
       List<cl_mem> boundaryPointCountPrefixSumBuffers,
       SplitBuffer boundaryPointVerticesBuffer,
-      int invMeshSize
+      int width,
+      int height
   ) {
     if (!compiled) {
       throw new RuntimeException("not compiled yet");
@@ -54,12 +56,13 @@ public class ComputeSolidObjectBoundariesKernel extends AbstractKernel {
     cl_mem pointCountBuffer = perSegmentBoundaryCountBuffers.get(objectIndex);
 
     check(error_code_ret);
-    clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {invMeshSize}));
-    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_mem, Pointer.to(vertexBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(pointCountBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, null);
+    clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {width}));
+    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_uint, Pointer.to(new int[] {height}));
+    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(vertexBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, Pointer.to(pointCountBuffer));
     clSetKernelArg(countBoundaryPointsKernel, 4, Sizeof.cl_mem, null);
-    clSetKernelArg(countBoundaryPointsKernel, 5, Sizeof.cl_int, Pointer.to(new int[] {0}));
+    clSetKernelArg(countBoundaryPointsKernel, 5, Sizeof.cl_mem, null);
+    clSetKernelArg(countBoundaryPointsKernel, 6, Sizeof.cl_int, Pointer.to(new int[] {0}));
 
     cl_event kernel_event = new cl_event();
     clEnqueueNDRangeKernel(session.queue(), countBoundaryPointsKernel, 1, null,
@@ -90,12 +93,13 @@ public class ComputeSolidObjectBoundariesKernel extends AbstractKernel {
     // finally, write boundary points
     cl_mem boundaryPointBuffer = boundaryPointVerticesBuffer.requestSubBuffer(
         Sizeof.cl_float * 2 * totalPointCount, CL_MEM_READ_WRITE);
-    clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {invMeshSize}));
-    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_mem, Pointer.to(vertexBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, null);
-    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, Pointer.to(pointCountPrefixSumBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 4, Sizeof.cl_mem, Pointer.to(boundaryPointBuffer));
-    clSetKernelArg(countBoundaryPointsKernel, 5, Sizeof.cl_int, Pointer.to(new int[] {1}));
+    clSetKernelArg(countBoundaryPointsKernel, 0, Sizeof.cl_uint, Pointer.to(new int[] {width}));
+    clSetKernelArg(countBoundaryPointsKernel, 1, Sizeof.cl_uint, Pointer.to(new int[] {height}));
+    clSetKernelArg(countBoundaryPointsKernel, 2, Sizeof.cl_mem, Pointer.to(vertexBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 3, Sizeof.cl_mem, null);
+    clSetKernelArg(countBoundaryPointsKernel, 4, Sizeof.cl_mem, Pointer.to(pointCountPrefixSumBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 5, Sizeof.cl_mem, Pointer.to(boundaryPointBuffer));
+    clSetKernelArg(countBoundaryPointsKernel, 6, Sizeof.cl_int, Pointer.to(new int[] {1}));
 
     kernel_event = new cl_event();
     clEnqueueNDRangeKernel(session.queue(), countBoundaryPointsKernel, 1, null,
@@ -106,6 +110,6 @@ public class ComputeSolidObjectBoundariesKernel extends AbstractKernel {
     clEnqueueReadBuffer(session.queue(), boundaryPointBuffer,
         CL_TRUE, 0, totalPointCount * 2 * Sizeof.cl_float, Pointer.to(result), 0, null, null);
 
-    return result.array();
+    return FloatBuffer1D.of(boundaryPointBuffer, totalPointCount * 2);
   }
 }

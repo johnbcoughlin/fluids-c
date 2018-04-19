@@ -5,6 +5,7 @@ import com.jogamp.newt.event.KeyListener;
 import com.jogamp.opengl.GL4;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
+import jack.fluids.cl.Session;
 
 import java.nio.FloatBuffer;
 
@@ -26,7 +27,7 @@ public class FluidsApp implements GLEventListener, KeyListener {
   @Override
   public void init(GLAutoDrawable drawable) {
     GL4 gl = drawable.getGL().getGL4();
-    simulation = new CLSimulation(gl, 100, 100);
+    simulation = new CLSimulation(gl, Session.createFromGL(), 100, 100);
 
     int[] textures = new int[1];
     gl.glGenTextures(1, textures, 0);

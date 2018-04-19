@@ -6,7 +6,8 @@ import jack.fluids.buffers.IntBuffer1D;
 import jack.fluids.buffers.SplitBuffer;
 import jack.fluids.cl.Session;
 import org.assertj.core.data.Offset;
-import org.jocl.*;
+import org.jocl.Sizeof;
+import org.jocl.cl_mem;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +50,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testSinglePositiveDiagonal() {
     float[] vertices = new float[]{
-        0.2f, 0.1f, 0.8f, 0.7f
+        0.4f, 0.2f, 1.6f, 1.4f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).containsExactly(new float[]{1.0f, 0.8f, 1.2f, 1.0f}, Offset.offset(0.0001f));
@@ -58,7 +59,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testSingleNegativeDiagonal() {
     float[] vertices = new float[]{
-        0.6f, 0.7f, 0.1f, 0.1f
+        1.2f, 1.4f, 0.2f, 0.2f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).containsExactly(new float[]{1.0f, 1.16f, 0.8666f, 1.0f}, Offset.offset(0.0001f));
@@ -67,7 +68,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testSingleVertical() {
     float[] vertices = new float[]{
-        0.2f, 0.1f, 0.2f, 0.8f
+        0.8f, 0.4f, 0.8f, 3.2f
     };
     float[] actual = boundaryPointsFor(1, vertices, 4);
     assertThat(actual).containsExactly(new float[]{
@@ -78,7 +79,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testNearlyVertical() {
     float[] vertices = new float[]{
-        0.4999f, 0.1f, 0.5001f, 0.4f
+        0.9999f, 0.2f, 1.0001f, 0.8f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).isEmpty();
@@ -87,7 +88,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testNearlyHorizontal() {
     float[] vertices = new float[]{
-        0.1f, 0.4999f, 0.4f, 0.5001f
+        0.2f, 0.9999f, 0.8f, 1.0001f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).isEmpty();
@@ -96,7 +97,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testLoop() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.8f, 0.2f, 0.6f, 0.7f, 0.1f, 0.1f
+        0.2f, 0.2f, 1.6f, 0.4f, 1.2f, 1.4f, 0.2f, 0.2f
     };
     float[] actual = boundaryPointsFor(3, vertices, 2);
     assertThat(actual).containsExactly(new float[]{
@@ -107,31 +108,37 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void testTooManyPointsInVerticalSegment() {
     float[] vertices = new float[]{
-        0.3f, 0.1f, 0.35f, 0.9f
+        0.3f * 128, 0.1f * 128, 0.35f * 128, 0.9f * 128
     };
     assertThatThrownBy(() -> boundaryPointsFor(1, vertices, 128))
         .isExactlyInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("too many intersections in one segment");
     // doesn't throw
-    boundaryPointsFor(1, vertices, 64);
+    float[] vertices2 = new float[]{
+        0.3f * 64, 0.1f * 64, 0.35f * 64, 0.9f * 64
+    };
+    boundaryPointsFor(1, vertices2, 64);
   }
 
   @Test
   public void testTooManyPointsInHorizontalSegment() {
     float[] vertices = new float[]{
-        0.1f, 0.3f, 0.9f, 0.35f
+        0.1f * 128, 0.3f * 128, 0.9f * 128, 0.35f * 128
     };
     assertThatThrownBy(() -> boundaryPointsFor(1, vertices, 128))
         .isExactlyInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("too many intersections in one segment");
     // doesn't throw
-    boundaryPointsFor(1, vertices, 64);
+    float[] vertices2 = new float[]{
+        0.1f * 64, 0.3f * 64, 0.9f * 64, 0.35f * 64
+    };
+    boundaryPointsFor(1, vertices2, 64);
   }
 
   @Test
   public void cullsEquivalentHorizontalAndVerticalIntersections() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.8f, 0.8f
+        0.2f, 0.2f, 1.6f, 1.6f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).containsExactly(new float[]{1.0f, 1.0f}, Offset.offset(0.0001f));
@@ -140,7 +147,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void cullsVeryClosePoints() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.8f, 0.8001f
+        0.2f, 0.2f, 1.6f, 1.6001f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).containsExactly(new float[]{1.0f, 1.00011f}, Offset.offset(0.0001f));
@@ -149,16 +156,16 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void doesNotCullPrettyClosePoints() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.8f, 0.81f
+        0.2f, 0.2f, 1.6f, 1.61f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
-    assertThat(actual).containsExactly(new float[]{0.9887f, 1.0f, 1.0f, 1.0114f}, Offset.offset(0.0001f));
+    assertThat(actual).containsExactly(new float[]{0.9943f, 1.0f, 1.0f, 1.0057f}, Offset.offset(0.0001f));
   }
 
   @Test
   public void verticalIntersectionAtEndVertex() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.5f, 0.4f
+        0.2f, 0.2f, 1.0f, 0.8f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).isEmpty();
@@ -167,7 +174,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void verticalIntersectionAtStartVertex() {
     float[] vertices = new float[]{
-        0.5f, 0.1f, 0.8f, 0.4f
+        1.0f, 0.2f, 1.6f, 0.8f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).containsExactly(new float[]{1.0f, 0.2f}, Offset.offset(0.0001f));
@@ -176,7 +183,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void horizontalIntersectionAtStartVertex() {
     float[] vertices = new float[]{
-        0.1f, 0.5f, 0.2f, 0.9f
+        0.2f, 1.0f, 0.4f, 1.8f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).containsExactly(new float[]{0.2f, 1.0f}, Offset.offset(0.0001f));
@@ -185,7 +192,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void horizontalIntersectionAtEndVertex() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.2f, 0.5f
+        0.2f, 0.2f, 0.4f, 1.0f
     };
     float[] actual = boundaryPointsFor(1, vertices, 2);
     assertThat(actual).isEmpty();
@@ -194,7 +201,7 @@ public class SolidObjectBoundariesKernelTest {
   @Test
   public void verticalIntersectionAtInteriorVertex() {
     float[] vertices = new float[]{
-        0.1f, 0.1f, 0.5f, 0.3f, 0.8f, 0.4f
+        0.2f, 0.2f, 1.0f, 0.6f, 1.6f, 0.8f
     };
     float[] actual = boundaryPointsFor(2, vertices, 2);
     assertThat(actual).containsExactly(new float[] {1.0f, 0.6f}, Offset.offset(0.0001f));
@@ -206,8 +213,8 @@ public class SolidObjectBoundariesKernelTest {
     float[] vertices = new float[2 * segmentCount + 2];
     for (int i = 0; i < segmentCount; i++) {
       double theta = (double) i / segmentCount * 2 * Math.PI;
-      vertices[2 * i] = (float) (0.5 + 0.5 * Math.cos(theta));
-      vertices[2 * i + 1] = (float) (0.5 + 0.5 * Math.sin(theta));
+      vertices[2 * i] = (float) (0.5 + 0.5 * Math.cos(theta)) * 64;
+      vertices[2 * i + 1] = (float) (0.5 + 0.5 * Math.sin(theta)) * 64;
     }
     vertices[2 * segmentCount] = vertices[0];
     vertices[2 * segmentCount + 1] = vertices[1];
@@ -220,13 +227,14 @@ public class SolidObjectBoundariesKernelTest {
     boundaryPointCountBuffer = session.createIntBuffer(segmentCount);
     boundaryPointCountPrefixSumBuffer = session.createIntBuffer(segmentCount);
     createSplitBuffer(1000);
-    return kernel.compute(
+    return session.readFloatBuffer(kernel.compute(
         ImmutableList.of(vertexBuffer.buffer()),
         ImmutableList.of(segmentCount),
         ImmutableList.of(boundaryPointCountBuffer.buffer()),
         ImmutableList.of(boundaryPointCountPrefixSumBuffer.buffer()),
         boundaryPointsSplitBuffer,
-        invMeshSize);
+        invMeshSize,
+        invMeshSize));
   }
 
   void createSplitBuffer(long size) {
