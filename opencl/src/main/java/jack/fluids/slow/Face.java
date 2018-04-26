@@ -13,5 +13,7 @@ public class Face {
     this.by = by;
   }
 
-
+  public double area() {
+    return Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+  }
 }

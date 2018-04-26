@@ -9,8 +9,7 @@ public abstract class ControlVolume {
   private final List<Face> faces;
 
   // primitive var at the center of the control volume
-  private final String variableName;
-  private double phi;
+  protected final String variableName;
 
   public ControlVolume(double x, double y, List<Face> faces, String variableName) {
     this.x = x;

@@ -1,46 +1,46 @@
 package jack.fluids.slow;
 
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
 import jack.fluids.util.Pair;
-
-import javax.naming.ldap.Control;
-import java.util.List;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class State {
   private final int nx;
   private final double width;
   private final int ny;
   private final double height;
-  private final Table<Integer, Integer, ControlVolume> pressureCells;
-  private final List<BoundaryPoint> boundaryPoints;
+  private final INDArray p;
+  private final INDArray u;
+  private final INDArray v;
 
   public State(int nx,
                double width,
                int ny,
                double height,
-               Table<Integer, Integer, ControlVolume> pressureCells,
-               List<BoundaryPoint> boundaryPoints) {
+               INDArray p,
+               INDArray u,
+               INDArray v) {
     this.nx = nx;
     this.width = width;
     this.ny = ny;
     this.height = height;
-    this.pressureCells = pressureCells;
-    this.boundaryPoints = boundaryPoints;
+    this.p = p;
+    this.u = u;
+    this.v = v;
+  }
+
+  public INDArray p() {
+    return p;
+  }
+
+  public INDArray u() {
+    return u;
+  }
+
+  public INDArray v() {
+    return v;
   }
 
   public Pair<Double, Double> toIndexSpace(double x, double y) {
     return Pair.of(x / width * nx, y / height * ny);
-  }
-
-  private Table<Integer, Integer, ControlVolume> uCells(Table<Integer, Integer, ControlVolume> pressureCells) {
-    var result = HashBasedTable.create();
-    for (int i = 0; i < nx; i++) {
-      for (int j = 0; j < ny; j++) {
-        if (pressureCells.contains(j, i) && pressureCells.contains(j, i+1)) {
-          result.put(j, i, new UCell());
-        }
-      }
-    }
   }
 }

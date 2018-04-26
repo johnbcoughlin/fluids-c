@@ -48,7 +48,6 @@
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/task/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/task/src/test/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/task/testing/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/test/src/test/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/testing/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/vault/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/common/vault/src/test/java" isTestSource="false" />
@@ -82,7 +81,11 @@
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/api/testing/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/omnibus/src/test/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/rep/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/rep/jooq/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/rep/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/api/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/jooq/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/tam/src/test/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../../inscriptive/user/api/src/main/java" isTestSource="false" />
@@ -135,6 +138,7 @@
     <orderEntry type="library" name="jetty-server-9.4.0.v20161208-ijar_3306ad16" level="project" />
     <orderEntry type="library" name="guice-assistedinject-4.0-ijar_ff2f5b04" level="project" />
     <orderEntry type="library" name="jcommander-1.35-ijar_5a9e0b6a" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_f99dd481" level="project" />
     <orderEntry type="library" name="liblib-gen_37d47fb3" level="project" />
     <orderEntry type="library" name="t-digest-3.2-ijar_b06a9aec" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_69d6ee65" level="project" />
@@ -154,6 +158,7 @@
     <orderEntry type="library" name="liblib-gen_65adbf96" level="project" />
     <orderEntry type="library" name="httpcore-4.4.1-ijar_3ba88b5c" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_2ef4bf75" level="project" />
+    <orderEntry type="library" name="google-http-client-jackson-1.22.0-ijar_14dd6bae" level="project" />
     <orderEntry type="library" name="liblib-gen_d10c4c8d" level="project" />
     <orderEntry type="library" name="google-auth-library-oauth2-http-0.6.0-ijar_47e642b0" level="project" />
     <orderEntry type="library" name="google-oauth-client-1.21.0-ijar_8e356d70" level="project" />
@@ -167,6 +172,7 @@
     <orderEntry type="library" name="liblib-gen_9a0dd6a" level="project" />
     <orderEntry type="library" name="liblib-gen_83d152d6" level="project" />
     <orderEntry type="library" name="libjava_protos_lib-hjar_9f58426b" level="project" />
+    <orderEntry type="library" name="google-api-services-storage-v1-rev85-1.22.0-ijar_4ca087f0" level="project" />
     <orderEntry type="library" name="aopalliance-1.0-ijar_1f3f9b70" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_d10c4c8d" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_47da70d9" level="project" />
@@ -213,8 +219,8 @@
     <orderEntry type="library" name="netty-tcnative-boringssl-static-1.1.33.Fork22-ijar_d9743914" level="project" />
     <orderEntry type="library" name="liblib-gen_1d422e51" level="project" />
     <orderEntry type="library" name="jsr305-3.0.1-ijar_db60452c" level="project" />
-    <orderEntry type="library" name="liblib_d10f8a17" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_69d733a9" level="project" />
+    <orderEntry type="library" name="libjava_protos_lib-hjar_32f5b609" level="project" />
     <orderEntry type="library" name="tika-core-1.8-ijar_16523e30" level="project" />
     <orderEntry type="library" name="blueprints-core-2.6.0-ijar_a66e50d0" level="project" />
     <orderEntry type="library" name="grpc-netty-1.6.1-ijar_cd2902c4" level="project" />
@@ -225,7 +231,6 @@
     <orderEntry type="library" name="gson-2.8.0-ijar_3b055ea4" level="project" />
     <orderEntry type="library" name="liblib-gen_243f5d5d" level="project" />
     <orderEntry type="library" name="google-auth-library-credentials-0.6.0-ijar_2a01acb0" level="project" />
-    <orderEntry type="library" name="unit_tests-filtered-gen_d10f8a17" level="project" />
     <orderEntry type="library" name="google-cloud-bigquery-0.8.0-beta-ijar_aa220c50" level="project" />
     <orderEntry type="library" name="compiler-0.9.0-ijar_7b2e244c" level="project" />
     <orderEntry type="library" name="log4j-core-2.5-ijar_60cfa756" level="project" />
@@ -234,16 +239,19 @@
     <orderEntry type="library" name="liblib-gen_16254ef2" level="project" />
     <orderEntry type="library" name="mockwebserver-3.2.0-ijar_dc3070" level="project" />
     <orderEntry type="library" name="JTransforms-3.0-ijar_dd593070" level="project" />
+    <orderEntry type="library" name="jackson-core-asl-1.9.13-ijar_a6d1839a" level="project" />
     <orderEntry type="library" name="liblib-gen_2d19d11e" level="project" />
     <orderEntry type="library" name="liblib-gen_804d8bb4" level="project" />
     <orderEntry type="library" name="libjava_protos_lib-hjar_50e0ecc" level="project" />
     <orderEntry type="library" name="liblib-gen_3a1d730a" level="project" />
     <orderEntry type="library" name="orientdb-client-2.2.33-ijar_d3d7a0b0" level="project" />
+    <orderEntry type="library" name="liblib-gen_f99dcd7e" level="project" />
     <orderEntry type="library" name="yamlbeans-1.09-ijar_90758750" level="project" />
     <orderEntry type="library" name="log4j-slf4j-impl-2.5-ijar_c6abdc50" level="project" />
     <orderEntry type="library" name="jose4j-0.5.0-ijar_80d82c28" level="project" />
     <orderEntry type="library" name="liblib-gen_80d58c4" level="project" />
     <orderEntry type="library" name="liblib_a1069ea9" level="project" />
+    <orderEntry type="library" name="liblib-gen_32f5b609" level="project" />
     <orderEntry type="library" name="jetty-http-9.4.0.v20161208-ijar_f782e420" level="project" />
     <orderEntry type="library" name="javax.inject-1-ijar_48ad7342" level="project" />
     <orderEntry type="library" name="mysql-connector-java-5.1.38-ijar_6e23e030" level="project" />
@@ -259,6 +267,7 @@
     <orderEntry type="library" name="commons-beanutils-1.7.0-ijar_2ef84010" level="project" />
     <orderEntry type="library" name="libjava_protos_lib-hjar_69d6ee65" level="project" />
     <orderEntry type="library" name="jetty-security-9.4.0.v20161208-ijar_d81e0f90" level="project" />
+    <orderEntry type="library" name="liblib-gen_2bc51fd8" level="project" />
     <orderEntry type="library" name="concurrent-trees-2.6.0-ijar_b4d0b28" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_80d58c4" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_c55bc668" level="project" />
@@ -300,6 +309,7 @@
     <orderEntry type="library" name="unit_tests-filtered-gen_38cfb595" level="project" />
     <orderEntry type="library" name="grpc-protobuf-lite-1.6.1-ijar_a858e4c4" level="project" />
     <orderEntry type="library" name="poi-3.12-ijar_f2acc6d0" level="project" />
+    <orderEntry type="library" name="google-http-client-jackson2-1.22.0-ijar_5440ecd0" level="project" />
     <orderEntry type="library" name="smile-math-1.5.1-ijar_7e2001cc" level="project" />
     <orderEntry type="library" name="grpc-protobuf-1.6.1-ijar_1f0af681" level="project" />
     <orderEntry type="library" name="force-wsc-42.0.0-ijar_a645a30" level="project" />
@@ -347,12 +357,14 @@
     <orderEntry type="library" name="protobuf-java-util-3.0.0-ijar_eac167a4" level="project" />
     <orderEntry type="library" name="liblib-gen_bd3fde8e" level="project" />
     <orderEntry type="library" name="libjava_protos_lib-hjar_12b33e4" level="project" />
+    <orderEntry type="library" name="liblib-gen_22d002b5" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_3a1d730a" level="project" />
     <orderEntry type="library" name="liblib-gen_5744f351" level="project" />
     <orderEntry type="library" name="libjava_protos_lib-hjar_bcd4b6cd" level="project" />
     <orderEntry type="library" name="google-http-client-gson-1.23.0-ijar_71dd55d0" level="project" />
     <orderEntry type="library" name="grpc-core-1.11.0-ijar_ada9abd0" level="project" />
     <orderEntry type="library" name="unit_tests-filtered-gen_1d422e51" level="project" />
+    <orderEntry type="library" name="jackson-core-2.3.2-ijar_a341d24" level="project" />
     <orderEntry type="library" name="liblib-gen_e3afe9aa" level="project" />
     <orderEntry type="library" name="google-api-client-1.23.0-ijar_20d65990" level="project" />
     <orderEntry type="library" name="tika-parsers-1.8-ijar_cd01b08e" level="project" />
