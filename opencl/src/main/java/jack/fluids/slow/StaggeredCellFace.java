@@ -4,6 +4,12 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface StaggeredCellFace {
+  Point point();
+
+  default double distance(Point point) {
+    return point().distance(point);
+  }
+
   double area();
 
   /*
@@ -12,8 +18,10 @@ public interface StaggeredCellFace {
    */
   boolean positiveDirectionFluid();
   double positiveDirectionDistance();
+  double positivePositiveDirectionDistance();
   boolean negativeDirectionFluid();
   double negativeDirectionDistance();
+  double negativeNegativeDirectionDistance();
 
   default double totalDistance() {
     return positiveDirectionDistance() + negativeDirectionDistance();

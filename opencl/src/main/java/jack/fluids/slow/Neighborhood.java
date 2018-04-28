@@ -2,36 +2,54 @@ package jack.fluids.slow;
 
 import org.immutables.value.Value;
 
+import java.util.Optional;
+
 @Value.Immutable
 public interface Neighborhood {
   // Value of the velocity component at the center of the neighborhood/system of equations.
-  double P();
+  ControlPoint P();
 
-  StaggeredCellFace n();
-  StaggeredCellFace s();
-  StaggeredCellFace e();
-  StaggeredCellFace w();
+  StaggeredCellFace fn();
+  StaggeredCellFace fs();
+  StaggeredCellFace fe();
+  StaggeredCellFace fw();
 
   // Principal directions
-  double N();
-  double S();
-  double E();
-  double W();
+  ControlPoint N();
+  ControlPoint S();
+  ControlPoint E();
+  ControlPoint W();
 
   // Two cells away in each direction; used for QUICK
-  double NN();
-  double SS();
-  double EE();
-  double WW();
+  ControlPoint NN();
+  ControlPoint SS();
+  ControlPoint EE();
+  ControlPoint WW();
 
   // Oblique neighbors
-  double ne();
-  double nw();
-  double se();
-  double sw();
+  ControlPoint ne();
+  ControlPoint nw();
+  ControlPoint se();
+  ControlPoint sw();
 
-  default double he() { return 1.0; }
-  default double hw() { return 1.0; }
-  default double hn() { return 1.0; }
-  default double hs() { return 1.0; }
+  Optional<BoundaryDistances> boundaryDistances();
+
+  // Vertical distances from the corresponding ControlPoints to the boundary.
+  @Value.Immutable
+  interface BoundaryDistances {
+    // for the center cell
+    double hP();
+
+    // for the immediate neighbor cells
+    double hN();
+    double hS();
+    double hE();
+    double hW();
+
+    // for the centers of the cell faces
+    double hn();
+    double hs();
+    double he();
+    double hw();
+  }
 }

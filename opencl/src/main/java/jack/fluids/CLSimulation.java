@@ -1,5 +1,6 @@
 package jack.fluids;
 
+import com.google.common.collect.ImmutableList;
 import com.jogamp.opengl.GL4;
 import jack.fluids.buffers.FloatBuffer1D;
 import jack.fluids.buffers.SplitBuffer;
@@ -40,15 +41,15 @@ public class CLSimulation {
         .56f * nx, .84f * ny,
         .12f * nx, .12f * ny
     };
-    var solidObjectVBOs = List.of(session.createFloatBuffer(triangle).buffer());
-    var perSegmentBoundaryCountBuffers = List.of(session.createIntBuffer(3).buffer());
-    var boundaryPointCountPrefixSumBuffers = List.of(session.createIntBuffer(3).buffer());
+    List<cl_mem> solidObjectVBOs = ImmutableList.of(session.createFloatBuffer(triangle).buffer());
+    List<cl_mem> perSegmentBoundaryCountBuffers = ImmutableList.of(session.createIntBuffer(3).buffer());
+    List<cl_mem> boundaryPointCountPrefixSumBuffers = ImmutableList.of(session.createIntBuffer(3).buffer());
     cl_mem splittableBuffer = session.createFloatBuffer(1000).buffer();
     SplitBuffer splitBuffer = new SplitBuffer(splittableBuffer, 1000 * Float.BYTES);
     ComputeSolidObjectBoundariesKernel kern = new ComputeSolidObjectBoundariesKernel(session);
     FloatBuffer1D boundaryPoints = kern.compute(
         solidObjectVBOs,
-        List.of(3),
+        ImmutableList.of(3),
         perSegmentBoundaryCountBuffers,
         boundaryPointCountPrefixSumBuffers,
         splitBuffer, nx, ny);
