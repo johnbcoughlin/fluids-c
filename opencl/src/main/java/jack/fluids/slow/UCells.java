@@ -1,17 +1,30 @@
 package jack.fluids.slow;
 
+import com.google.common.collect.ImmutableList;
 import jack.fluids.slow.LinearEquation.Term;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static jack.fluids.slow.Direction.*;
+import static jack.fluids.slow.Direction.EAST;
+import static jack.fluids.slow.Direction.NORTH;
+import static jack.fluids.slow.Direction.SOUTH;
+import static jack.fluids.slow.Direction.WEST;
 import static jack.fluids.slow.Grid.MU;
 import static jack.fluids.slow.NeighborhoodGeometry.alpha;
 
 public class UCells {
-  protected static LinearEquation equation(State n, State n_1, int i, int j) {
-    return null;
+  public static LinearEquation localEquation(double dt, Neighborhood nb, Neighborhood n,
+      double del_p_del_y_n_1_1, Neighborhood n_1) {
+    Term vTerm = new Term(nb.P().variable(), nb.volume() / dt);
+    List<Term> diffusiveFluxTerms = diffusiveFluxTerms(nb);
+    double rhs = -nb.volume() / dt * n.P().phi();
+    rhs += 3.0 / 2 * advectiveFluxU(n) - 1.0 / 2 * advectiveFluxU(n_1);
+    rhs += nb.volume() * del_p_del_y_n_1_1;
+    rhs += 1.0 / 2 * diffusiveFlux(n);
+    return new LinearEquation(ImmutableList.<Term>builder()
+        .add(vTerm)
+        .addAll(diffusiveFluxTerms)
+        .build(), rhs);
   }
 
   /**
@@ -40,13 +53,15 @@ public class UCells {
   }
 
   private static double parallelAdvectedVelocity(StaggeredCellFace face,
-                                                 ControlPoint pos, ControlPoint neg,
-                                                 ControlPoint posPos, ControlPoint negNeg) {
+      ControlPoint pos, ControlPoint neg,
+      ControlPoint posPos, ControlPoint negNeg) {
     double interiorDistance = face.distance(neg) + face.distance(pos);
-    double centralDifferenceApprox = (face.distance(neg) * pos.phi() + face.distance(pos) * neg.phi())
+    double centralDifferenceApprox = (face.distance(neg) * pos.phi() + face.distance(pos) * neg
+        .phi())
         / interiorDistance;
     double quickApprox;
-    // quantities are named here according to https://people.eng.unimelb.edu.au/imarusic/proceedings/12/LiY.pdf
+    // quantities are named here according to https://people.eng.unimelb.edu
+    // .au/imarusic/proceedings/12/LiY.pdf
     if (centralDifferenceApprox > 0.0) {
       double delta2 = face.positiveDirectionDistance();
       double delta3 = face.negativeNegativeDirectionDistance();
@@ -71,7 +86,8 @@ public class UCells {
     return quickApprox;
   }
 
-  private static double orthogonalAdvectingVelocity(StaggeredCellFace face, ControlPoint neg, ControlPoint pos) {
+  private static double orthogonalAdvectingVelocity(StaggeredCellFace face, ControlPoint neg,
+      ControlPoint pos) {
     double negDistance = face.point().distance(neg);
     double posDistance = face.point().distance(pos);
     double totalDistance = negDistance + posDistance;
@@ -79,11 +95,12 @@ public class UCells {
   }
 
   private static double orthogonalAdvectedVelocity(StaggeredCellFace face,
-                                                   ControlPoint pos, ControlPoint neg,
-                                                   ControlPoint posPos, ControlPoint negNeg,
-                                                   double advectingVelocity) {
+      ControlPoint pos, ControlPoint neg,
+      ControlPoint posPos, ControlPoint negNeg,
+      double advectingVelocity) {
     double interiorDistance = face.distance(neg) + face.distance(pos);
-    double centralDifferenceApprox = (face.distance(neg) * pos.phi() + face.distance(pos) * neg.phi())
+    double centralDifferenceApprox = (face.distance(neg) * pos.phi() + face.distance(pos) * neg
+        .phi())
         / interiorDistance;
     double quickApprox;
     if (advectingVelocity > 0.0) {
@@ -122,53 +139,27 @@ public class UCells {
     return total;
   }
 
-  private static double singleFaceGradient(ControlPoint neg, ControlPoint pos) {
+
+  private static double singleFaceGradient(ControlPoint pos, ControlPoint neg) {
     return (pos.phi() - neg.phi()) / (pos.distance(neg));
   }
 
-  private static List<Term> diffusiveFlux_abandoned(int i, int j, Direction direction, Grid grid) {
-    String centerId = unknownId(i, j);
-    List<Term> result = new ArrayList<>();
-    switch (direction) {
-      case NORTH:
-        if (grid.uNorthmost(j)) {
-          return result;
-        }
-        String northId = unknownId(i, j + 1);
-        result.add(new Term(northId, 1.0));
-        result.add(new Term(centerId, -1.0));
-        return result;
-      case SOUTH:
-        if (grid.uSouthmost(j)) {
-          return result;
-        }
-        String southId = unknownId(i, j - 1);
-        result.add(new Term(centerId, 1.0));
-        result.add(new Term(southId, -1.0));
-        return result;
-      case EAST:
-        if (grid.uEastmost(i)) {
-          return result;
-        }
-        String eastId = unknownId(i + 1, j);
-        result.add(new Term(eastId, 1.0));
-        result.add(new Term(centerId, -1.0));
-        return result;
-      case WEST:
-        if (grid.uWestmost(i)) {
-          return result;
-        }
-        String westId = unknownId(i - 1, j);
-        result.add(new Term(centerId, 1.0));
-        result.add(new Term(westId, -1.0));
-        return result;
-      default:
-        throw new IllegalStateException("come on");
-    }
-  }
+  public static List<Term> diffusiveFluxTerms(Neighborhood neighborhood) {
+    ControlPoint P = neighborhood.P();
+    ControlPoint N = neighborhood.N();
+    ControlPoint S = neighborhood.S();
+    ControlPoint E = neighborhood.E();
+    ControlPoint W = neighborhood.W();
 
-  public static String unknownId(int i, int j) {
-    return String.format("u-%d.%d", i, j);
-  }
+    Term nTerm = new Term(N.variable(), neighborhood.fn().area() / N.distance(P) / 2);
+    Term sTerm = new Term(S.variable(), -neighborhood.fs().area() / P.distance(S) / 2);
+    Term eTerm = new Term(E.variable(), neighborhood.fe().area() / E.distance(P) / 2);
+    Term wTerm = new Term(W.variable(), -neighborhood.fw().area() / P.distance(W) / 2);
+    Term pTerm = new Term(P.variable(), (-neighborhood.fn().area() / N.distance(P)
+        + neighborhood.fs().area() / P.distance(S)
+        - neighborhood.fe().area() / E.distance(P)
+        + neighborhood.fw().area() / P.distance(W)) / 2);
 
+    return ImmutableList.of(pTerm, nTerm, sTerm, eTerm, wTerm);
+  }
 }

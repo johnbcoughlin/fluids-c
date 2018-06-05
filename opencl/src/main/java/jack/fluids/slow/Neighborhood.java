@@ -6,6 +6,9 @@ import java.util.Optional;
 
 @Value.Immutable
 public interface Neighborhood {
+  // Volume of the central control volume.
+  double volume();
+
   // Value of the velocity component at the center of the neighborhood/system of equations.
   ControlPoint P();
 
@@ -26,7 +29,7 @@ public interface Neighborhood {
   ControlPoint EE();
   ControlPoint WW();
 
-  // Oblique neighbors
+  // Oblique neighbors. If P is a u-control point, then these are v-control points, and vice versa
   ControlPoint ne();
   ControlPoint nw();
   ControlPoint se();

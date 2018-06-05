@@ -1,6 +1,10 @@
 package jack.fluids.slow;
 
+import jack.fluids.slow.mesh.Mesh;
+import jack.fluids.slow.mesh.Segment;
 import org.nd4j.linalg.api.ndarray.INDArray;
+
+import java.util.Optional;
 
 public class Grid {
   public static final double MU = 1.0;
@@ -8,6 +12,11 @@ public class Grid {
   // Dimensions of the grid of p-cells
   private final int nx;
   private final int ny;
+
+  private final double dx;
+  private final double dy;
+
+  private final Mesh mesh;
 
   /*
    * P-cell volumes and faces
@@ -47,14 +56,32 @@ public class Grid {
   INDArray vCellsVolume;
   INDArray vCellsVerticalBoundaryDistance;
 
-  public Grid(int nx, int ny) {
+  public Grid(int nx, int ny, double dx, double dy, Mesh mesh) {
     this.nx = nx;
     this.ny = ny;
+    this.dx = dx;
+    this.dy = dy;
+    this.mesh = mesh;
   }
+
+  Optional<ControlPoint> uControlPoint(int i, int j) {
+    Optional<Segment> principalSegment = Grids.uPrincipalSegmentLocation(dx, dy, i, j, mesh);
+    if (!principalSegment.isPresent()) {
+      return Optional.empty();
+    }
+    Segment segment = principalSegment.get();
+    return Optional.of(ControlPoint.of(
+        segment.midpoint(),
+        "u-" + i + "-" + j,
+        uCellsValue.getDouble(i, j)));
+  }
+
+  ControlPoint uControlPoint
 
 //  Neighborhood uNeighborhood(int i, int j) {
 //    return ImmutableNeighborhood.builder()
-//        .P(uCellsValue.getDouble(i, j))
+//        .P(ControlPoint.of(Point.of(uCellsX.getDouble(i, j), uCellsY.getDouble(i, j)),
+//            uCellsValue.getDouble(i, j))
 //        .n(uCellFace(i, j, NORTH))
 //        .s(uCellFace(i, j, SOUTH))
 //        .e(uCellFace(i, j, EAST))
@@ -73,7 +100,7 @@ public class Grid {
 //        .sw(vCellsValue.getDouble(i, j - 1))
 //        .build();
 //  }
-
+//
 //  StaggeredCellFace uCellFace(int i, int j, Direction direction) {
 //    int fi = direction.toFacei(i);
 //    int fj = direction.toFacej(j);
@@ -89,20 +116,4 @@ public class Grid {
 //        .crosswiseTheta(uFacesCrosswiseTheta.getDouble(fi, fj))
 //        .build();
 //  }
-
-  public boolean uNorthmost(int j) {
-    return j == nx - 1;
-  }
-
-  public boolean uSouthmost(int j) {
-    return j == 0;
-  }
-
-  public boolean uEastmost(int i) {
-    return i == nx - 2;
-  }
-
-  public boolean uWestmost(int i) {
-    return i == 0;
-  }
 }

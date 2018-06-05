@@ -15,7 +15,11 @@ import java.util.stream.Collectors;
 public class Grids {
   private static final Logger logger = LoggerFactory.getLogger(Grids.class);
 
-  public static Optional<Point> uControlPointLocation(double dx, double dy, int i, int j, Mesh mesh) {
+  /**
+   * Compute the largest segment of a grid line which is inside the mesh
+   */
+  public static Optional<Segment> uPrincipalSegmentLocation(double dx, double dy, int i, int j,
+      Mesh mesh) {
     Point a = Point.of(i - 0.5 * dx, j - 0.5 * dy);
     Point b = Point.of(i - 0.5 * dx, j + 0.5 * dy);
     Segment naturalSegment = Segment.of(a, b);
@@ -53,7 +57,28 @@ public class Grids {
       return Optional.empty();
     }
     return openSegments.stream()
-        .max(Comparator.comparingDouble(Segment::length).reversed())
-        .map(Segment::midpoint);
+        .max(Comparator.comparingDouble(Segment::length).reversed());
+  }
+
+  /**
+   * TODO(jack) find a better algorithm for this.
+   *
+   * @param x0 the x origin of the cell
+   * @param y0 the y origin of the cell
+   * @return an approximation of the volume of the cell
+   */
+  public static double approximateVolume(double dx, double dy,
+      double x0, double y0, Mesh mesh) {
+    int count = 0;
+    Point origin = Point.of(0, 0);
+    for (int i = 0; i < 10; i++) {
+      for (int j = 0; j < 10; j++) {
+        Point p = Point.of(x0 + i * dx / 10, y0 + j * dy / 10);
+        if (mesh.inside(p, origin)) {
+          count++;
+        }
+      }
+    }
+    return count * dx * dy / 100;
   }
 }
