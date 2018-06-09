@@ -1,6 +1,7 @@
 package jack.fluids.slow;
 
 import com.google.common.collect.ImmutableList;
+import jack.fluids.slow.coords.VCellCoords;
 import jack.fluids.slow.mesh.Mesh;
 import jack.fluids.slow.mesh.Segment;
 import org.slf4j.Logger;
@@ -16,13 +17,16 @@ public class Grids {
   private static final Logger logger = LoggerFactory.getLogger(Grids.class);
 
   /**
-   * Compute the largest segment of a grid line which is inside the mesh
+   * Return the natural location of a u control point with the given integer coordinates
    */
-  public static Optional<Segment> uPrincipalSegmentLocation(double dx, double dy, int i, int j,
-      Mesh mesh) {
-    Point a = Point.of(i - 0.5 * dx, j - 0.5 * dy);
-    Point b = Point.of(i - 0.5 * dx, j + 0.5 * dy);
-    Segment naturalSegment = Segment.of(a, b);
+  public static Point uPointAtCoords(double dx, double dy, int i, int j) {
+    return Point.of((i - 0.5) * dx, j * dy);
+  }
+
+  /**
+   * Compute the longest sub-segment of the given segment which lies fully inside the mesh.
+   */
+  public static Optional<Segment> principalSegmentLocation(Segment naturalSegment, Mesh mesh) {
     List<Point> allIntersections = mesh.segments().stream()
         .map(s -> s.intersection(naturalSegment))
         .filter(Optional::isPresent)
@@ -30,14 +34,14 @@ public class Grids {
         .sorted(Comparator.comparingDouble(Point::y))
         .collect(Collectors.toList());
     List<Point> controlPoints = ImmutableList.<Point>builder()
-        .add(a)
+        .add(naturalSegment.a())
         .addAll(allIntersections)
-        .add(b)
+        .add(naturalSegment.b())
         .build();
 
     Point origin = Point.of(0, 0);
-    boolean aInside = mesh.inside(a, origin);
-    boolean bInside = mesh.inside(b, origin);
+    boolean aInside = mesh.inside(naturalSegment.a(), origin);
+    boolean bInside = mesh.inside(naturalSegment.b(), origin);
     if (!aInside && !bInside) {
       if (allIntersections.isEmpty()) {
         return Optional.empty();
@@ -58,6 +62,68 @@ public class Grids {
     }
     return openSegments.stream()
         .max(Comparator.comparingDouble(Segment::length).reversed());
+  }
+
+  /**
+   * Compute the largest segment of a grid line which is inside the mesh
+   */
+  public static Optional<Segment> pCellUFacePrincipalSegment(double dx, double dy, int i, int j,
+      Mesh mesh) {
+    Point a = Point.of((i - 0.5) * dx, (j - 0.5) * dy);
+    Point b = Point.of((i - 0.5) * dx, (j + 0.5) * dy);
+    Segment naturalSegment = Segment.of(a, b);
+    return principalSegmentLocation(naturalSegment, mesh);
+  }
+
+  public static Segment pCellVFace(double dx, double dy, VCellCoords coords) {
+    int i = coords.i();
+    int j = coords.j();
+    return Segment.of(
+        Point.of((i - 0.5) * dx, (j - 0.5) * dy),
+        Point.of((i + 0.5) * dx, (j - 0.5) * dy)
+    );
+  }
+
+  /**
+   * @param i the i coordinate of the u cell
+   * @param j the j coordinate of the u cell
+   */
+  public static Segment uCellEastWall(double dx, double dy, int i, int j) {
+    Point a = Point.of(i * dx, (j - 0.5) * dy);
+    Point b = Point.of(i * dx, (j + 0.5) * dy);
+    return Segment.of(a, b);
+  }
+
+  /**
+   * @param i the i coordinate of the u cell
+   * @param j the j coordinate of the u cell
+   */
+  public static Segment uCellWestWall(double dx, double dy, int i, int j) {
+    Point a = Point.of((i - 1) * dx, (j - 0.5) * dy);
+    Point b = Point.of((i - 1) * dx, (j + 0.5) * dy);
+    return Segment.of(a, b);
+  }
+
+  /**
+   * @param i the i coordinate of the u cell
+   * @param j the j coordinate of the u cell
+   */
+  public static Segment uCellNorthWall(double dx, double dy, int i, int j) {
+    return Segment.of(
+        Point.of((i - 1) * dx, (j + 0.5) * dy),
+        Point.of(i * dx, (j + 0.5) * dy)
+    );
+  }
+
+  /**
+   * @param i the i coordinate of the u cell
+   * @param j the j coordinate of the u cell
+   */
+  public static Segment uCellSouthWall(double dx, double dy, int i, int j) {
+    return Segment.of(
+        Point.of((i - 1) * dx, (j - 0.5) * dy),
+        Point.of(i * dx, (j - 0.5) * dy)
+    );
   }
 
   /**

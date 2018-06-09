@@ -1,10 +1,17 @@
 package jack.fluids.slow;
 
+import jack.fluids.slow.coords.UCellCoords;
+import jack.fluids.slow.coords.VCellCoords;
 import jack.fluids.slow.mesh.Mesh;
 import jack.fluids.slow.mesh.Segment;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.Optional;
+
+import static jack.fluids.slow.Direction.EAST;
+import static jack.fluids.slow.Direction.NORTH;
+import static jack.fluids.slow.Direction.SOUTH;
+import static jack.fluids.slow.Direction.WEST;
 
 public class Grid {
   public static final double MU = 1.0;
@@ -64,8 +71,8 @@ public class Grid {
     this.mesh = mesh;
   }
 
-  Optional<ControlPoint> uControlPoint(int i, int j) {
-    Optional<Segment> principalSegment = Grids.uPrincipalSegmentLocation(dx, dy, i, j, mesh);
+  Optional<ControlPoint> uuControlPoint(int i, int j) {
+    Optional<Segment> principalSegment = Grids.pCellUFacePrincipalSegment(dx, dy, i, j, mesh);
     if (!principalSegment.isPresent()) {
       return Optional.empty();
     }
@@ -76,44 +83,148 @@ public class Grid {
         uCellsValue.getDouble(i, j)));
   }
 
-  ControlPoint uControlPoint
+  /**
+   * Compute a u control point for a neighborhood centered at the given coordinates.
+   */
+  ControlPoint uuControlPoint(int i, int j, Direction direction, int distance, double borderU) {
+    int ui = i + (direction == EAST ? -distance : (direction == WEST ? distance : 0));
+    int uj = j + (direction == NORTH ? distance : (direction == SOUTH ? distance : 0));
+    Optional<ControlPoint> realControlPoint = uuControlPoint(ui, uj);
+    if (realControlPoint.isPresent()) {
+      return realControlPoint.get();
+    }
+    Optional<Point> meshIntersection = mesh.intersectionPoint(Segment.of(
+        Grids.uPointAtCoords(dx, dy, i, j),
+        Grids.uPointAtCoords(dx, dy, ui, uj)));
+    if (!meshIntersection.isPresent()) {
+      throw new IllegalStateException("The mesh must not be closed, " +
+          "there should be an intersection here");
+    }
+    return ControlPoint.of(meshIntersection.get(), "", borderU);
+  }
 
-//  Neighborhood uNeighborhood(int i, int j) {
-//    return ImmutableNeighborhood.builder()
-//        .P(ControlPoint.of(Point.of(uCellsX.getDouble(i, j), uCellsY.getDouble(i, j)),
-//            uCellsValue.getDouble(i, j))
-//        .n(uCellFace(i, j, NORTH))
-//        .s(uCellFace(i, j, SOUTH))
-//        .e(uCellFace(i, j, EAST))
-//        .w(uCellFace(i, j, WEST))
-//        .N(uCellsValue.getDouble(i + 1, j))
-//        .S(uCellsValue.getDouble(i - 1, j))
-//        .E(uCellsValue.getDouble(i, j + 1))
-//        .W(uCellsValue.getDouble(i, j - 1))
-//        .NN(uCellsValue.getDouble(i + 2, j))
-//        .SS(uCellsValue.getDouble(i - 2, j))
-//        .EE(uCellsValue.getDouble(i, j + 2))
-//        .WW(uCellsValue.getDouble(i, j - 2))
-//        .ne(vCellsValue.getDouble(i + 1, j))
-//        .nw(vCellsValue.getDouble(i + 1, j - 1))
-//        .se(vCellsValue.getDouble(i, j))
-//        .sw(vCellsValue.getDouble(i, j - 1))
-//        .build();
-//  }
-//
-//  StaggeredCellFace uCellFace(int i, int j, Direction direction) {
-//    int fi = direction.toFacei(i);
-//    int fj = direction.toFacej(j);
-//    return ImmutableStaggeredCellFace.builder()
-//        .area(uFacesArea.getDouble(i, j))
-//        .positiveDirectionFluid(uFacesPositiveDirectionFluid.getInt(fi, fj) == 1)
-//        .positiveDirectionDistance(uFacesPositiveDirectionDistance.getDouble(fi, fj))
-//        .negativeDirectionFluid(uFacesNegativeDirectionFluid.getInt(fi, fj) == 1)
-//        .negativeDirectionDistance(uFacesNegativeDirectionDistance.getDouble(fi, fj))
-//        .theta(uFacesTheta.getDouble(fi, fj))
-//        .crosswisePositiveDirectionFluid(uFacesCrosswisePositiveDirectionFluid.getInt(fi, fj) == 1)
-//        .crosswiseNegativeDirectionFluid(uFacesCrosswiseNegativeDirectionFluid.getInt(fi, fj) == 1)
-//        .crosswiseTheta(uFacesCrosswiseTheta.getDouble(fi, fj))
-//        .build();
-//  }
+  ControlPoint uvControlPoint(UCellCoords coords, Direction nsDirection, Direction ewDirection,
+      StaggeredCellFace face, double borderV) {
+    if (nsDirection == NORTH) {
+      if (ewDirection == EAST) {
+        VCellCoords ne = coords.ne();
+        Segment naturalNe = Grids.pCellVFace(dx, dy, ne);
+        Optional<Segment> actualNe = Grids.principalSegmentLocation(naturalNe, mesh);
+        if (actualNe.isPresent()) {
+          return ControlPoint.of(actualNe.get().midpoint(), ne.variable(),
+              vCellsValue.getDouble(ne.i(), ne.j()));
+        } else {
+          return ControlPoint.of(face.segment().eastmost(), "", borderV);
+        }
+      } else if (ewDirection == WEST) {
+        VCellCoords nw = coords.nw();
+        Segment naturalNw = Grids.pCellVFace(dx, dy, nw);
+        Optional<Segment> actualNw = Grids.principalSegmentLocation(naturalNw, mesh);
+        if (actualNw.isPresent()) {
+          return ControlPoint.of(actualNw.get().midpoint(), nw.variable(),
+              vCellsValue.getDouble(nw.i(), nw.j()));
+        } else {
+          return ControlPoint.of(face.segment().westmost(), "", borderV);
+        }
+      }
+    } else if (nsDirection == SOUTH) {
+      if (ewDirection == EAST) {
+        VCellCoords se = coords.se();
+        Segment naturalSe = Grids.pCellVFace(dx, dy, se);
+        Optional<Segment> actualSe = Grids.principalSegmentLocation(naturalSe, mesh);
+        if (actualSe.isPresent()) {
+          return ControlPoint.of(actualSe.get().midpoint(), se.variable(),
+              vCellsValue.getDouble(se.i(), se.j()));
+        } else {
+          return ControlPoint.of(face.segment().eastmost(), "", borderV);
+        }
+      } else if (ewDirection == WEST) {
+        VCellCoords sw = coords.sw();
+        Segment naturalSw = Grids.pCellVFace(dx, dy, sw);
+        Optional<Segment> actualNw = Grids.principalSegmentLocation(naturalSw, mesh);
+        if (actualNw.isPresent()) {
+          return ControlPoint.of(actualNw.get().midpoint(), sw.variable(),
+              vCellsValue.getDouble(sw.i(), sw.j()));
+        } else {
+          return ControlPoint.of(face.segment().westmost(), "", borderV);
+        }
+      }
+    }
+    throw new IllegalArgumentException(String.format("Bad ns/ew directions: %s/%s",
+        nsDirection, ewDirection));
+  }
+
+
+  Optional<Neighborhood> uNeighborhood(int i, int j) {
+    UCellCoords coords = UCellCoords.of(i, j);
+    Optional<ControlPoint> maybeP = uuControlPoint(i, j);
+    if (!maybeP.isPresent()) {
+      return Optional.empty();
+    }
+    ControlPoint P = maybeP.get();
+    ControlPoint N = uuControlPoint(i, j, NORTH, 1, 0.0);
+    ControlPoint S = uuControlPoint(i, j, SOUTH, 1, 0.0);
+    ControlPoint E = uuControlPoint(i, j, EAST, 1, 0.0);
+    ControlPoint W = uuControlPoint(i, j, WEST, 1, 0.0);
+    ControlPoint NN = uuControlPoint(i, j, NORTH, 2, 0.0);
+    ControlPoint SS = uuControlPoint(i, j, SOUTH, 2, 0.0);
+    ControlPoint EE = uuControlPoint(i, j, EAST, 2, 0.0);
+    ControlPoint WW = uuControlPoint(i, j, WEST, 2, 0.0);
+    Optional<StaggeredCellFace> fn = uCellFace(i, j, NORTH, N, P, NN, S);
+    Optional<StaggeredCellFace> fs = uCellFace(i, j, SOUTH, P, S, N, SS);
+    Optional<StaggeredCellFace> fe = uCellFace(i, j, EAST, E, P, EE, W);
+    Optional<StaggeredCellFace> fw = uCellFace(i, j, WEST, P, W, E, WW);
+    return Optional.of(ImmutableNeighborhood.builder()
+        .P(P)
+        .N(N)
+        .S(S)
+        .E(E)
+        .W(W)
+        .NN(NN)
+        .SS(SS)
+        .EE(EE)
+        .WW(WW)
+        .fn(fn)
+        .fs(fs)
+        .fe(fe)
+        .fw(fw)
+        .ne(fn.map(f -> uvControlPoint(coords, NORTH, EAST, f, 0.0)))
+        .nw(fn.map(f -> uvControlPoint(coords, NORTH, WEST, f, 0.0)))
+        .se(fs.map(f -> uvControlPoint(coords, SOUTH, EAST, f, 0.0)))
+        .sw(fs.map(f -> uvControlPoint(coords, SOUTH, WEST, f, 0.0)))
+        .boundaryDistances(/* TODO(jack) get it */)
+        .build());
+  }
+
+  Optional<StaggeredCellFace> uCellFace(int i, int j, Direction direction,
+      ControlPoint pos, ControlPoint neg, ControlPoint posPos, ControlPoint negNeg) {
+    Segment naturalSegment = null;
+    switch (direction) {
+      case NORTH:
+        naturalSegment = Grids.uCellNorthWall(dx, dy, i, j);
+        break;
+      case SOUTH:
+        naturalSegment = Grids.uCellSouthWall(dx, dy, i, j);
+        break;
+      case EAST:
+        naturalSegment = Grids.uCellEastWall(dx, dy, i, j);
+        break;
+      case WEST:
+        naturalSegment = Grids.uCellWestWall(dx, dy, i, j);
+        break;
+    }
+    Optional<Segment> maybeSegment = Grids.principalSegmentLocation(naturalSegment, mesh);
+    if (!maybeSegment.isPresent()) {
+      return Optional.empty();
+    }
+    Segment segment = maybeSegment.get();
+    return Optional.of(ImmutableStaggeredCellFace.builder()
+        .area(segment.length())
+        .segment(segment)
+        .positiveDirectionDistance(pos.distance(segment.midpoint()))
+        .positivePositiveDirectionDistance(posPos.distance(segment.midpoint()))
+        .negativeDirectionDistance(neg.distance(segment.midpoint()))
+        .negativeNegativeDirectionDistance(negNeg.distance(segment.midpoint()))
+        .build());
+  }
 }

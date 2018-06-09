@@ -17,7 +17,7 @@ public class GridsTest {
         .addSegments(Segment.of(Point.of(0.3, 0.2), Point.of(0.6, 1.0)))
         .addSegments(Segment.of(Point.of(0.6, 1.0), Point.of(0.3, 1.2)))
         .build();
-    Optional<Segment> actual = Grids.uPrincipalSegmentLocation(1.0, 1.0, 1, 1, mesh);
+    Optional<Segment> actual = Grids.pCellUFacePrincipalSegment(1.0, 1.0, 1, 1, mesh);
     assertThat(actual.get().midpoint()).isEqualTo(Point.of(0.5, 0.9));
   }
 
@@ -26,7 +26,7 @@ public class GridsTest {
     Mesh mesh = ImmutableMesh.builder()
         .addSegments(Segment.of(Point.of(0.3, 0.2), Point.of(0.3, 1.2)))
         .build();
-    Optional<Segment> actual = Grids.uPrincipalSegmentLocation(1.0, 1.0, 1, 1, mesh);
+    Optional<Segment> actual = Grids.pCellUFacePrincipalSegment(1.0, 1.0, 1, 1, mesh);
     assertThat(actual).isEmpty();
   }
 
@@ -35,7 +35,7 @@ public class GridsTest {
     Mesh mesh = ImmutableMesh.builder()
         .addSegments(Segment.of(Point.of(0.3, 0.2), Point.of(0.6, 1.0)))
         .build();
-    Optional<Segment> actual = Grids.uPrincipalSegmentLocation(1.0, 1.0, 1, 1, mesh);
+    Optional<Segment> actual = Grids.pCellUFacePrincipalSegment(1.0, 1.0, 1, 1, mesh);
     assertThat(actual.get().midpoint().y()).isEqualTo(1.11666, Offset.offset(0.0001));
   }
 }

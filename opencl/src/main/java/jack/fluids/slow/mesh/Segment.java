@@ -13,6 +13,14 @@ public interface Segment {
   @Value.Parameter
   Point b();
 
+  default Point eastmost() {
+    return a().x() > b().x() ? a() : b();
+  }
+
+  default Point westmost() {
+    return a().x() < b().x() ? a() : b();
+  }
+
   static Segment of(Point a, Point b) {
     return ImmutableSegment.of(a, b);
   }
