@@ -14,10 +14,7 @@ public interface Mesh {
   // TODO(jack) speed this up
   // Is p inside the mesh, given that the origin point is outside?
   default boolean inside(Point p, Point origin) {
-    Segment ray = Segment.of(p, origin);
-    return segments().stream()
-        .mapToInt(s -> ray.intersection(s).isPresent() ? 1 : 0)
-        .sum() % 2 == 1;
+    return MeshContainment.contains(this, p, origin);
   }
 
   // return the point nearest s.a() which intersects the mesh, if there is one
@@ -28,5 +25,25 @@ public interface Mesh {
         .map(Optional::get)
         .sorted(Comparator.comparing(p -> p.distance(test.a())))
         .findFirst();
+  }
+
+  default double minimumDistance(Point point) {
+    return segments().stream()
+        .mapToDouble(s -> distance(s, point))
+        .min().orElse(Double.MAX_VALUE);
+  }
+
+  static double distance(Segment segment, Point point) {
+    double l2 = segment.length() * segment.length();
+    if (l2 == 0.0) {
+      return point.distance(segment.a());
+    }
+    Point s = segment.b().minus(segment.a());
+    Point x = point.minus(segment.a());
+    double dot = s.x() * x.x() + x.y() * x.y();
+    // the projection of point onto the line extending segment, parameterized, clamped to a (0, 1)
+    double t = Math.max(0, Math.min(1, dot / l2));
+    Point projection = segment.a().plus(s.times(t));
+    return point.distance(projection);
   }
 }

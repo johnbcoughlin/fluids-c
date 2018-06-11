@@ -39,7 +39,7 @@ public class Grids {
         .add(naturalSegment.b())
         .build();
 
-    Point origin = Point.of(0, 0);
+    Point origin = Point.of(-1000.0, -1000.0);
     boolean aInside = mesh.inside(naturalSegment.a(), origin);
     boolean bInside = mesh.inside(naturalSegment.b(), origin);
     if (!aInside && !bInside) {
@@ -52,7 +52,7 @@ public class Grids {
       }
     }
     List<Segment> openSegments = new ArrayList<>();
-    int k = aInside ? 1 : 0;
+    int k = aInside ? 0 : 1;
     while (k < controlPoints.size() - 1) {
       openSegments.add(Segment.of(controlPoints.get(k), controlPoints.get(k + 1)));
       k += 2;

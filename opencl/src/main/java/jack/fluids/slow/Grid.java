@@ -39,10 +39,6 @@ public class Grid {
    */
   INDArray uCellsFluid;
   INDArray uCellsValue;
-  INDArray uCellsX;
-  INDArray uCellsY;
-  INDArray uCellsVolume;
-  INDArray uCellsVerticalBoundaryDistance;
 
   INDArray uFacesArea;
   INDArray uFacesExistenceFlag;
@@ -63,15 +59,29 @@ public class Grid {
   INDArray vCellsVolume;
   INDArray vCellsVerticalBoundaryDistance;
 
-  public Grid(int nx, int ny, double dx, double dy, Mesh mesh) {
+  public Grid(int nx, int ny, double dx, double dy, INDArray uCellsValue,
+      INDArray vCellsValue, Mesh mesh) {
     this.nx = nx;
     this.ny = ny;
     this.dx = dx;
     this.dy = dy;
+    this.uCellsValue = uCellsValue;
+    this.vCellsValue = vCellsValue;
     this.mesh = mesh;
   }
 
+  public int nx() {
+    return nx;
+  }
+
+  public int ny() {
+    return ny;
+  }
+
   Optional<ControlPoint> uuControlPoint(int i, int j) {
+    if (i >= nx + 1 || j >= ny) {
+      return Optional.empty();
+    }
     Optional<Segment> principalSegment = Grids.pCellUFacePrincipalSegment(dx, dy, i, j, mesh);
     if (!principalSegment.isPresent()) {
       return Optional.empty();
@@ -86,16 +96,16 @@ public class Grid {
   /**
    * Compute a u control point for a neighborhood centered at the given coordinates.
    */
-  ControlPoint uuControlPoint(int i, int j, Direction direction, int distance, double borderU) {
-    int ui = i + (direction == EAST ? -distance : (direction == WEST ? distance : 0));
-    int uj = j + (direction == NORTH ? distance : (direction == SOUTH ? distance : 0));
+  ControlPoint uuControlPoint(int i, int j, Direction direction, int distance, double borderU,
+      Point P) {
+    int ui = i + (direction == EAST ? distance : (direction == WEST ? -distance : 0));
+    int uj = j + (direction == NORTH ? distance : (direction == SOUTH ? -distance : 0));
     Optional<ControlPoint> realControlPoint = uuControlPoint(ui, uj);
     if (realControlPoint.isPresent()) {
       return realControlPoint.get();
     }
     Optional<Point> meshIntersection = mesh.intersectionPoint(Segment.of(
-        Grids.uPointAtCoords(dx, dy, i, j),
-        Grids.uPointAtCoords(dx, dy, ui, uj)));
+        P, Grids.uPointAtCoords(dx, dy, ui, uj)));
     if (!meshIntersection.isPresent()) {
       throw new IllegalStateException("The mesh must not be closed, " +
           "there should be an intersection here");
@@ -154,26 +164,39 @@ public class Grid {
         nsDirection, ewDirection));
   }
 
-
   Optional<Neighborhood> uNeighborhood(int i, int j) {
     UCellCoords coords = UCellCoords.of(i, j);
     Optional<ControlPoint> maybeP = uuControlPoint(i, j);
     if (!maybeP.isPresent()) {
       return Optional.empty();
     }
+    Point naturalPLocation = Grids.uPointAtCoords(dx, dy, i, j);
     ControlPoint P = maybeP.get();
-    ControlPoint N = uuControlPoint(i, j, NORTH, 1, 0.0);
-    ControlPoint S = uuControlPoint(i, j, SOUTH, 1, 0.0);
-    ControlPoint E = uuControlPoint(i, j, EAST, 1, 0.0);
-    ControlPoint W = uuControlPoint(i, j, WEST, 1, 0.0);
-    ControlPoint NN = uuControlPoint(i, j, NORTH, 2, 0.0);
-    ControlPoint SS = uuControlPoint(i, j, SOUTH, 2, 0.0);
-    ControlPoint EE = uuControlPoint(i, j, EAST, 2, 0.0);
-    ControlPoint WW = uuControlPoint(i, j, WEST, 2, 0.0);
+    ControlPoint N = uuControlPoint(i, j, NORTH, 1, 0.0, P);
+    ControlPoint S = uuControlPoint(i, j, SOUTH, 1, 0.0, P);
+    ControlPoint E = uuControlPoint(i, j, EAST, 1, 0.0, P);
+    ControlPoint W = uuControlPoint(i, j, WEST, 1, 0.0, P);
+    ControlPoint NN = uuControlPoint(i, j, NORTH, 2, 0.0, P);
+    ControlPoint SS = uuControlPoint(i, j, SOUTH, 2, 0.0, P);
+    ControlPoint EE = uuControlPoint(i, j, EAST, 2, 0.0, P);
+    ControlPoint WW = uuControlPoint(i, j, WEST, 2, 0.0, P);
     Optional<StaggeredCellFace> fn = uCellFace(i, j, NORTH, N, P, NN, S);
     Optional<StaggeredCellFace> fs = uCellFace(i, j, SOUTH, P, S, N, SS);
     Optional<StaggeredCellFace> fe = uCellFace(i, j, EAST, E, P, EE, W);
     Optional<StaggeredCellFace> fw = uCellFace(i, j, WEST, P, W, E, WW);
+
+    Neighborhood.BoundaryDistances boundaryDistances = ImmutableBoundaryDistances.builder()
+        .hP(mesh.minimumDistance(P))
+        .hN(mesh.minimumDistance(N))
+        .hS(mesh.minimumDistance(S))
+        .hE(mesh.minimumDistance(E))
+        .hW(mesh.minimumDistance(W))
+        .hn(fn.map(f -> mesh.minimumDistance(f.point())).orElse(0.0))
+        .hs(fs.map(f -> mesh.minimumDistance(f.point())).orElse(0.0))
+        .he(fe.map(f -> mesh.minimumDistance(f.point())).orElse(0.0))
+        .hw(fw.map(f -> mesh.minimumDistance(f.point())).orElse(0.0))
+        .build();
+
     return Optional.of(ImmutableNeighborhood.builder()
         .P(P)
         .N(N)
@@ -192,7 +215,9 @@ public class Grid {
         .nw(fn.map(f -> uvControlPoint(coords, NORTH, WEST, f, 0.0)))
         .se(fs.map(f -> uvControlPoint(coords, SOUTH, EAST, f, 0.0)))
         .sw(fs.map(f -> uvControlPoint(coords, SOUTH, WEST, f, 0.0)))
-        .boundaryDistances(/* TODO(jack) get it */)
+        .boundaryDistances(boundaryDistances)
+        .volume(Grids.approximateVolume(dx, dy, naturalPLocation.x() - dx / 2,
+            naturalPLocation.y() - dy / 2, mesh))
         .build());
   }
 
@@ -219,7 +244,6 @@ public class Grid {
     }
     Segment segment = maybeSegment.get();
     return Optional.of(ImmutableStaggeredCellFace.builder()
-        .area(segment.length())
         .segment(segment)
         .positiveDirectionDistance(pos.distance(segment.midpoint()))
         .positivePositiveDirectionDistance(posPos.distance(segment.midpoint()))
