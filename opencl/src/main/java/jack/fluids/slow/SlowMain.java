@@ -3,6 +3,7 @@ package jack.fluids.slow;
 import jack.fluids.slow.mesh.ImmutableMesh;
 import jack.fluids.slow.mesh.Mesh;
 import jack.fluids.slow.mesh.Segment;
+import jack.fluids.slow.server.SlowServer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 
@@ -22,9 +23,11 @@ public class SlowMain {
     for (int i = 0; i < grid.nx(); i++) {
       for (int j = 0; j < grid.ny(); j++) {
         Optional<Neighborhood> maybeNeighborhood = grid.uNeighborhood(i, j);
-        System.out.println(maybeNeighborhood);
+//        System.out.println(maybeNeighborhood);
       }
     }
+
+    new SlowServer(grid).start();
   }
 
   private static Mesh mesh(int nx, int ny, double dx, double dy) {

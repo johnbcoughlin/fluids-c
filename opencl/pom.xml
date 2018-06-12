@@ -28,6 +28,11 @@
         </plugins>
     </build>
 
+    <properties>
+        <project.jetty.version>9.4.9.v20180320</project.jetty.version>
+        <project.guice.version>4.2.0</project.guice.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.jocl</groupId>
@@ -49,11 +54,33 @@
             <artifactId>guava</artifactId>
             <version>23.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${project.guice.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-servlet</artifactId>
+            <version>${project.guice.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-assistedinject</artifactId>
+            <version>${project.guice.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.immutables</groupId>
             <artifactId>value</artifactId>
             <version>2.5.6</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.5.6</version>
         </dependency>
 
         <dependency>
@@ -66,6 +93,22 @@
             <groupId>net.mikera</groupId>
             <artifactId>vectorz</artifactId>
             <version>0.65.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>${project.jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${project.jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>${project.jetty.version}</version>
         </dependency>
 
         <dependency>

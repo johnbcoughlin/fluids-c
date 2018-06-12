@@ -1,8 +1,10 @@
 package jack.fluids.slow;
 
+import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@Gson.TypeAdapters
 public interface ControlPoint extends Point {
   @Value.Parameter
   double phi();

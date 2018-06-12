@@ -1,16 +1,25 @@
 package jack.fluids.slow.mesh;
 
 import jack.fluids.slow.Point;
+import jack.fluids.slow.PointVal;
+import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
 import java.util.Optional;
 
 @Value.Immutable
+@Gson.TypeAdapters
 public interface Segment {
   @Value.Parameter
+  @Gson.ExpectedSubtypes({
+      PointVal.class
+  })
   Point a();
 
   @Value.Parameter
+  @Gson.ExpectedSubtypes({
+      PointVal.class
+  })
   Point b();
 
   default Point eastmost() {

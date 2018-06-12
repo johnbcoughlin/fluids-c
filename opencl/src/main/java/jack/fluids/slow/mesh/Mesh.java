@@ -1,6 +1,7 @@
 package jack.fluids.slow.mesh;
 
 import jack.fluids.slow.Point;
+import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
 import java.util.Comparator;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Value.Immutable
+@Gson.TypeAdapters
 public interface Mesh {
   List<Segment> segments();
 

@@ -1,5 +1,6 @@
 package jack.fluids.slow;
 
+import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
 import java.util.Optional;
@@ -7,12 +8,13 @@ import java.util.Optional;
 import static com.google.common.base.Preconditions.checkArgument;
 
 @Value.Immutable
+@Gson.TypeAdapters
 public interface Neighborhood {
   // Volume of the central control volume.
   double volume();
 
   // Value of the velocity component at the center of the neighborhood/system of equations.
-  ControlPoint P();
+  ControlPoint p();
 
   Optional<StaggeredCellFace> fn();
   Optional<StaggeredCellFace> fs();
@@ -20,18 +22,18 @@ public interface Neighborhood {
   Optional<StaggeredCellFace> fw();
 
   // Principal directions
-  ControlPoint N();
-  ControlPoint S();
-  ControlPoint E();
-  ControlPoint W();
+  ControlPoint n();
+  ControlPoint s();
+  ControlPoint e();
+  ControlPoint w();
 
   // Two cells away in each direction; used for QUICK
-  ControlPoint NN();
-  ControlPoint SS();
-  ControlPoint EE();
-  ControlPoint WW();
+  ControlPoint nn();
+  ControlPoint ss();
+  ControlPoint ee();
+  ControlPoint ww();
 
-  // Oblique neighbors. If P is a u-control point, then these are v-control points, and vice versa
+  // Oblique neighbors. If p is a u-control point, then these are v-control points, and vice versa
   Optional<ControlPoint> ne();
   Optional<ControlPoint> nw();
   Optional<ControlPoint> se();

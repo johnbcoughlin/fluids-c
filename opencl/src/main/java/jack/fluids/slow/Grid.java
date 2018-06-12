@@ -23,10 +23,10 @@ public class Grid {
   private final double dx;
   private final double dy;
 
-  private final Mesh mesh;
+  public final Mesh mesh;
 
   /*
-   * P-cell volumes and faces
+   * p-cell volumes and faces
    */
   INDArray pCellsFluid;
   INDArray pCellsX;
@@ -76,6 +76,14 @@ public class Grid {
 
   public int ny() {
     return ny;
+  }
+
+  public double dx() {
+    return dx;
+  }
+
+  public double dy() {
+    return dy;
   }
 
   Optional<ControlPoint> uuControlPoint(int i, int j) {
@@ -164,7 +172,7 @@ public class Grid {
         nsDirection, ewDirection));
   }
 
-  Optional<Neighborhood> uNeighborhood(int i, int j) {
+  public Optional<Neighborhood> uNeighborhood(int i, int j) {
     UCellCoords coords = UCellCoords.of(i, j);
     Optional<ControlPoint> maybeP = uuControlPoint(i, j);
     if (!maybeP.isPresent()) {
@@ -198,15 +206,15 @@ public class Grid {
         .build();
 
     return Optional.of(ImmutableNeighborhood.builder()
-        .P(P)
-        .N(N)
-        .S(S)
-        .E(E)
-        .W(W)
-        .NN(NN)
-        .SS(SS)
-        .EE(EE)
-        .WW(WW)
+        .p(P)
+        .n(N)
+        .s(S)
+        .e(E)
+        .w(W)
+        .nn(NN)
+        .ss(SS)
+        .ee(EE)
+        .ww(WW)
         .fn(fn)
         .fs(fs)
         .fe(fe)

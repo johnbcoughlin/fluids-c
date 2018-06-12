@@ -15,9 +15,9 @@ import static jack.fluids.slow.NeighborhoodGeometry.alpha;
 public class UCells {
   public static LinearEquation localEquation(double dt, Neighborhood nb, Neighborhood n,
       double del_p_del_y_n_1_1, Neighborhood n_1) {
-    Term vTerm = new Term(nb.P().variable(), nb.volume() / dt);
+    Term vTerm = new Term(nb.p().variable(), nb.volume() / dt);
     List<Term> diffusiveFluxTerms = diffusiveFluxTerms(nb);
-    double rhs = -nb.volume() / dt * n.P().phi();
+    double rhs = -nb.volume() / dt * n.p().phi();
     rhs += 3.0 / 2 * advectiveFluxU(n) - 1.0 / 2 * advectiveFluxU(n_1);
     rhs += nb.volume() * del_p_del_y_n_1_1;
     rhs += 1.0 / 2 * diffusiveFlux(n);
@@ -35,7 +35,7 @@ public class UCells {
     if (nb.fn().isPresent()) {
       StaggeredCellFace fn = nb.fn().get();
       double v_n = orthogonalAdvectingVelocity(fn, nb.nw().get(), nb.ne().get());
-      double u_n = orthogonalAdvectedVelocity(fn, nb.E(), nb.P(), nb.EE(), nb.W(), v_n);
+      double u_n = orthogonalAdvectedVelocity(fn, nb.e(), nb.p(), nb.ee(), nb.w(), v_n);
       double alpha_n = alpha(nb, fn, NORTH);
       fAdv_n = fn.area() * v_n * u_n * alpha_n;
     }
@@ -44,7 +44,7 @@ public class UCells {
     if (nb.fs().isPresent()) {
       StaggeredCellFace fs = nb.fs().get();
       double v_s = orthogonalAdvectingVelocity(fs, nb.sw().get(), nb.se().get());
-      double u_s = orthogonalAdvectedVelocity(fs, nb.P(), nb.S(), nb.N(), nb.SS(), v_s);
+      double u_s = orthogonalAdvectedVelocity(fs, nb.p(), nb.s(), nb.n(), nb.ss(), v_s);
       double alpha_s = alpha(nb, fs, SOUTH);
       fAdv_s = fs.area() * v_s * u_s * alpha_s;
     }
@@ -52,7 +52,7 @@ public class UCells {
     double fAdv_e = 0.0;
     if (nb.fe().isPresent()) {
       StaggeredCellFace fe = nb.fe().get();
-      double u_e = parallelAdvectedVelocity(fe, nb.E(), nb.P(), nb.EE(), nb.W());
+      double u_e = parallelAdvectedVelocity(fe, nb.e(), nb.p(), nb.ee(), nb.w());
       double alpha_e = alpha(nb, fe, EAST);
       fAdv_e = fe.area() * u_e * u_e * alpha_e * alpha_e;
     }
@@ -60,7 +60,7 @@ public class UCells {
     double fAdv_w = 0.0;
     if (nb.fw().isPresent()) {
       StaggeredCellFace fw = nb.fw().get();
-      double u_w = parallelAdvectedVelocity(fw, nb.P(), nb.W(), nb.E(), nb.WW());
+      double u_w = parallelAdvectedVelocity(fw, nb.p(), nb.w(), nb.e(), nb.ww());
       double alpha_w = alpha(nb, fw, WEST);
       fAdv_w = fw.area() * u_w * u_w * alpha_w * alpha_w;
     }
@@ -152,16 +152,16 @@ public class UCells {
   public static double diffusiveFlux(Neighborhood nb) {
     double total = 0.0;
     if (nb.fn().isPresent()) {
-      total += MU * nb.fn().get().area() * singleFaceGradient(nb.N(), nb.P());
+      total += MU * nb.fn().get().area() * singleFaceGradient(nb.n(), nb.p());
     }
     if (nb.fs().isPresent()) {
-      total += MU * nb.fs().get().area() * singleFaceGradient(nb.P(), nb.S());
+      total += MU * nb.fs().get().area() * singleFaceGradient(nb.p(), nb.s());
     }
     if (nb.fe().isPresent()) {
-      total += MU * nb.fe().get().area() * singleFaceGradient(nb.E(), nb.P());
+      total += MU * nb.fe().get().area() * singleFaceGradient(nb.e(), nb.p());
     }
     if (nb.fw().isPresent()) {
-      total += MU * nb.fw().get().area() * singleFaceGradient(nb.P(), nb.W());
+      total += MU * nb.fw().get().area() * singleFaceGradient(nb.p(), nb.w());
     }
     return total;
   }
@@ -172,11 +172,11 @@ public class UCells {
   }
 
   public static List<Term> diffusiveFluxTerms(Neighborhood nb) {
-    ControlPoint P = nb.P();
-    ControlPoint N = nb.N();
-    ControlPoint S = nb.S();
-    ControlPoint E = nb.E();
-    ControlPoint W = nb.W();
+    ControlPoint P = nb.p();
+    ControlPoint N = nb.n();
+    ControlPoint S = nb.s();
+    ControlPoint E = nb.e();
+    ControlPoint W = nb.w();
 
     Term nTerm = new Term(N.variable(), nb.fn().isPresent()
         ? nb.fn().get().area() / N.distance(P) / 2 : 0.0);
