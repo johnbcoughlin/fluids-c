@@ -6,11 +6,11 @@ mod functions;
 use functions::gamma::gamma;
 
 fn main() {
-    let n: i32 = 8;
-    let mesh: Mesh = generate_mesh_1d(0.0, 2.0, 10);
-
-    let z: Complex64 = Complex64::from(5 as f64);
-    println!("gamma(5) = {}", gamma(z));
+//    let n: i32 = 8;
+//    let mesh: Mesh = generate_mesh_1d(0.0, 2.0, 10);
+//
+//    let z: Complex64 = Complex64::from(5 as f64);
+//    println!("gamma(5) = {}", gamma(z));
 }
 
 fn generate_mesh_1d(x_min: f64, x_max: f64, k: i32) -> Mesh {

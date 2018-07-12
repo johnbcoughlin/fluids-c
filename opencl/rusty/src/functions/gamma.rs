@@ -35,6 +35,28 @@ pub fn gamma(z: Complex64) -> Complex64 {
     }
 }
 
+impl GammaFn for f32 {
+    type Output = f32;
+
+    fn gamma(&self) -> f32 {
+        gamma(Complex64::from(*self as f64)).re as f32
+    }
+}
+
+impl GammaFn for f64 {
+    type Output = f64;
+
+    fn gamma(&self) -> f64 {
+        gamma(Complex64::from(self)).re
+    }
+}
+
+pub trait GammaFn {
+    type Output;
+
+    fn gamma(&self) -> Self::Output;
+}
+
 #[cfg(test)]
 mod tests {
     use functions::gamma::gamma;

@@ -20,3 +20,6 @@ lapack-sys = "0.12.1"
 ## Sources
 blas-src = "0.2.1"
 accelerate-src = "0.3.1"
+
+# ArrayFire
+arrayfire = "3.5"
