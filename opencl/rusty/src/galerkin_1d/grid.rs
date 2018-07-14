@@ -1,56 +1,57 @@
+extern crate arrayfire;
+
 use std::fmt;
 use functions::jacobi_polynomials::grad_legendre_roots;
+use self::arrayfire::{Array, Dim4};
 
-pub enum Flux {
-    // The *flux* is constantly 0
-    Zero,
-
-    // A Dirichlet boundary condition which depends on time.
-    // The first parameter is alpha, the Lax-Friedrichs parameter.
-    BoundaryTimeDependent(f64, Box<Fn(f64) -> f64>),
-
-    // The flux parameter alpha
-    LaxFriedrichs(f64),
-}
-
-impl fmt::Debug for Flux {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Flux::Zero => write!(f, "Zero"),
-            Flux::BoundaryTimeDependent(alpha, _) => write!(f, "BoundaryTimeDependent({})", alpha),
-            Flux::LaxFriedrichs(alpha) => write!(f, "LaxFriedrichs({})", alpha),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Element<'flux> {
+pub struct Element {
     pub index: i32,
-    pub x_left: f64,
-    pub x_right: f64,
+    pub x_left: f32,
+    pub x_right: f32,
 
-    // A vector of values of the solution, u, at the interpolation points r_i.
-    // Refer to ReferenceElement for the interpolation points.
-    pub u_k: Vec<f64>,
+    pub x_k: Array,
 
-    pub left_flux: &'flux Flux,
-    pub right_flux: &'flux Flux,
+    pub left_face: Box<Face>,
+    pub right_face: Box<Face>,
+
+    pub left_outward_normal: f32,
+    pub right_outward_normal: f32,
 }
 
-impl<'flux> fmt::Display for Element<'flux> {
+impl fmt::Display for Element {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "D_{}: [{:.2}, {:.2}]", self.index, self.x_left, self.x_right)
     }
 }
 
-#[derive(Debug)]
+pub enum Face {
+    // An interior face with the index of the element on the other side.
+    Interior(i32),
+
+    // A Dirichlet boundary condition which is dependent on time.
+    BoundaryDirichlet(Box<Fn(f32) -> f32>),
+
+    // A Neumann boundary condition with specified flux across.
+    Neumann(f32),
+}
+
+impl fmt::Debug for Face {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Face::Neumann(_) => write!(f, "||-"),
+            Face::BoundaryDirichlet(_) => write!(f, "||="),
+            Face::Interior(i) => write!(f, "|"),
+        }
+    }
+}
+
 pub struct ReferenceElement {
     // The order of polynomial approximation N_p
-    n_p: i32,
+    pub n_p: i32,
 
     // The vector of interpolation points in the reference element [-1, 1].
     // The first value in this vector is -1, and the last is 1.
-    rs: Vec<f64>,
+    pub rs: Array,
 }
 
 impl ReferenceElement {
@@ -62,19 +63,19 @@ impl ReferenceElement {
         roots.host(&mut h);
         println!("{:?}", h);
         for &r in h.iter() {
-            rs.push(r as f64);
+            rs.push(r as f32);
         }
         rs.push(1.);
+        let rs = Array::new(rs.as_slice(), Dim4::new(&[rs.len() as u64, 1, 1, 1]));
         ReferenceElement { n_p, rs }
     }
 }
 
-#[derive(Debug)]
-pub struct Grid<'flux> {
-    pub elements: Vec<Element<'flux>>,
+pub struct Grid {
+    pub elements: Vec<Element>,
 }
 
-impl<'f> fmt::Display for Grid<'f> {
+impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let elts = &self.elements;
         write!(f, "[ ")?;
@@ -86,37 +87,49 @@ impl<'f> fmt::Display for Grid<'f> {
     }
 }
 
-pub fn generate_grid<'flux, Fx>(x_min: f64, x_max: f64, n_k: i32, n_p: i32,
-                                reference_element: &ReferenceElement, u_0: Fx,
-                                left_boundary_flux: &'flux Flux,
-                                right_boundary_flux: &'flux Flux,
-                                internal_flux: &'flux Flux, ) -> Grid<'flux>
-    where Fx: Fn(f64) -> f64 {
-
+pub fn generate_grid(x_min: f32, x_max: f32, n_k: i32, n_p: i32,
+                     reference_element: &ReferenceElement,
+                     left_boundary_face: Face, right_boundary_face: Face) -> Grid {
     assert!(x_max > x_min);
-    let diff = (x_max - x_min) / (n_k as f64);
-    let elements = (0..n_k).map(|k| {
-        let left = x_min + diff * (k as f64);
+    let diff = (x_max - x_min) / (n_k as f32);
+    let transform = |left| {
+        let s = (&reference_element.rs + 1. as f32) / 2. as f32;
+        let x = s * diff + left;
+        x
+    };
+    let mut elements = vec![];
+    elements.push(Element {
+        index: 0,
+        x_left: x_min,
+        x_right: x_min + diff,
+        x_k: transform(x_min),
+        left_face: Box::new(left_boundary_face),
+        right_face: Box::new(Face::Interior(1)),
+        left_outward_normal: -1.,
+        right_outward_normal: 1.,
+    });
+    elements.extend((1..n_k - 1).map(|k| {
+        let left = x_min + diff * (k as f32);
         Element {
             index: k,
             x_left: left,
             x_right: left + diff,
-            u_k: reference_element.rs.iter().map(|r| {
-                let s = (r + 1.) / 2.;
-                let x = left + diff * s;
-                u_0(x)
-            }).collect(),
-            left_flux: if k == 0 {
-                left_boundary_flux
-            } else {
-                internal_flux
-            },
-            right_flux: if k < n_k - 1 {
-                internal_flux
-            } else {
-                right_boundary_flux
-            },
+            x_k: transform(left),
+            left_face: Box::new(Face::Interior(k - 1)),
+            right_face: Box::new(Face::Interior(k + 1)),
+            left_outward_normal: -1.,
+            right_outward_normal: 1.,
         }
-    }).collect();
+    }));
+    elements.push(Element {
+        index: n_k - 1,
+        x_left: x_max - diff,
+        x_right: x_max,
+        x_k: transform(x_max - diff),
+        left_face: Box::new(Face::Interior(n_k - 1)),
+        right_face: Box::new(right_boundary_face),
+        left_outward_normal: -1.,
+        right_outward_normal: 1.,
+    });
     Grid { elements }
 }
