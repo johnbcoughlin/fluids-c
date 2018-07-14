@@ -1,6 +1,6 @@
 extern crate num;
 
-use num::complex::Complex64;
+use self::num::complex::Complex64;
 use std::f64::consts;
 
 const P: [f64; 8] = [
@@ -60,7 +60,7 @@ pub trait GammaFn {
 #[cfg(test)]
 mod tests {
     use functions::gamma::gamma;
-    use num::complex::Complex64;
+    use super::num::complex::Complex64;
     use std::f64::consts;
 
     #[test]
