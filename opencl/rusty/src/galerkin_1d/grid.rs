@@ -40,7 +40,7 @@ impl fmt::Debug for Face {
         match *self {
             Face::Neumann(_) => write!(f, "||-"),
             Face::BoundaryDirichlet(_) => write!(f, "||="),
-            Face::Interior(_) => write!(f, "|"),
+            Face::Interior(i) => write!(f, "Interior({})", i),
         }
     }
 }

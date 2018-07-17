@@ -14,7 +14,7 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
                     operators: &Operators)
     where Fx: Fn(&Array) -> Array {
     let nt = 10;
-    let dt: f32 = 0.05;
+    let dt: f32 = 5.9827e-04;
     let mut t: f32 = 0.0;
 
     let storage: Vec<ElementStorage> = initialize_storage(u_0, reference_element.n_p,
@@ -23,33 +23,35 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
                                     Dim4::new(&[reference_element.n_p as u64 + 1, 1, 1, 1]),
                                     DType::F32);
     for tstep in 0..1 {
-        for int_rk in 0..5 {
+        for int_rk in 0..2 {
             let t = t + RKC[int_rk] * dt;
             // communicate current values of u across faces
             println!("t = {}", t);
             communicate(t as f32, grid, reference_element.n_p, &storage);
+            println!("{:?}", &storage);
             // update each element's local solution
             for elt in (*grid).elements.iter() {
                 let storage = &storage[elt.index as usize];
                 let rhs_u = advec_rhs_1d(&elt, &storage, &operators);
+//                println!("rhsu:");
+//                print(&rhs_u);
                 residual_u = &residual_u * RKA[int_rk] + rhs_u * dt;
-                print(&residual_u);
+//                print(&residual_u);
                 let new_u = {
                     let u_ref = storage.u_k.borrow();
                     u_ref.deref() + &residual_u * RKB[int_rk]
                 };
                 new_u.eval();
+//                print(&new_u);
                 storage.u_k.replace(new_u);
             }
         }
         for elt in (*grid).elements.iter() {
             let storage = &storage[elt.index as usize];
-            print(&storage.u_k.borrow().deref());
+//            print(&storage.u_k.borrow().deref());
         }
         t = t + dt;
     }
-
-    println!("{:?}", RKC);
 }
 
 fn advec_rhs_1d(elt: &Element, elt_storage: &ElementStorage, operators: &Operators) -> Array {
@@ -80,18 +82,20 @@ fn advec_rhs_1d(elt: &Element, elt_storage: &ElementStorage, operators: &Operato
                 u_h,
                 elt.right_outward_normal,
             );
-            (operators.a * u_h - numerical_flux) * elt.right_outward_normal
+            let a = operators.a;
+            if elt.index == 4 {
+                println!("nf: {}", numerical_flux);
+                println!("uh: {}", a * u_h);
+                println!("diff: {}", numerical_flux - a * u_h);
+            }
+            (((a * u_h) - numerical_flux) * elt.right_outward_normal)
         }
     } as f32;
     let du: Array = Array::new(&[du_left, du_right], Dim4::new(&[2, 1, 1, 1]));
-//    print(&du);
-
+    println!("du:");
+    print(&(&du * 1.0e5 as f32));
     let dr_u = matmul(&operators.d_r, elt_storage.u_k.borrow().deref(),
                       MatProp::NONE, MatProp::NONE);
-//    println!("dr_u:");
-//    print(&dr_u);
-//    println!("r_x:");
-//    print(&elt_storage.r_x);
     let a_rx = &elt_storage.r_x * (-operators.a);
 //    println!("a_rx:");
 //    print(&a_rx);
@@ -100,12 +104,9 @@ fn advec_rhs_1d(elt: &Element, elt_storage: &ElementStorage, operators: &Operato
 //    print(&rhs_u);
     let lifted_flux = matmul(&operators.lift, &(&elt_storage.r_x_at_faces * du),
                              MatProp::NONE, MatProp::NONE);
-
 //    println!("lifted_flux:");
-//    print(&lifted_flux);
+//    print(&(&lifted_flux * 1.0e7 as f32));
     let result = rhs_u + lifted_flux;
-//    println!("result:");
-//    print(&result);
     result.eval();
     result
 }
@@ -151,7 +152,6 @@ fn communicate(t: f32, grid: &Grid, n_p: i32, storages: &Vec<ElementStorage>) {
     for (i, elt) in grid.elements.iter().enumerate() {
         let storage = storages.get(i).expect("index mismatch");
         let mut u_k = array_to_vector(size, storage.u_k.borrow().deref());
-//        println!("u_k: {:?}", &u_k);
         let (minus, plus) = match *elt.left_face {
             Face::Neumann(_) => (None, None),
             Face::BoundaryDirichlet(ref u_0) => {
@@ -164,7 +164,9 @@ fn communicate(t: f32, grid: &Grid, n_p: i32, storages: &Vec<ElementStorage>) {
             }
             Face::Interior(j) => {
                 let u_k_minus_1 = array_to_vector(size, storages[j as usize].u_k.borrow().deref());
-//                println!("j: {}, u_k-1: {:?}", j, &u_k_minus_1);
+                if i == 5 {
+                    println!("{:?}", u_k_minus_1);
+                }
                 (
                     // minus is outside, plus is inside
                     Some(*u_k_minus_1.last().expect("vector u_k must not be empty")),
@@ -172,6 +174,9 @@ fn communicate(t: f32, grid: &Grid, n_p: i32, storages: &Vec<ElementStorage>) {
                 )
             }
         };
+        if i == 5 {
+            println!("({:?}, {:?})", minus, plus);
+        }
         storage.u_left_minus.set(minus);
         storage.u_left_plus.set(plus);
 
@@ -188,6 +193,9 @@ fn communicate(t: f32, grid: &Grid, n_p: i32, storages: &Vec<ElementStorage>) {
             Face::Interior(j) => {
                 let u_k_plus_1 = array_to_vector(size, storages[j as usize].u_k.borrow().deref());
 //                println!("j: {}, u_k+1: {:?}", j, &u_k_plus_1);
+                if i == 4 {
+                    println!("{:?}", u_k);
+                }
                 (
                     // minus is outside, plus is inside
                     Some(*u_k_plus_1.first().expect("vector u_k must not be empty")),
@@ -221,8 +229,8 @@ impl fmt::Debug for ElementStorage {
         write!(f, "{{\n")?;
         write!(f, "\tu_left_minus: {:?},\n", self.u_left_minus)?;
         write!(f, "\tu_left_plus: {:?},\n", self.u_left_plus)?;
-        write!(f, "\tu_right_minus: {:?},\n", self.u_left_minus)?;
-        write!(f, "\tu_right_plus: {:?},\n", self.u_left_minus)?;
+        write!(f, "\tu_right_minus: {:?},\n", self.u_right_minus)?;
+        write!(f, "\tu_right_plus: {:?},\n", self.u_right_minus)?;
         write!(f, "}}")
     }
 }
@@ -241,7 +249,7 @@ mod tests {
         let reference_element = ReferenceElement::legendre(n_p);
         let u_0 = |xs: &Array| sin(xs);
         let a = consts::PI * 2.;
-        let left_boundary_face = Face::BoundaryDirichlet(Box::new(|t: f32| t.sin()));
+        let left_boundary_face = Face::BoundaryDirichlet(Box::new(move |t: f32| -(a * t).sin()));
         let right_boundary_face = Face::Neumann(0.0);
         let grid: Grid = generate_grid(0.0, 2.0, 10, 8, &reference_element,
                                        left_boundary_face, right_boundary_face);
