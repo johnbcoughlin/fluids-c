@@ -23,7 +23,7 @@ pub fn gamma(z: Complex64) -> Complex64 {
         let y = consts::PI / ((z * consts::PI).sin() * gamma(-z + 1.0));
         return y;
     } else {
-        let mut z = z - 1.0;
+        let z = z - 1.0;
         let mut x = Complex64::new(0.99999999999980993, 0.0);
         for i in 0..P.len() {
             let z_inv = (z + ((i + 1) as f64)).inv();

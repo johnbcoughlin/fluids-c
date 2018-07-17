@@ -22,7 +22,7 @@ pub fn jacobi(xs: &Array, alpha: i32, beta: i32, n: i32) -> Array {
     // See NUDG p. 446
     let gamma_0 = 2.0.powi(alpha + beta + 1) / (alphaf + betaf + 1.) *
         (alphaf + 1.).gamma() * (betaf + 1.).gamma() / (alphaf + betaf + 1.).gamma();
-    let mut p_0 = arrayfire::constant_t(Scalar::F32(1.0 / gamma_0.sqrt() as f32),
+    let p_0 = arrayfire::constant_t(Scalar::F32(1.0 / gamma_0.sqrt() as f32),
                                     Dim4::new(&[dim[0], 1, 1, 1]), DType::F32);
     if n == 0 {
         return p_0;
@@ -80,7 +80,7 @@ pub fn grad_legendre_roots(n: i32) -> Array {
         (num / denom).sqrt()
     }).collect();
     let mut z = vec![];
-    let mut w = vec![0.0; n as usize];
+    let w = vec![0.0; n as usize];
     let mut work = vec![0.0; 4 * n as usize];
     let lwork = 4 * n;
     let mut info = 0;

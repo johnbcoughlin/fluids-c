@@ -40,7 +40,7 @@ impl fmt::Debug for Face {
         match *self {
             Face::Neumann(_) => write!(f, "||-"),
             Face::BoundaryDirichlet(_) => write!(f, "||="),
-            Face::Interior(i) => write!(f, "|"),
+            Face::Interior(_) => write!(f, "|"),
         }
     }
 }
@@ -126,7 +126,7 @@ pub fn generate_grid(x_min: f32, x_max: f32, n_k: i32, n_p: i32,
         x_left: x_max - diff,
         x_right: x_max,
         x_k: transform(x_max - diff),
-        left_face: Box::new(Face::Interior(n_k - 1)),
+        left_face: Box::new(Face::Interior(n_k - 2)),
         right_face: Box::new(right_boundary_face),
         left_outward_normal: -1.,
         right_outward_normal: 1.,
