@@ -1,21 +1,22 @@
 extern crate arrayfire;
+extern crate rulinalg;
 
 use std::fmt;
 use functions::jacobi_polynomials::grad_legendre_roots;
-use self::arrayfire::{Array, Dim4};
+use self::rulinalg::vector::Vector;
 
 pub struct Element {
     pub index: i32,
-    pub x_left: f32,
-    pub x_right: f32,
+    pub x_left: f64,
+    pub x_right: f64,
 
-    pub x_k: Array,
+    pub x_k: Vector<f64>,
 
     pub left_face: Box<Face>,
     pub right_face: Box<Face>,
 
-    pub left_outward_normal: f32,
-    pub right_outward_normal: f32,
+    pub left_outward_normal: f64,
+    pub right_outward_normal: f64,
 }
 
 impl fmt::Display for Element {
@@ -29,10 +30,10 @@ pub enum Face {
     Interior(i32),
 
     // A Dirichlet boundary condition which is dependent on time.
-    BoundaryDirichlet(Box<Fn(f32) -> f32>),
+    BoundaryDirichlet(Box<Fn(f64) -> f64>),
 
     // A Neumann boundary condition with specified flux across.
-    Neumann(f32),
+    Neumann(f64),
 }
 
 impl fmt::Debug for Face {
@@ -51,27 +52,25 @@ pub struct ReferenceElement {
 
     // The vector of interpolation points in the reference element [-1, 1].
     // The first value in this vector is -1, and the last is 1.
-    pub rs: Array,
+    pub rs: Vector<f64>,
 }
 
 impl ReferenceElement {
     pub fn legendre(n_p: i32) -> ReferenceElement {
         let mut rs = vec![-1.];
-        let mut h: Vec<f32> = vec![0.; n_p as usize - 1];
         let roots = grad_legendre_roots(n_p);
-        roots.eval();
-        roots.host(&mut h);
-        println!("{:?}", h);
-        for &r in h.iter() {
-            rs.push(r as f32);
+        for r in roots.into_iter() {
+            rs.push(r);
         }
         rs.push(1.);
-        let rs = Array::new(rs.as_slice(), Dim4::new(&[rs.len() as u64, 1, 1, 1]));
+        let rs = Vector::new(rs);
         ReferenceElement { n_p, rs }
     }
 }
 
 pub struct Grid {
+    pub x_min: f64,
+    pub x_max: f64,
     pub elements: Vec<Element>,
 }
 
@@ -87,13 +86,13 @@ impl fmt::Display for Grid {
     }
 }
 
-pub fn generate_grid(x_min: f32, x_max: f32, n_k: i32, n_p: i32,
+pub fn generate_grid(x_min: f64, x_max: f64, n_k: i32, n_p: i32,
                      reference_element: &ReferenceElement,
                      left_boundary_face: Face, right_boundary_face: Face) -> Grid {
     assert!(x_max > x_min);
-    let diff = (x_max - x_min) / (n_k as f32);
+    let diff = (x_max - x_min) / (n_k as f64);
     let transform = |left| {
-        let s = (&reference_element.rs + 1. as f32) / 2. as f32;
+        let s = (&reference_element.rs + 1.) / 2.;
         let x = s * diff + left;
         x
     };
@@ -109,7 +108,7 @@ pub fn generate_grid(x_min: f32, x_max: f32, n_k: i32, n_p: i32,
         right_outward_normal: 1.,
     });
     elements.extend((1..n_k - 1).map(|k| {
-        let left = x_min + diff * (k as f32);
+        let left = x_min + diff * (k as f64);
         Element {
             index: k,
             x_left: left,
@@ -131,5 +130,5 @@ pub fn generate_grid(x_min: f32, x_max: f32, n_k: i32, n_p: i32,
         left_outward_normal: -1.,
         right_outward_normal: 1.,
     });
-    Grid { elements }
+    Grid { x_min, x_max, elements }
 }

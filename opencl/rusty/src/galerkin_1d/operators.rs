@@ -1,43 +1,42 @@
 extern crate arrayfire;
+extern crate rulinalg;
 
-use self::arrayfire::{Array, Dim4, DType, Seq, Scalar,
-                      inverse, matmul, constant_t, assign_seq, print, MatProp};
-use galerkin_1d::grid::{Element, ReferenceElement, Grid, Face};
+use rulinalg::matrix::{Matrix, BaseMatrix};
+use galerkin_1d::grid::{ReferenceElement, Grid};
 use functions::vandermonde::{vandermonde, grad_vandermonde};
 
 pub struct Operators {
     // The linear flux operator
-    pub a: f32,
+    pub a: f64,
 
     // The Lax-Friedrichs flux parameter
-    pub alpha: f32,
+    pub alpha: f64,
 
     // The Vandermonde matrix
-    pub v: Array,
+    pub v: Matrix<f64>,
 
     // The D_r derivative matrix
-    pub d_r: Array,
+    pub d_r: Matrix<f64>,
 
     // The matrix lifting [a, b] to [a, ..., 0, ..., b] with length n_p, followed by the inverse
     // mass matrix.
-    pub lift: Array,
+    pub lift: Matrix<f64>,
 }
 
-pub fn assemble_operators(a: f32, grid: &Grid, reference_element: &ReferenceElement) -> Operators {
+pub fn assemble_operators(a: f64, grid: &Grid, reference_element: &ReferenceElement) -> Operators {
     let n_p = reference_element.n_p;
     let rs = &reference_element.rs;
 
     let v = vandermonde(&rs, n_p);
+    let v_inv = v.clone().inverse().expect("Non-invertible Vandermonde matrix");
     let v_r = grad_vandermonde(&rs, n_p);
-    let d_r = matmul(&v_r, &inverse(&v, MatProp::NONE), MatProp::NONE, MatProp::NONE);
+    let d_r = &v_r * &v_inv;
 
-    let mut vals: Vec<f32> = vec![0.0 as f32; (n_p as usize + 1) * 2];
+    let mut vals: Vec<f64> = vec![0.0; (n_p as usize + 1) * 2];
     vals[0] = 1.0;
     vals[2 * n_p as usize + 1] = 1.0;
-    let e_mat = Array::new(vals.as_slice(), Dim4::new(&[n_p as u64 + 1, 2, 1, 1]));
-
-    let lift = matmul(&v, &matmul(&v, &e_mat, MatProp::TRANS, MatProp::NONE),
-                      MatProp::NONE, MatProp::NONE);
+    let e_mat = Matrix::new(n_p as usize + 1, 2, vals);
+    let lift = &v * &(v.transpose() * e_mat);
 
     Operators {
         a,
