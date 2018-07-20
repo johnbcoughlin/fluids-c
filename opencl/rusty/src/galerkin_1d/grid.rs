@@ -1,4 +1,3 @@
-extern crate arrayfire;
 extern crate rulinalg;
 
 use std::fmt;

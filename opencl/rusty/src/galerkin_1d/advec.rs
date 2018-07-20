@@ -1,22 +1,22 @@
-extern crate arrayfire;
 extern crate rulinalg;
 
-use galerkin_1d::grid::{Element, ReferenceElement, Grid, Face};
+use galerkin_1d::grid::{Element, ReferenceElement, Grid, Face, generate_grid};
 use std::cell::{Cell, RefCell};
 use self::rulinalg::vector::Vector;
 use galerkin_1d::operators::Operators;
+use galerkin_1d::operators::assemble_operators;
 use std::fmt;
 use functions::range_kutta::{RKA, RKB, RKC};
 use std::ops::Deref;
 use std::iter::repeat;
 use std::f64::consts;
 
-
+#[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
                     operators: &Operators)
     where Fx: Fn(&Vector<f64>) -> Vector<f64> {
 
-    let final_time = 2.0;
+    let final_time = 100.3;
 
     let cfl = 0.75;
     let x_scale = 0.01;
@@ -220,30 +220,34 @@ impl fmt::Debug for ElementStorage {
     }
 }
 
+fn u_0(xs: &Vector<f64>) -> Vector<f64> {
+    xs.iter().map(|x: &f64| x.sin()).collect()
+}
+
+pub fn advec_1d_example() {
+    let n_p = 8;
+    let reference_element = ReferenceElement::legendre(n_p);
+    let a = consts::PI * 2.;
+    let left_boundary_face = Face::BoundaryDirichlet(Box::new(move |t: f64| -(a * t).sin()));
+    let right_boundary_face = Face::Neumann(0.0);
+    let grid: Grid = generate_grid(0.0, 2.0, 10, 8, &reference_element,
+                                   left_boundary_face, right_boundary_face);
+
+    let operators = assemble_operators(a, &grid, &reference_element);
+
+    advec_1d(&u_0, &grid, &reference_element, &operators);
+}
+
 #[cfg(test)]
 mod tests {
     use super::rulinalg::vector::Vector;
     use galerkin_1d::grid::{ReferenceElement, Grid, Face, generate_grid};
-    use galerkin_1d::advec::advec_1d;
+    use galerkin_1d::advec::{advec_1d_example};
     use galerkin_1d::operators::assemble_operators;
     use std::f64::consts;
 
-    fn u_0(xs: &Vector<f64>) -> Vector<f64> {
-        xs.iter().map(|x: &f64| x.sin()).collect()
-    }
-
     #[test]
     fn test() {
-        let n_p = 8;
-        let reference_element = ReferenceElement::legendre(n_p);
-        let a = consts::PI * 2.;
-        let left_boundary_face = Face::BoundaryDirichlet(Box::new(move |t: f64| -(a * t).sin()));
-        let right_boundary_face = Face::Neumann(0.0);
-        let grid: Grid = generate_grid(0.0, 2.0, 10, 8, &reference_element,
-                                       left_boundary_face, right_boundary_face);
-
-        let operators = assemble_operators(a, &grid, &reference_element);
-
-        advec_1d(&u_0, &grid, &reference_element, &operators);
+        advec_1d_example();
     }
 }

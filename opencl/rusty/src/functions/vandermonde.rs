@@ -31,8 +31,6 @@ pub fn grad_vandermonde(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
 
 #[cfg(test)]
 mod tests {
-    extern crate arrayfire;
-
     use functions::jacobi_polynomials::grad_legendre_roots;
     use functions::vandermonde::{vandermonde, grad_vandermonde};
 

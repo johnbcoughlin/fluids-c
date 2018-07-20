@@ -1,4 +1,3 @@
-extern crate arrayfire;
 extern crate num;
 extern crate lapack;
 extern crate accelerate_src;
