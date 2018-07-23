@@ -3,6 +3,7 @@ extern crate rulinalg;
 use rulinalg::matrix::{Matrix, BaseMatrix};
 use galerkin_1d::grid::{ReferenceElement, Grid};
 use functions::vandermonde::{vandermonde, grad_vandermonde};
+use galerkin_1d::unknowns::Unknown;
 
 pub struct Operators {
     // The linear flux operator
@@ -22,7 +23,8 @@ pub struct Operators {
     pub lift: Matrix<f64>,
 }
 
-pub fn assemble_operators(a: f64, grid: &Grid, reference_element: &ReferenceElement) -> Operators {
+pub fn assemble_operators<U>(a: f64, grid: &Grid<U>, reference_element: &ReferenceElement) -> Operators
+    where U: Unknown {
     let n_p = reference_element.n_p;
     let rs = &reference_element.rs;
 

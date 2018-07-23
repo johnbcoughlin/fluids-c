@@ -1,3 +1,4 @@
 pub mod advec;
-pub mod grid;
-pub mod operators;
+mod grid;
+mod operators;
+mod unknowns;

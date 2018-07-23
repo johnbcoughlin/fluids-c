@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Jack Coughlin <johnbcoughlin@gmail.com>"]
 
 [dependencies]
+clippy = {version = "*", optional = true}
+
 num = "0.1"
 rulinalg = "0.4.2"
 

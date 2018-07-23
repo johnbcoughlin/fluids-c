@@ -3,39 +3,40 @@ extern crate rulinalg;
 use std::fmt;
 use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
+use galerkin_1d::unknowns::{Unknown};
 
-pub struct Element {
+pub struct Element<U: Unknown> {
     pub index: i32,
     pub x_left: f64,
     pub x_right: f64,
 
     pub x_k: Vector<f64>,
 
-    pub left_face: Box<Face>,
-    pub right_face: Box<Face>,
+    pub left_face: Box<Face<U>>,
+    pub right_face: Box<Face<U>>,
 
     pub left_outward_normal: f64,
     pub right_outward_normal: f64,
 }
 
-impl fmt::Display for Element {
+impl<U: Unknown> fmt::Display for Element<U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "D_{}: [{:.2}, {:.2}]", self.index, self.x_left, self.x_right)
     }
 }
 
-pub enum Face {
+pub enum Face<U: Unknown> {
     // An interior face with the index of the element on the other side.
     Interior(i32),
 
     // A Dirichlet boundary condition which is dependent on time.
-    BoundaryDirichlet(Box<Fn(f64) -> f64>),
+    BoundaryDirichlet(Box<Fn(f64) -> U::Unit>),
 
     // A Neumann boundary condition with specified flux across.
     Neumann(f64),
 }
 
-impl fmt::Debug for Face {
+impl<U: Unknown> fmt::Debug for Face<U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Face::Neumann(_) => write!(f, "||-"),
@@ -67,13 +68,13 @@ impl ReferenceElement {
     }
 }
 
-pub struct Grid {
+pub struct Grid<U: Unknown> {
     pub x_min: f64,
     pub x_max: f64,
-    pub elements: Vec<Element>,
+    pub elements: Vec<Element<U>>,
 }
 
-impl fmt::Display for Grid {
+impl<U: Unknown> fmt::Display for Grid<U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let elts = &self.elements;
         write!(f, "[ ")?;
@@ -85,9 +86,10 @@ impl fmt::Display for Grid {
     }
 }
 
-pub fn generate_grid(x_min: f64, x_max: f64, n_k: i32, n_p: i32,
-                     reference_element: &ReferenceElement,
-                     left_boundary_face: Face, right_boundary_face: Face) -> Grid {
+pub fn generate_grid<U>(x_min: f64, x_max: f64, n_k: i32, n_p: i32,
+                              reference_element: &ReferenceElement,
+                              left_boundary_face: Face<U>, right_boundary_face: Face<U>) -> Grid<U>
+    where U: Unknown {
     assert!(x_max > x_min);
     let diff = (x_max - x_min) / (n_k as f64);
     let transform = |left| {
