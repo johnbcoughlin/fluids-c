@@ -23,7 +23,7 @@ pub struct Operators {
     pub lift: Matrix<f64>,
 }
 
-pub fn assemble_operators<U>(a: f64, grid: &Grid<U>, reference_element: &ReferenceElement) -> Operators
+pub fn assemble_operators<U>(a: f64, reference_element: &ReferenceElement) -> Operators
     where U: Unknown {
     let n_p = reference_element.n_p;
     let rs = &reference_element.rs;

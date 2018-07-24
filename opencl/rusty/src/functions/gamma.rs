@@ -14,8 +14,6 @@ const P: [f64; 8] = [
     1.5056327351493116e-7
 ];
 
-const EPSILON: f64 = 1e-10;
-
 // Using the Lanczos approximation to the Gamma Function
 // https://en.wikipedia.org/wiki/Lanczos_approximation
 pub fn gamma(z: Complex64) -> Complex64 {

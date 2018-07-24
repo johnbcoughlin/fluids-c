@@ -3,7 +3,7 @@ extern crate rulinalg;
 use std::fmt;
 use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
-use galerkin_1d::unknowns::{Unknown};
+use galerkin_1d::unknowns::Unknown;
 
 pub struct Element<U: Unknown> {
     pub index: i32,
@@ -86,9 +86,9 @@ impl<U: Unknown> fmt::Display for Grid<U> {
     }
 }
 
-pub fn generate_grid<U>(x_min: f64, x_max: f64, n_k: i32, n_p: i32,
-                              reference_element: &ReferenceElement,
-                              left_boundary_face: Face<U>, right_boundary_face: Face<U>) -> Grid<U>
+pub fn generate_grid<U>(x_min: f64, x_max: f64, n_k: i32,
+                        reference_element: &ReferenceElement,
+                        left_boundary_face: Face<U>, right_boundary_face: Face<U>) -> Grid<U>
     where U: Unknown {
     assert!(x_max > x_min);
     let diff = (x_max - x_min) / (n_k as f64);
