@@ -12,34 +12,8 @@ pub trait Unknown {
     fn first(&self) -> Self::Unit;
 
     fn last(&self) -> Self::Unit;
-}
 
-pub struct ElementStorage<U: Unknown> {
-
-    // The derivative of r with respect to x, i.e. the metric of the x -> r mapping.
-    pub r_x: Vector<f64>,
-    pub r_x_at_faces: Vector<f64>,
-
-    pub u_k: U,
-    // the interior value on the left face
-    pub u_left_minus: Cell<Option<U::Unit>>,
-    // the exterior value on the left face
-    pub u_left_plus: Cell<Option<U::Unit>>,
-    // the interior value on the right face
-    pub u_right_minus: Cell<Option<U::Unit>>,
-    // the exterior value on the right face
-    pub u_right_plus: Cell<Option<U::Unit>>,
-}
-
-impl<U: Unknown> fmt::Debug for ElementStorage<U> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{{\n")?;
-        write!(f, "\tu_left_minus: {:?},\n", self.u_left_minus)?;
-        write!(f, "\tu_left_plus: {:?},\n", self.u_left_plus)?;
-        write!(f, "\tu_right_minus: {:?},\n", self.u_right_minus)?;
-        write!(f, "\tu_right_plus: {:?},\n", self.u_right_minus)?;
-        write!(f, "}}")
-    }
+    fn zero() -> Self::Unit;
 }
 
 pub fn initialize_storage<U, F, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U, F>, operators: &Operators)
@@ -55,10 +29,10 @@ pub fn initialize_storage<U, F, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U, F>, 
             r_x,
             r_x_at_faces,
             u_k: u_0(&elt.x_k),
-            u_left_minus: Cell::new(None),
-            u_right_minus: Cell::new(None),
-            u_left_plus: Cell::new(None),
-            u_right_plus: Cell::new(None),
+            u_left_minus: Cell::new(U::zero()),
+            u_right_minus: Cell::new(U::zero()),
+            u_left_plus: Cell::new(U::zero()),
+            u_right_plus: Cell::new(U::zero()),
         }
     }).collect()
 }
@@ -70,49 +44,35 @@ F: grid::SpatialFlux {
     for (i, elt) in grid.elements.iter().enumerate() {
         let mut storage = storages.get(i).expect("index mismatch");
         let mut u_k: &U = &storage.u_k;
-        let (minus, plus) = match *elt.left_face {
-            grid::Face::Neumann(_) => (None, None),
-            grid::Face::BoundaryDirichlet(ref u_0) => {
-                let u_0 = u_0(t);
-                (
-                    // minus is outside, plus is inside
-                    Some(u_0),
-                    Some(u_k.first())
-                )
-            }
+        let first = u_k.first();
+        let (u_left_minus, u_left_plus) = match *elt.left_face {
             grid::Face::Interior(j) => {
                 let u_k_minus_1: &U = &storages[j as usize].u_k;
-                (
-                    // minus is outside, plus is inside
-                    Some(u_k_minus_1.last()),
-                    Some(u_k.first())
-                )
+                // minus is outside, plus is inside
+                (u_k_minus_1.last(), first)
+            },
+            grid::Face::Boundary(ref b) => {
+                let bc = b(t, first);
+                (bc, first)
             }
         };
-        storage.u_left_minus.set(minus);
-        storage.u_left_plus.set(plus);
+        storage.u_left_minus.set(u_left_minus);
+        storage.u_left_plus.set(u_left_plus);
 
-        let (minus, plus) = match *elt.right_face {
-            grid::Face::Neumann(_) => (None, None),
-            grid::Face::BoundaryDirichlet(ref u_0) => {
-                let u_0 = u_0(t);
-                (
-                    // minus is outside, plus is inside
-                    Some(u_0),
-                    Some(u_k.first())
-                )
-            }
+        let last = u_k.last();
+        let (u_right_minus, u_right_plus) = match *elt.right_face {
             grid::Face::Interior(j) => {
                 let u_k_plus_1: &U = &storages[j as usize].u_k;
-                (
-                    // minus is outside, plus is inside
-                    Some(u_k_plus_1.first()),
-                    Some(u_k.last())
-                )
+                // minus is outside, plus is inside
+                (u_k_plus_1.first(), last)
+            },
+            grid::Face::Boundary(ref b) => {
+                let bc = b(t, first);
+                (bc, last)
             }
         };
-        storage.u_right_minus.set(minus);
-        storage.u_right_plus.set(plus);
+        storage.u_right_minus.set(u_right_minus);
+        storage.u_right_plus.set(u_right_plus);
     }
 }
 

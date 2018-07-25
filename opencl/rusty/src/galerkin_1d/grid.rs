@@ -5,7 +5,9 @@ use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
 use galerkin_1d::unknowns::Unknown;
 
-pub trait SpatialFlux: Sized {}
+pub trait SpatialFlux {
+    type Unit: Sized;
+}
 
 pub struct Element<U: Unknown, F: SpatialFlux> {
     pub index: i32,
@@ -24,9 +26,42 @@ pub struct Element<U: Unknown, F: SpatialFlux> {
     pub spatial_flux: F,
 }
 
+pub struct ElementStorage<U: Unknown, F: SpatialFlux> {
+    // The derivative of r with respect to x, i.e. the metric of the x -> r mapping.
+    pub r_x: Vector<f64>,
+    pub r_x_at_faces: Vector<f64>,
+
+    pub u_k: U,
+
+    // the interior value on the left face
+    pub u_left_minus: Cell<U::Unit>,
+    // the exterior value on the left face
+    pub u_left_plus: Cell<U::Unit>,
+    // the interior value on the right face
+    pub u_right_minus: Cell<U::Unit>,
+    // the exterior value on the right face
+    pub u_right_plus: Cell<U::Unit>,
+
+    pub f_left_minus: Cell<F::Unit>,
+    pub f_left_plus: Cell<F::Unit>,
+    pub f_right_minus: Cell<F::Unit>,
+    pub f_right_plus: Cell<F::Unit>,
+}
+
 impl<U: Unknown, F: SpatialFlux> fmt::Display for Element<U, F> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "D_{}: [{:.2}, {:.2}]", self.index, self.x_left, self.x_right)
+    }
+}
+
+impl<U: Unknown, F: SpatialFlux> fmt::Debug for ElementStorage<U, F> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{\n")?;
+        write!(f, "\tu_left_minus: {:?},\n", self.u_left_minus)?;
+        write!(f, "\tu_left_plus: {:?},\n", self.u_left_plus)?;
+        write!(f, "\tu_right_minus: {:?},\n", self.u_right_minus)?;
+        write!(f, "\tu_right_plus: {:?},\n", self.u_right_minus)?;
+        write!(f, "}}")
     }
 }
 
@@ -34,18 +69,24 @@ pub enum Face<U: Unknown> {
     // An interior face with the index of the element on the other side.
     Interior(i32),
 
-    // A Dirichlet boundary condition which is dependent on time.
-    BoundaryDirichlet(Box<Fn(f64) -> U::Unit>),
+    // A complex boundary condition which may depend on both the other side of the boundary
+    // and the time parameter
+    Boundary(Box<Fn(f64, U::Unit) -> U::Unit>),
+}
 
-    // A Neumann boundary condition with specified flux across.
-    Neumann(f64),
+pub fn freeFlowBoundary<U: Unknown>() -> Face<U> {
+    Face::Boundary(Box::new(move |_, other_side| other_side))
+}
+
+pub fn fixedBoundary<U: Unknown>(value: U::Unit) -> Face<U>
+    where U::Unit: 'static {
+    Face::Boundary(Box::new(move |_, _| value))
 }
 
 impl<U: Unknown> fmt::Debug for Face<U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Face::Neumann(_) => write!(f, "||-"),
-            Face::BoundaryDirichlet(_) => write!(f, "||="),
+            Face::Boundary(_) => write!(f, "||="),
             Face::Interior(i) => write!(f, "Interior({})", i),
         }
     }
