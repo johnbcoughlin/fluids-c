@@ -7,6 +7,12 @@ use galerkin_1d::unknowns::Unknown;
 
 pub trait SpatialFlux {
     type Unit: Sized;
+
+    fn first(&self) -> Self::Unit;
+
+    fn last(&self) -> Self::Unit;
+
+    fn zero() -> Self::Unit;
 }
 
 pub struct Element<U: Unknown, F: SpatialFlux> {
@@ -16,8 +22,8 @@ pub struct Element<U: Unknown, F: SpatialFlux> {
 
     pub x_k: Vector<f64>,
 
-    pub left_face: Box<Face<U>>,
-    pub right_face: Box<Face<U>>,
+    pub left_face: Box<Face<U, F>>,
+    pub right_face: Box<Face<U, F>>,
 
     pub left_outward_normal: f64,
     pub right_outward_normal: f64,
@@ -65,25 +71,25 @@ impl<U: Unknown, F: SpatialFlux> fmt::Debug for ElementStorage<U, F> {
     }
 }
 
-pub enum Face<U: Unknown> {
+pub enum Face<U: Unknown, F: SpatialFlux> {
     // An interior face with the index of the element on the other side.
     Interior(i32),
 
     // A complex boundary condition which may depend on both the other side of the boundary
     // and the time parameter
-    Boundary(Box<Fn(f64, U::Unit) -> U::Unit>),
+    Boundary(Box<Fn(f64, U::Unit) -> U::Unit>, F::Unit),
 }
 
-pub fn freeFlowBoundary<U: Unknown>() -> Face<U> {
-    Face::Boundary(Box::new(move |_, other_side| other_side))
+pub fn freeFlowBoundary<U: Unknown, F: SpatialFlux>(f: F::Unit) -> Face<U, F> {
+    Face::Boundary(Box::new(move |_, other_side| other_side), f)
 }
 
-pub fn fixedBoundary<U: Unknown>(value: U::Unit) -> Face<U>
+pub fn fixedBoundary<U: Unknown, F: SpatialFlux>(value: U::Unit, f: F::Unit) -> Face<U, F>
     where U::Unit: 'static {
-    Face::Boundary(Box::new(move |_, _| value))
+    Face::Boundary(Box::new(move |_, _| value), f)
 }
 
-impl<U: Unknown> fmt::Debug for Face<U> {
+impl<U: Unknown, F: SpatialFlux> fmt::Debug for Face<U, F> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Face::Boundary(_) => write!(f, "||="),
@@ -134,7 +140,7 @@ impl<U: Unknown, F: SpatialFlux> fmt::Display for Grid<U, F> {
 
 pub fn generate_grid<U, F, Fx>(x_min: f64, x_max: f64, n_k: i32,
                                reference_element: &ReferenceElement,
-                               left_boundary_face: Face<U>, right_boundary_face: Face<U>,
+                               left_boundary_face: Face<U, F>, right_boundary_face: Face<U, F>,
                                f: Fx, ) -> Grid<U, F>
     where U: Unknown,
           F: SpatialFlux,

@@ -35,11 +35,17 @@ impl Unknown for EH {
 }
 
 struct Permittivity {
-    epsilon: Vector<f64>,
-    mu: Vector<f64>,
+    epsilon: f64,
+    mu: f64,
 }
 
-impl grid::SpatialFlux for Permittivity {}
+impl grid::SpatialFlux for Permittivity {
+    type Unit = Self;
+
+    fn zero() -> Self::Unit {
+        Permittivity { epsilon: 0.0, mu: 0.0 }
+    }
+}
 
 type Grid = grid::Grid<EH, Permittivity>;
 
@@ -48,9 +54,10 @@ type Element = grid::Element<EH, Permittivity>;
 type EHStorage = ElementStorage<EH>;
 
 fn permittivity(xs: &Vector<f64>) -> Permittivity {
-    Permittivity {
-        epsilon: xs.iter().map(|x: &f64| if *x > 0.0 { 2.0 } else { 1.0 }).collect(),
-        mu: xs.iter().map(|x: &f64| 1.0).collect(),
+    if xs[0] >= 0.0 {
+        Permittivity { epsilon: 2.0, mu: 1.0 }
+    } else {
+        Permittivity { epsilon: 1.0, mu: 1.0 }
     }
 }
 
