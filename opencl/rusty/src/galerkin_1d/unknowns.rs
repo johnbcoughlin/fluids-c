@@ -42,9 +42,10 @@ impl<U: Unknown> fmt::Debug for ElementStorage<U> {
     }
 }
 
-pub fn initialize_storage<U, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U>, operators: &Operators)
+pub fn initialize_storage<U, F, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U, F>, operators: &Operators)
                              -> Vec<ElementStorage<U>>
     where U: Unknown,
+          F: grid::SpatialFlux,
           Fx: Fn(&Vector<f64>) -> U {
     grid.elements.iter().map(|elt| {
         let d_r_x_k = &operators.d_r * &elt.x_k;
@@ -63,8 +64,9 @@ pub fn initialize_storage<U, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U>, operat
 }
 
 // Pass flux information across faces into each element's local storage.
-pub fn communicate<U>(t: f64, grid: &grid::Grid<U>, storages: &Vec<ElementStorage<U>>)
-    where U: Unknown {
+pub fn communicate<U, F>(t: f64, grid: &grid::Grid<U, F>, storages: &Vec<ElementStorage<U>>)
+    where U: Unknown,
+F: grid::SpatialFlux {
     for (i, elt) in grid.elements.iter().enumerate() {
         let mut storage = storages.get(i).expect("index mismatch");
         let mut u_k: &U = &storage.u_k;

@@ -15,7 +15,7 @@ use galerkin_1d::unknowns::{Unknown, ElementStorage, initialize_storage, communi
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
-                    operators: &Operators)
+                    operators: &Operators, a: f64)
     where Fx: Fn(&Vector<f64>) -> U {
     let final_time = 1.3;
 
@@ -47,7 +47,7 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
                 let residuals_u = {
                     let residuals_u = &(residuals[elt.index as usize]);
 
-                    let rhs_u = advec_rhs_1d(&elt, &storage, &operators);
+                    let rhs_u = advec_rhs_1d(&elt, &storage, &operators, a);
                     residuals_u * RKA[int_rk] + rhs_u * dt
                 };
 
@@ -69,7 +69,8 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
     }
 }
 
-fn advec_rhs_1d(elt: &Element, elt_storage: &UStorage, operators: &Operators) -> Vector<f64> {
+fn advec_rhs_1d(elt: &Element, elt_storage: &UStorage,
+                operators: &Operators, a: f64) -> Vector<f64> {
     let du_left = match *elt.left_face {
         grid::Face::Neumann(f) => f,
         _ => {
@@ -139,9 +140,14 @@ impl Unknown for U {
 
 type UStorage = ElementStorage<U>;
 
-type Grid = grid::Grid<U>;
+type Grid = grid::Grid<U, ()>;
 
-type Element = grid::Element<U>;
+type Element = grid::Element<U, ()>;
+
+type LinearFlux = f64;
+
+impl grid::SpatialFlux for () {
+}
 
 fn u_0(xs: &Vector<f64>) -> U {
     U { u: xs.iter().map(|x: &f64| x.sin()).collect() }
@@ -154,11 +160,11 @@ pub fn advec_1d_example() {
     let left_boundary_face = grid::Face::BoundaryDirichlet(Box::new(move |t: f64| -(a * t).sin()));
     let right_boundary_face = grid::Face::Neumann(0.0);
     let grid: Grid = generate_grid(0.0, 2.0, 10, &reference_element,
-                                   left_boundary_face, right_boundary_face);
+                                   left_boundary_face, right_boundary_face, move |_| ());
 
     let operators = assemble_operators::<U>(a, &reference_element);
 
-    advec_1d(&u_0, &grid, &reference_element, &operators);
+    advec_1d(&u_0, &grid, &reference_element, &operators, a);
 }
 
 #[cfg(test)]
