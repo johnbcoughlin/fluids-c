@@ -4,9 +4,10 @@ use std::fmt;
 use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
 use galerkin_1d::unknowns::Unknown;
+use std::cell::Cell;
 
 pub trait SpatialFlux {
-    type Unit: Sized;
+    type Unit: Sized + Copy;
 
     fn first(&self) -> Self::Unit;
 
@@ -92,7 +93,7 @@ pub fn fixedBoundary<U: Unknown, F: SpatialFlux>(value: U::Unit, f: F::Unit) -> 
 impl<U: Unknown, F: SpatialFlux> fmt::Debug for Face<U, F> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Face::Boundary(_) => write!(f, "||="),
+            Face::Boundary(_, _) => write!(f, "||="),
             Face::Interior(i) => write!(f, "Interior({})", i),
         }
     }

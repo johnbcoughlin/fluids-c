@@ -11,11 +11,11 @@ use functions::range_kutta::{RKA, RKB, RKC};
 use std::ops::Deref;
 use std::iter::repeat;
 use std::f64::consts;
-use galerkin_1d::unknowns::{Unknown, ElementStorage, initialize_storage, communicate};
+use galerkin_1d::unknowns::{Unknown, initialize_storage, communicate};
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
-                    operators: &Operators, a: f64)
+                    operators: &Operators, a: f64) -> Vec<UStorage>
     where Fx: Fn(&Vector<f64>) -> U {
     let final_time = 1.3;
 
@@ -67,26 +67,28 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
         let storage = &storage[elt.index as usize];
         println!("{:?}", &storage.u_k);
     }
+
+    storage
 }
 
 fn advec_rhs_1d(elt: &Element, elt_storage: &UStorage,
                 operators: &Operators, a: f64) -> Vector<f64> {
     let du_left = {
-        let u_h = elt_storage.u_left_plus.get();
+        let u_h = elt_storage.u_left_minus.get();
         let numerical_flux = lax_friedrichs(
             a,
-            elt_storage.u_left_minus.get(),
             u_h,
+            elt_storage.u_left_plus.get(),
             elt.left_outward_normal,
         );
         (((a * u_h) - numerical_flux) * elt.left_outward_normal)
     };
     let du_right = {
-        let u_h = elt_storage.u_right_plus.get();
+        let u_h = elt_storage.u_right_minus.get();
         let numerical_flux = lax_friedrichs(
             a,
-            elt_storage.u_right_minus.get(),
             u_h,
+            elt_storage.u_right_plus.get(),
             elt.right_outward_normal,
         );
         (((a * u_h) - numerical_flux) * elt.right_outward_normal)
@@ -105,7 +107,7 @@ fn lax_friedrichs(a: f64, u_minus: f64, u_plus: f64, outward_normal: f64) -> f64
     let f_a = u_minus * a;
     let f_b = u_plus * a;
     let avg = (f_a + f_b) / 2.;
-    let jump = (u_minus * (-outward_normal)) + (u_plus * outward_normal);
+    let jump = (u_minus * (outward_normal)) + (u_plus * -outward_normal);
     avg + a * jump / 2.
 }
 
@@ -130,7 +132,7 @@ impl Unknown for U {
     }
 }
 
-type UStorage = ElementStorage<U>;
+type UStorage = grid::ElementStorage<U, ()>;
 
 type Grid = grid::Grid<U, ()>;
 
@@ -138,37 +140,71 @@ type Element = grid::Element<U, ()>;
 
 type LinearFlux = f64;
 
-impl grid::SpatialFlux for () {}
+impl grid::SpatialFlux for () {
+    type Unit = ();
+
+    fn first(&self) -> Self::Unit {
+        ()
+    }
+
+    fn last(&self) -> Self::Unit {
+        ()
+    }
+
+    fn zero() -> Self::Unit {
+        ()
+    }
+}
 
 fn u_0(xs: &Vector<f64>) -> U {
     U { u: xs.iter().map(|x: &f64| x.sin()).collect() }
 }
 
-pub fn advec_1d_example() {
+pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
     let n_p = 8;
     let reference_element = ReferenceElement::legendre(n_p);
     let a = consts::PI * 2.;
     let left_boundary_face = grid::Face::Boundary(
-        Box::new(move |t: f64, _| -(a * t).sin()));
-    let right_boundary_face = grid::freeFlowBoundary();
+        Box::new(move |t: f64, _| -(a * t).sin()), ());
+    let right_boundary_face = grid::freeFlowBoundary(());
     let grid: Grid = generate_grid(0.0, 2.0, 10, &reference_element,
                                    left_boundary_face, right_boundary_face, move |_| ());
 
     let operators = assemble_operators::<U>(&reference_element);
 
-    advec_1d(&u_0, &grid, &reference_element, &operators, a);
+    let storages = advec_1d(&u_0, &grid, &reference_element, &operators, a);
+
+    let mut xs: Vec<f64> = vec![];
+    for elt in grid.elements.iter() {
+        xs.extend(elt.x_k.iter());
+    }
+    let mut us: Vec<f64> = vec![];
+    for storage in storages.iter() {
+        us.extend(storage.u_k.u.iter());
+    }
+
+    (xs, us)
 }
 
 #[cfg(test)]
 mod tests {
+    extern crate gnuplot;
+
     use super::rulinalg::vector::Vector;
     use galerkin_1d::grid::{ReferenceElement, Grid, Face, generate_grid};
     use galerkin_1d::advec::advec_1d_example;
     use galerkin_1d::operators::assemble_operators;
     use std::f64::consts;
 
+    use self::gnuplot::{Figure, Caption, Color};
+
     #[test]
     fn test() {
-        advec_1d_example();
+        let (xs, us) = advec_1d_example();
+
+        let mut fig = Figure::new();
+        fig.axes2d()
+            .lines(xs.as_slice(), us.as_slice(), &[Caption("A line"), Color("black")]);
+        fig.show();
     }
 }

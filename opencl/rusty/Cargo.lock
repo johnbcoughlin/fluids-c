@@ -172,6 +172,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "gnuplot"
+version = "0.0.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "idna"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -428,6 +433,7 @@ dependencies = [
  "blas-src 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "blas-sys 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "clippy 0.0.212 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gnuplot 0.0.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "lapack 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lapack-sys 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -597,6 +603,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 "checksum fuchsia-zircon-sys 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 "checksum getopts 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)" = "0a7292d30132fb5424b354f5dc02512a86e4c516fe544bb7a25e7f266951b797"
+"checksum gnuplot 0.0.26 (registry+https://github.com/rust-lang/crates.io-index)" = "94ced719051688349bcae457d79b0bb7a4f154ff53b5afef67be4c300651d913"
 "checksum idna 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "38f09e0f0b1fb55fdee1f17470ad800da77af5186a1a76c026b679358b7e844e"
 "checksum if_chain 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "4bac95d9aa0624e7b78187d6fb8ab012b41d9f6f54b1bcb61e61c4845f8357ec"
 "checksum itertools 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)" = "f58856976b776fedd95533137617a02fb25719f40e7d9b01c7043cd65474f450"

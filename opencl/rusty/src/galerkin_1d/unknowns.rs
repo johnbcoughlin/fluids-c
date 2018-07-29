@@ -28,24 +28,30 @@ pub fn initialize_storage<U, F, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U, F>, 
         let r_x = Vector::ones(d_r_x_k.size()).elediv(&d_r_x_k);
         let r_x_at_faces = vector![r_x[0], r_x[n_p as usize]];
 
-        // minus is exterior, plus is interior
+        // minus is interior, plus is exterior
         let (f_left_minus, f_left_plus) = match *elt.left_face {
             grid::Face::Interior(j) => (
-                grid.elements[j].spatial_flux.last(),
                 elt.spatial_flux.first(),
+                grid.elements[j as usize].spatial_flux.last(),
             ),
-            grid::Face::Boundary(_, f) => (f, elt.spatial_flux.first())
+            grid::Face::Boundary(_, f) => (
+                elt.spatial_flux.first(),
+                f,
+            )
         };
 
         let (f_right_minus, f_right_plus) = match *elt.right_face {
             grid::Face::Interior(j) => (
-                grid.elements[j].spatial_flux.first(),
                 elt.spatial_flux.last(),
+                grid.elements[j as usize].spatial_flux.first(),
             ),
-            grid::Face::Boundary(_, f) => (f, elt.spatial_flux.last()),
+            grid::Face::Boundary(_, f) => (
+                elt.spatial_flux.last(),
+                f,
+            ),
         };
 
-        ElementStorage {
+        result.push(ElementStorage {
             r_x,
             r_x_at_faces,
             u_k: u_0(&elt.x_k),
@@ -57,9 +63,9 @@ pub fn initialize_storage<U, F, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U, F>, 
             f_left_plus: Cell::new(f_left_plus),
             f_right_minus: Cell::new(f_right_minus),
             f_right_plus: Cell::new(f_right_plus),
-        }
+        });
     }
-    grid.elements.iter().map(|elt| {}).collect()
+    result
 }
 
 // Pass flux information across faces into each element's local storage.
@@ -73,12 +79,18 @@ pub fn communicate<U, F>(t: f64, grid: &grid::Grid<U, F>, storages: &Vec<Element
         let (u_left_minus, u_left_plus) = match *elt.left_face {
             grid::Face::Interior(j) => {
                 let u_k_minus_1: &U = &storages[j as usize].u_k;
-                // minus is outside, plus is inside
-                (u_k_minus_1.last(), first)
+                // minus is interior, plus is exterior
+                (
+                    first,
+                    u_k_minus_1.last(),
+                )
             }
-            grid::Face::Boundary(ref b) => {
+            grid::Face::Boundary(ref b, _) => {
                 let bc = b(t, first);
-                (bc, first)
+                (
+                    first,
+                    bc,
+                )
             }
         };
         storage.u_left_minus.set(u_left_minus);
@@ -88,12 +100,18 @@ pub fn communicate<U, F>(t: f64, grid: &grid::Grid<U, F>, storages: &Vec<Element
         let (u_right_minus, u_right_plus) = match *elt.right_face {
             grid::Face::Interior(j) => {
                 let u_k_plus_1: &U = &storages[j as usize].u_k;
-                // minus is outside, plus is inside
-                (u_k_plus_1.first(), last)
+                // minus is interior, plus is exterior
+                (
+                    last,
+                    u_k_plus_1.first(),
+                )
             }
-            grid::Face::Boundary(ref b) => {
+            grid::Face::Boundary(ref b, _) => {
                 let bc = b(t, first);
-                (bc, last)
+                (
+                    last,
+                    bc,
+                )
             }
         };
         storage.u_right_minus.set(u_right_minus);

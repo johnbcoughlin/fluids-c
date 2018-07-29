@@ -23,5 +23,7 @@ lapack-sys = "0.12.1"
 blas-src = "0.2.1"
 accelerate-src = "0.3.1"
 
+gnuplot = "0.0.26"
+
 [profile.release]
 debug = true
