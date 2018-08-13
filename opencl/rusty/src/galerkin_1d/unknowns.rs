@@ -7,13 +7,13 @@ use self::rulinalg::vector::Vector;
 use galerkin_1d::grid::ElementStorage;
 use galerkin_1d::grid;
 use galerkin_1d::operators::Operators;
-use core::ops::{Add, Neg, Mul};
+use self::core::ops::{Add, Neg, Mul, Div};
 
 pub trait Unknown {
-    type Unit: Neg<Output=Unit> +
-    Add<Output=Unit> +
-    Mul<RHS=f64, Output=Unit> +
-    Div<RHS=f64, Output=Unit> +
+    type Unit: Neg<Output=Self::Unit> +
+    Add<Output=Self::Unit> +
+    Mul<f64, Output=Self::Unit> +
+    Div<f64, Output=Self::Unit> +
     Copy + fmt::Debug;
 
     fn first(&self) -> Self::Unit;
@@ -36,22 +36,22 @@ pub fn initialize_storage<U, F, Fx>(u_0: Fx, n_p: i32, grid: &grid::Grid<U, F>, 
 
         // minus is interior, plus is exterior
         let (f_left_minus, f_left_plus) = match *elt.left_face {
-            grid::Face::Interior(j) => (
+            grid::FaceType::Interior(j) => (
                 elt.spatial_flux.first(),
                 grid.elements[j as usize].spatial_flux.last(),
             ),
-            grid::Face::Boundary(_, f) => (
+            grid::FaceType::Boundary(_, f) => (
                 elt.spatial_flux.first(),
                 f,
             )
         };
 
         let (f_right_minus, f_right_plus) = match *elt.right_face {
-            grid::Face::Interior(j) => (
+            grid::FaceType::Interior(j) => (
                 elt.spatial_flux.last(),
                 grid.elements[j as usize].spatial_flux.first(),
             ),
-            grid::Face::Boundary(_, f) => (
+            grid::FaceType::Boundary(_, f) => (
                 elt.spatial_flux.last(),
                 f,
             ),

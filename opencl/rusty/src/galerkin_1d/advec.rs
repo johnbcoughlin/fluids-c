@@ -16,6 +16,7 @@ use plotter::Plotter;
 use galerkin_1d::flux::LaxFriedrichs;
 use galerkin_1d::grid::FaceType;
 use galerkin_1d::flux::FreeflowFlux;
+use galerkin_1d::flux::FluxScheme;
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
@@ -146,11 +147,11 @@ impl Unknown for U {
     }
 }
 
-type UStorage = grid::ElementStorage<U, ()>;
+type UStorage = grid::ElementStorage<U, LinearFlux>;
 
-type Grid = grid::Grid<U, LinearFlux, LaxFriedrichs>;
+type Grid = grid::Grid<U, LinearFlux>;
 
-type Element = grid::Element<U, LinearFlux, LaxFriedrichs>;
+type Element = grid::Element<U, LinearFlux>;
 
 type LinearFlux = f64;
 
@@ -158,11 +159,11 @@ impl grid::SpatialFlux for LinearFlux {
     type Unit = f64;
 
     fn first(&self) -> Self::Unit {
-        self
+        *self
     }
 
     fn last(&self) -> Self::Unit {
-        self
+        *self
     }
 
     fn zero() -> Self::Unit {
@@ -180,13 +181,12 @@ pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
     let a = consts::PI * 2.;
     let left_boundary_face = grid::Face {
         face_type: FaceType::Boundary(Box::new(move |t: f64, _| -(a * t).sin()), a),
-        flux: LaxFriedrichs { alpha: 1. }
+        flux: FluxScheme::Left(Box::new(LaxFriedrichs { alpha: 1. })),
     };
     let right_boundary_face = grid::Face {
         face_type: grid::freeFlowBoundary(a),
-        flux: FreeflowFlux {},
+        flux: FluxScheme::Right(Box::new(FreeflowFlux {})),
     };
-    let right_boundary_face = grid::freeFlowBoundary(());
     let grid: Grid = generate_grid(0.0, 2.0, 10, &reference_element,
                                    left_boundary_face,
                                    right_boundary_face,

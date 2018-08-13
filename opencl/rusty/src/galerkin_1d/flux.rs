@@ -6,8 +6,14 @@ pub struct Side<U: Unknown, F: SpatialFlux> {
     f: F::Unit,
 }
 
-pub trait NumericalFlux<U: Unknown, F: SpatialFlux>: Copy {
+pub trait NumericalFlux<U: Unknown, F: SpatialFlux> {
     fn flux(&self, minus: Side<U, F>, plus: Side<U, F>, outward_normal: f64) -> U::Unit;
+}
+
+pub enum FluxScheme<U, F> where U: Unknown, F: SpatialFlux {
+    Left(Box<NumericalFlux<U, F>>),
+    Right(Box<NumericalFlux<U, F>>),
+    Interior(Box<NumericalFlux<U, F>>),
 }
 
 #[derive(Clone, Copy)]
@@ -31,7 +37,7 @@ impl<U, F> NumericalFlux<U, F> for LaxFriedrichs where
 #[derive(Clone, Copy)]
 pub struct FreeflowFlux {}
 
-impl<U, F> NumericalFlux<U, F> where U: Unknown, F: SpatialFlux {
+impl<U, F> NumericalFlux<U, F> for FreeflowFlux where U: Unknown, F: SpatialFlux {
     fn flux(&self, minus: Side<U, F>, plus: Side<U, F>, outward_normal: f64) -> U::Unit {
         U::zero()
     }

@@ -1,4 +1,5 @@
 extern crate rulinalg;
+extern crate core;
 
 use functions::range_kutta::{RKA, RKB, RKC};
 use galerkin_1d::unknowns::{Unknown, communicate, initialize_storage};
@@ -9,6 +10,7 @@ use std::iter::repeat;
 use std::f64::consts;
 use std::cell::Cell;
 use plotter::Plotter;
+use self::core::ops::{Add, Neg, Mul, Div};
 
 #[derive(Debug)]
 struct EH {
@@ -33,10 +35,32 @@ impl Add for EHUnit {
     }
 }
 
+impl Mul<f64> for EHUnit {
+    type Output = EHUnit;
+
+    fn mul(self, other: f64) -> EHUnit {
+        EHUnit {
+            E: self.E * other,
+            H: self.H * other,
+        }
+    }
+}
+
+impl Div<f64> for EHUnit {
+    type Output = EHUnit;
+
+    fn div(self, other: f64) -> EHUnit {
+        EHUnit {
+            E: self.E / other,
+            H: self.H / other,
+        }
+    }
+}
+
 impl Neg for EHUnit {
     type Output = EHUnit;
 
-    fn neg(self, other: EHUnit) -> EHUnit {
+    fn neg(self) -> EHUnit {
         EHUnit {
             E: -self.E,
             H: -self.H,
