@@ -12,11 +12,17 @@ use std::ops::Deref;
 use std::iter::repeat;
 use std::f64::consts;
 use galerkin_1d::unknowns::{Unknown, initialize_storage, communicate};
+use plotter::Plotter;
+use galerkin_1d::flux::LaxFriedrichs;
+use galerkin_1d::grid::FaceType;
+use galerkin_1d::flux::FreeflowFlux;
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
                     operators: &Operators, a: f64) -> Vec<UStorage>
     where Fx: Fn(&Vector<f64>) -> U {
+    let mut plotter = Plotter::create(0.0, 2.0, -1.0, 1.0);
+
     let final_time = 1.3;
 
     let cfl = 0.75;
@@ -33,7 +39,7 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
         .take(grid.elements.len())
         .collect();
 
-    for _ in 0..n_t {
+    for epoch in 0..n_t {
         for int_rk in 0..5 {
             let t = t + RKC[int_rk] * dt;
 
@@ -60,6 +66,14 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
 
                 storage.u_k = U { u: new_u };
             }
+        }
+        if epoch % 20 == 0 {
+            plotter.header();
+            for elt in (*grid).elements.iter() {
+                let storage = &storage[elt.index as usize];
+                plotter.plot(&elt.x_k, &storage.u_k.u);
+            }
+            plotter.replot();
         }
         t = t + dt;
     }
@@ -134,25 +148,25 @@ impl Unknown for U {
 
 type UStorage = grid::ElementStorage<U, ()>;
 
-type Grid = grid::Grid<U, ()>;
+type Grid = grid::Grid<U, LinearFlux, LaxFriedrichs>;
 
-type Element = grid::Element<U, ()>;
+type Element = grid::Element<U, LinearFlux, LaxFriedrichs>;
 
 type LinearFlux = f64;
 
-impl grid::SpatialFlux for () {
-    type Unit = ();
+impl grid::SpatialFlux for LinearFlux {
+    type Unit = f64;
 
     fn first(&self) -> Self::Unit {
-        ()
+        self
     }
 
     fn last(&self) -> Self::Unit {
-        ()
+        self
     }
 
     fn zero() -> Self::Unit {
-        ()
+        0.
     }
 }
 
@@ -164,11 +178,21 @@ pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
     let n_p = 8;
     let reference_element = ReferenceElement::legendre(n_p);
     let a = consts::PI * 2.;
-    let left_boundary_face = grid::Face::Boundary(
-        Box::new(move |t: f64, _| -(a * t).sin()), ());
+    let left_boundary_face = grid::Face {
+        face_type: FaceType::Boundary(Box::new(move |t: f64, _| -(a * t).sin()), a),
+        flux: LaxFriedrichs { alpha: 1. }
+    };
+    let right_boundary_face = grid::Face {
+        face_type: grid::freeFlowBoundary(a),
+        flux: FreeflowFlux {},
+    };
     let right_boundary_face = grid::freeFlowBoundary(());
     let grid: Grid = generate_grid(0.0, 2.0, 10, &reference_element,
-                                   left_boundary_face, right_boundary_face, move |_| ());
+                                   left_boundary_face,
+                                   right_boundary_face,
+                                   LaxFriedrichs { alpha: 1. },
+                                   move |_| a);
+
 
     let operators = assemble_operators::<U>(&reference_element);
 

@@ -2,4 +2,5 @@ pub mod advec;
 mod grid;
 mod operators;
 mod unknowns;
-mod maxwell;
+pub mod maxwell;
+mod flux;

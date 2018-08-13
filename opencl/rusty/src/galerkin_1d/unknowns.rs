@@ -1,4 +1,5 @@
 extern crate rulinalg;
+extern crate core;
 
 use std::fmt;
 use std::cell::{Cell, RefCell};
@@ -6,9 +7,14 @@ use self::rulinalg::vector::Vector;
 use galerkin_1d::grid::ElementStorage;
 use galerkin_1d::grid;
 use galerkin_1d::operators::Operators;
+use core::ops::{Add, Neg, Mul};
 
 pub trait Unknown {
-    type Unit: Copy + fmt::Debug;
+    type Unit: Neg<Output=Unit> +
+    Add<Output=Unit> +
+    Mul<RHS=f64, Output=Unit> +
+    Div<RHS=f64, Output=Unit> +
+    Copy + fmt::Debug;
 
     fn first(&self) -> Self::Unit;
 
