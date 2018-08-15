@@ -17,6 +17,9 @@ use galerkin_1d::flux::LaxFriedrichs;
 use galerkin_1d::grid::FaceType;
 use galerkin_1d::flux::FreeflowFlux;
 use galerkin_1d::flux::FluxScheme;
+use galerkin_1d::galerkin::GalerkinScheme;
+use galerkin_1d::flux::Formulation;
+use galerkin_1d::flux::FluxEnum;
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
@@ -149,9 +152,9 @@ impl Unknown for U {
 
 type UStorage = grid::ElementStorage<U, LinearFlux>;
 
-type Grid = grid::Grid<U, LinearFlux>;
+type Grid = grid::Grid<Advec>;
 
-type Element = grid::Element<U, LinearFlux>;
+type Element = grid::Element<Advec>;
 
 type LinearFlux = f64;
 
@@ -171,6 +174,26 @@ impl grid::SpatialFlux for LinearFlux {
     }
 }
 
+pub struct AdvecFluxScheme {}
+
+impl FluxScheme<U, LinearFlux> for AdvecFluxScheme {
+    type Left = LaxFriedrichs;
+    type Right = FreeflowFlux;
+    type Interior = LaxFriedrichs;
+
+    fn formulation() -> Formulation {
+        Formulation::Weak
+    }
+}
+
+pub struct Advec {}
+
+impl GalerkinScheme for Advec {
+    type U = U;
+    type F = LinearFlux;
+    type FS = AdvecFluxScheme;
+}
+
 fn u_0(xs: &Vector<f64>) -> U {
     U { u: xs.iter().map(|x: &f64| x.sin()).collect() }
 }
@@ -181,11 +204,11 @@ pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
     let a = consts::PI * 2.;
     let left_boundary_face = grid::Face {
         face_type: FaceType::Boundary(Box::new(move |t: f64, _| -(a * t).sin()), a),
-        flux: FluxScheme::Left(Box::new(LaxFriedrichs { alpha: 1. })),
+        flux: FluxEnum::Left(LaxFriedrichs { alpha: 1. }),
     };
     let right_boundary_face = grid::Face {
         face_type: grid::freeFlowBoundary(a),
-        flux: FluxScheme::Right(Box::new(FreeflowFlux {})),
+        flux: FluxEnum::Right(FreeflowFlux {}),
     };
     let grid: Grid = generate_grid(0.0, 2.0, 10, &reference_element,
                                    left_boundary_face,
@@ -225,10 +248,5 @@ mod tests {
     #[test]
     fn test() {
         let (xs, us) = advec_1d_example();
-
-        let mut fig = Figure::new();
-        fig.axes2d()
-            .lines(xs.as_slice(), us.as_slice(), &[Caption("A line"), Color("black")]);
-        fig.show();
     }
 }

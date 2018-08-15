@@ -11,6 +11,13 @@ use std::f64::consts;
 use std::cell::Cell;
 use plotter::Plotter;
 use self::core::ops::{Add, Neg, Mul, Div};
+use galerkin_1d::galerkin::GalerkinScheme;
+use galerkin_1d::flux::FluxScheme;
+use galerkin_1d::flux::NumericalFlux;
+use galerkin_1d::flux::Formulation;
+use galerkin_1d::grid::FaceType;
+use galerkin_1d::flux::FluxEnum;
+use galerkin_1d::flux::Side;
 
 #[derive(Debug)]
 struct EH {
@@ -106,11 +113,65 @@ impl grid::SpatialFlux for Permittivity {
     }
 }
 
-type Grid = grid::Grid<EH, Permittivity>;
+type Grid = grid::Grid<Maxwells>;
 
-type Element = grid::Element<EH, Permittivity>;
+type Element = grid::Element<Maxwells>;
 
 type EHStorage = grid::ElementStorage<EH, Permittivity>;
+
+fn permittivityFlux(de: f64, dh: f64, f_minus: Permittivity, f_plus: Permittivity,
+                    outward_normal: f64) -> EHUnit {
+    let (z_minus, z_plus) = (
+        (f_minus.mu / f_minus.epsilon).sqrt(),
+        (f_plus.mu / f_plus.epsilon).sqrt(),
+    );
+    let (y_minus, y_plus) = (1. / z_minus, 1. / z_plus);
+    EHUnit {
+        E: (1. / (y_minus + y_plus)) * (outward_normal * y_plus * de - dh),
+        H: (1. / (z_minus + z_plus)) * (outward_normal * z_plus * dh - de),
+    }
+}
+
+#[derive(Copy, Clone)]
+struct MaxwellsInteriorFlux {}
+
+impl NumericalFlux<EH, Permittivity> for MaxwellsInteriorFlux {
+    fn flux(&self, minus: Side<EH, Permittivity>, plus: Side<EH, Permittivity>, outward_normal: f64)
+            -> EHUnit {
+        let (de, dh) = (minus.u.E - plus.u.E, minus.u.H - plus.u.H);
+        permittivityFlux(de, dh, minus.f, plus.f, outward_normal)
+    }
+}
+
+#[derive(Copy, Clone)]
+struct MaxwellsExteriorFlux {}
+
+impl NumericalFlux<EH, Permittivity> for MaxwellsExteriorFlux {
+    fn flux(&self, minus: Side<EH, Permittivity>, plus: Side<EH, Permittivity>, outward_normal: f64) -> EHUnit {
+        let (de, dh) = (2. * minus.u.E, 0.);
+        permittivityFlux(de, dh, minus.f, plus.f, outward_normal)
+    }
+}
+
+struct MaxwellsFluxScheme {}
+
+impl FluxScheme<EH, Permittivity> for MaxwellsFluxScheme {
+    type Left = MaxwellsExteriorFlux;
+    type Right = MaxwellsExteriorFlux;
+    type Interior = MaxwellsInteriorFlux;
+
+    fn formulation() -> Formulation {
+        Formulation::Strong
+    }
+}
+
+struct Maxwells {}
+
+impl GalerkinScheme for Maxwells {
+    type U = EH;
+    type F = Permittivity;
+    type FS = MaxwellsFluxScheme;
+}
 
 fn permittivity(xs: &Vector<f64>) -> Permittivity {
     if xs[0] >= 0.0 {
@@ -130,18 +191,30 @@ fn eh_0(xs: &Vector<f64>) -> EH {
 pub fn maxwell_1d_example() {
     let n_p = 6;
     let reference_element = grid::ReferenceElement::legendre(n_p);
-    let left_boundary_face = grid::Face::Boundary(Box::new(move |_: f64, other_side: EHUnit|
-        EHUnit { E: 0.0, H: other_side.H }
-    ), Permittivity { epsilon: 1.0, mu: 1.0 });
-    let right_boundary_face = grid::Face::Boundary(Box::new(move |_: f64, other_side: EHUnit|
-        EHUnit { E: 0.0, H: other_side.H }
-    ), Permittivity { epsilon: 2.0, mu: 1.0 });
-    let grid: grid::Grid<EH, Permittivity> = grid::generate_grid(
-        -1.0, 1.0, 8, &reference_element, left_boundary_face,
-        right_boundary_face, &permittivity);
+    let left_boundary_face = grid::Face {
+        face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
+            EHUnit { E: 0.0, H: other_side.H }
+        ), Permittivity { epsilon: 1.0, mu: 1.0 }),
+        flux: FluxEnum::Left(MaxwellsExteriorFlux {}),
+    };
+    let right_boundary_face = grid::Face {
+        face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
+            EHUnit { E: 0.0, H: other_side.H }
+        ), Permittivity { epsilon: 2.0, mu: 1.0 }),
+        flux: FluxEnum::Right(MaxwellsExteriorFlux {}),
+    };
+    let grid: grid::Grid<Maxwells> = grid::generate_grid(
+        -1.0, 1.0, 8, &reference_element,
+        left_boundary_face,
+        right_boundary_face,
+        MaxwellsInteriorFlux {},
+        &permittivity);
     let operators = assemble_operators::<EH>(&reference_element);
 
-    maxwell_1d(&eh_0, &grid, &reference_element, &operators);
+    maxwell_1d(&eh_0,
+               &grid,
+               &reference_element,
+               &operators);
 }
 
 fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElement,

@@ -2,23 +2,36 @@ use galerkin_1d::unknowns::Unknown;
 use galerkin_1d::grid::SpatialFlux;
 
 pub struct Side<U: Unknown, F: SpatialFlux> {
-    u: U::Unit,
-    f: F::Unit,
+    pub u: U::Unit,
+    pub f: F::Unit,
 }
 
-pub trait NumericalFlux<U: Unknown, F: SpatialFlux> {
+pub trait NumericalFlux<U: Unknown, F: SpatialFlux>: Copy {
     fn flux(&self, minus: Side<U, F>, plus: Side<U, F>, outward_normal: f64) -> U::Unit;
 }
 
-pub enum FluxScheme<U, F> where U: Unknown, F: SpatialFlux {
-    Left(Box<NumericalFlux<U, F>>),
-    Right(Box<NumericalFlux<U, F>>),
-    Interior(Box<NumericalFlux<U, F>>),
+pub enum Formulation {
+    Strong,
+    Weak,
+}
+
+pub trait FluxScheme<U, F>  where U: Unknown, F: SpatialFlux {
+    type Left: NumericalFlux<U, F>;
+    type Right: NumericalFlux<U, F>;
+    type Interior: NumericalFlux<U, F>;
+
+    fn formulation() -> Formulation;
+}
+
+pub enum FluxEnum<U: Unknown, F: SpatialFlux, FS: FluxScheme<U, F>> {
+    Left(FS::Left),
+    Right(FS::Right),
+    Interior(FS::Interior),
 }
 
 #[derive(Clone, Copy)]
 pub struct LaxFriedrichs {
-    alpha: f64,
+    pub alpha: f64,
 }
 
 impl<U, F> NumericalFlux<U, F> for LaxFriedrichs where

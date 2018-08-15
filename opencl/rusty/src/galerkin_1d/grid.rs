@@ -7,6 +7,8 @@ use galerkin_1d::unknowns::Unknown;
 use std::cell::Cell;
 use galerkin_1d::flux::NumericalFlux;
 use galerkin_1d::flux::FluxScheme;
+use galerkin_1d::galerkin::GalerkinScheme;
+use galerkin_1d::flux::FluxEnum;
 
 pub trait SpatialFlux {
     type Unit: Sized + Copy;
@@ -18,21 +20,21 @@ pub trait SpatialFlux {
     fn zero() -> Self::Unit;
 }
 
-pub struct Element<U: Unknown, F: SpatialFlux> {
+pub struct Element<GS: GalerkinScheme> {
     pub index: i32,
     pub x_left: f64,
     pub x_right: f64,
 
     pub x_k: Vector<f64>,
 
-    pub left_face: Box<Face<U, F>>,
-    pub right_face: Box<Face<U, F>>,
+    pub left_face: Box<Face<GS>>,
+    pub right_face: Box<Face<GS>>,
 
     pub left_outward_normal: f64,
     pub right_outward_normal: f64,
 
     // Some representation of the per-element spatial flux.
-    pub spatial_flux: F,
+    pub spatial_flux: GS::F,
 }
 
 pub struct ElementStorage<U: Unknown, F: SpatialFlux> {
@@ -57,7 +59,7 @@ pub struct ElementStorage<U: Unknown, F: SpatialFlux> {
     pub f_right_plus: Cell<F::Unit>,
 }
 
-impl<U: Unknown, F: SpatialFlux> fmt::Display for Element<U, F> {
+impl<GS: GalerkinScheme> fmt::Display for Element<GS> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "D_{}: [{:.2}, {:.2}]", self.index, self.x_left, self.x_right)
     }
@@ -74,25 +76,25 @@ impl<U: Unknown, F: SpatialFlux> fmt::Debug for ElementStorage<U, F> {
     }
 }
 
-pub enum FaceType<U: Unknown, F: SpatialFlux> {
+pub enum FaceType<GS: GalerkinScheme> {
     // An interior face with the index of the element on the other side.
     Interior(i32),
 
     // A complex boundary condition which may depend on both the other side of the boundary
     // and the time parameter
-    Boundary(Box<Fn(f64, U::Unit) -> U::Unit>, F::Unit),
+    Boundary(Box<Fn(f64, <<GS as GalerkinScheme>::U as Unknown>::Unit) -> <<GS as GalerkinScheme>::U as Unknown>::Unit>, <<GS as GalerkinScheme>::F as SpatialFlux>::Unit),
 }
 
-pub struct Face<U: Unknown, F: SpatialFlux> {
-    face_type: FaceType<U, F>,
-    flux: FluxScheme<U, F>,
+pub struct Face<GS: GalerkinScheme> {
+    pub face_type: FaceType<GS>,
+    pub flux: FluxEnum<GS::U, GS::F, GS::FS>,
 }
 
-pub fn freeFlowBoundary<U: Unknown, F: SpatialFlux>(f: F::Unit) -> FaceType<U, F> {
+pub fn freeFlowBoundary<GS: GalerkinScheme>(f: <<GS as GalerkinScheme>::F as SpatialFlux>::Unit) -> FaceType<GS> {
     FaceType::Boundary(Box::new(move |_, other_side| other_side), f)
 }
 
-impl<U: Unknown, F: SpatialFlux> fmt::Debug for FaceType<U, F> {
+impl<GS: GalerkinScheme> fmt::Debug for FaceType<GS> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             FaceType::Boundary(_, _) => write!(f, "||="),
@@ -123,13 +125,13 @@ impl ReferenceElement {
     }
 }
 
-pub struct Grid<U: Unknown, F: SpatialFlux> {
+pub struct Grid<GS: GalerkinScheme> {
     pub x_min: f64,
     pub x_max: f64,
-    pub elements: Vec<Element<U, F>>,
+    pub elements: Vec<Element<GS>>,
 }
 
-impl<U: Unknown, F: SpatialFlux> fmt::Display for Grid<U, F> {
+impl<GS: GalerkinScheme> fmt::Display for Grid<GS> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let elts = &self.elements;
         write!(f, "[ ")?;
@@ -141,16 +143,14 @@ impl<U: Unknown, F: SpatialFlux> fmt::Display for Grid<U, F> {
     }
 }
 
-pub fn generate_grid<U, F, Fx, Intf: 'static>(x_min: f64, x_max: f64, n_k: i32,
+pub fn generate_grid<GS, Fx,>(x_min: f64, x_max: f64, n_k: i32,
                                              reference_element: &ReferenceElement,
-                                             left_boundary: Face<U, F>,
-                                             right_boundary: Face<U, F>,
-                                             interior_flux: Intf,
-                                             f: Fx, ) -> Grid<U, F>
-    where U: Unknown,
-          F: SpatialFlux,
-          Fx: Fn(&Vector<f64>) -> F,
-          Intf: NumericalFlux<U, F>,
+                                             left_boundary: Face<GS>,
+                                             right_boundary: Face<GS>,
+                                             interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
+                                             f: Fx, ) -> Grid<GS>
+    where GS: GalerkinScheme,
+          Fx: Fn(&Vector<f64>) -> GS::F,
 {
     assert!(x_max > x_min);
     let diff = (x_max - x_min) / (n_k as f64);
@@ -170,7 +170,7 @@ pub fn generate_grid<U, F, Fx, Intf: 'static>(x_min: f64, x_max: f64, n_k: i32,
         left_face: Box::new(left_boundary),
         right_face: Box::new(Face {
             face_type: FaceType::Interior(1),
-            flux: FluxScheme::Interior(Box::new(interior_flux)),
+            flux: FluxEnum::Interior(interior_flux),
         }),
         left_outward_normal: -1.,
         right_outward_normal: 1.,
@@ -187,11 +187,11 @@ pub fn generate_grid<U, F, Fx, Intf: 'static>(x_min: f64, x_max: f64, n_k: i32,
             x_k,
             left_face: Box::new(Face {
                 face_type: FaceType::Interior(k - 1),
-                flux: FluxScheme::Interior(Box::new(interior_flux)),
+                flux: FluxEnum::Interior(interior_flux),
             }),
             right_face: Box::new(Face {
                 face_type: FaceType::Interior(k + 1),
-                flux: FluxScheme::Interior(Box::new(interior_flux)),
+                flux: FluxEnum::Interior(interior_flux),
             }),
             left_outward_normal: -1.,
             right_outward_normal: 1.,
@@ -207,7 +207,7 @@ pub fn generate_grid<U, F, Fx, Intf: 'static>(x_min: f64, x_max: f64, n_k: i32,
         x_k,
         left_face: Box::new(Face {
             face_type: FaceType::Interior(n_k - 2),
-            flux: FluxScheme::Interior(Box::new(interior_flux)),
+            flux: FluxEnum::Interior(interior_flux),
         }),
         right_face: Box::new(right_boundary),
         left_outward_normal: -1.,
