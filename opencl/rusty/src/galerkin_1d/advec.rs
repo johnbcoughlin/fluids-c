@@ -18,8 +18,9 @@ use galerkin_1d::grid::FaceType;
 use galerkin_1d::flux::FreeflowFlux;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::galerkin::GalerkinScheme;
-use galerkin_1d::flux::Formulation;
 use galerkin_1d::flux::FluxEnum;
+use galerkin_1d::galerkin::Formulation;
+use galerkin_1d::galerkin::compute_flux;
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
@@ -91,26 +92,27 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
 
 fn advec_rhs_1d(elt: &Element, elt_storage: &UStorage,
                 operators: &Operators, a: f64) -> Vector<f64> {
-    let du_left = {
-        let u_h = elt_storage.u_left_minus.get();
-        let numerical_flux = lax_friedrichs(
-            a,
-            u_h,
-            elt_storage.u_left_plus.get(),
-            elt.left_outward_normal,
-        );
-        (((a * u_h) - numerical_flux) * elt.left_outward_normal)
-    };
-    let du_right = {
-        let u_h = elt_storage.u_right_minus.get();
-        let numerical_flux = lax_friedrichs(
-            a,
-            u_h,
-            elt_storage.u_right_plus.get(),
-            elt.right_outward_normal,
-        );
-        (((a * u_h) - numerical_flux) * elt.right_outward_normal)
-    };
+    let (du_left, du_right) = compute_flux(elt, elt_storage);
+//    let du_left = {
+//        let u_h = elt_storage.u_left_minus.get();
+//        let numerical_flux = lax_friedrichs(
+//            a,
+//            u_h,
+//            elt_storage.u_left_plus.get(),
+//            elt.left_outward_normal,
+//        );
+//        (((a * u_h) - numerical_flux) * elt.left_outward_normal)
+//    };
+//    let du_right = {
+//        let u_h = elt_storage.u_right_minus.get();
+//        let numerical_flux = lax_friedrichs(
+//            a,
+//            u_h,
+//            elt_storage.u_right_plus.get(),
+//            elt.right_outward_normal,
+//        );
+//        (((a * u_h) - numerical_flux) * elt.right_outward_normal)
+//    };
     let du: Vector<f64> = vector![du_left, du_right];
     let dr_u = &operators.d_r * &elt_storage.u_k.u;
     let a_rx = &elt_storage.r_x * (-a);
@@ -180,10 +182,6 @@ impl FluxScheme<U, LinearFlux> for AdvecFluxScheme {
     type Left = LaxFriedrichs;
     type Right = FreeflowFlux;
     type Interior = LaxFriedrichs;
-
-    fn formulation() -> Formulation {
-        Formulation::Weak
-    }
 }
 
 pub struct Advec {}
@@ -192,6 +190,8 @@ impl GalerkinScheme for Advec {
     type U = U;
     type F = LinearFlux;
     type FS = AdvecFluxScheme;
+
+    const FORMULATION: Formulation = Formulation::Strong;
 }
 
 fn u_0(xs: &Vector<f64>) -> U {

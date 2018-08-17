@@ -14,10 +14,11 @@ use self::core::ops::{Add, Neg, Mul, Div};
 use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::flux::NumericalFlux;
-use galerkin_1d::flux::Formulation;
 use galerkin_1d::grid::FaceType;
 use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::Side;
+use galerkin_1d::galerkin::Formulation;
+use galerkin_1d::galerkin::compute_flux;
 
 #[derive(Debug)]
 struct EH {
@@ -159,10 +160,6 @@ impl FluxScheme<EH, Permittivity> for MaxwellsFluxScheme {
     type Left = MaxwellsExteriorFlux;
     type Right = MaxwellsExteriorFlux;
     type Interior = MaxwellsInteriorFlux;
-
-    fn formulation() -> Formulation {
-        Formulation::Strong
-    }
 }
 
 struct Maxwells {}
@@ -171,6 +168,8 @@ impl GalerkinScheme for Maxwells {
     type U = EH;
     type F = Permittivity;
     type FS = MaxwellsFluxScheme;
+
+    const FORMULATION: Formulation = Formulation::Strong;
 }
 
 fn permittivity(xs: &Vector<f64>) -> Permittivity {
@@ -272,12 +271,14 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
                 storage.u_k = new_eh;
             }
         }
-        plotter.header();
-        for elt in (*grid).elements.iter() {
-            let storage = &storage[elt.index as usize];
-            plotter.plot(&elt.x_k, &storage.u_k.E);
+        if epoch % 20 == 0 {
+            plotter.header();
+            for elt in (*grid).elements.iter() {
+                let storage = &storage[elt.index as usize];
+                plotter.plot(&elt.x_k, &storage.u_k.E);
+            }
+            plotter.replot();
         }
-        plotter.replot();
         t = t + dt;
     }
     println!("here");
@@ -294,64 +295,21 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
 
 fn maxwell_rhs_1d(n_k: i32, elt: &Element, elt_storage: &EHStorage,
                   operators: &Operators) -> (Vector<f64>, Vector<f64>) {
-    let (flux_e_left, flux_h_left) = {
-        let outward_normal = elt.left_outward_normal;
-        let (de, dh) = de_dh(elt_storage.u_left_plus.get(), elt_storage.u_left_minus.get(),
-                             outward_normal);
-        let (de, dh) = if elt.index == 0 { (2. * elt_storage.u_left_minus.get().E, 0.) } else { (de, dh) };
-//        println!("de: {}, dh: {}", de, dh);
-        let (z_minus, z_plus) = z(elt_storage.f_left_minus.get(), elt_storage.f_left_plus.get());
-        let y_minus = 1. / z_minus;
-        let y_plus = 1. / z_plus;
-        (
-            (1. / (y_minus + y_plus)) * (outward_normal * y_plus * de - dh),
-            (1. / (z_minus + z_plus)) * (outward_normal * z_plus * dh - de)
-        )
-    };
-    let (flux_e_right, flux_h_right) = {
-        let outward_normal = elt.right_outward_normal;
-        let (de, dh) = de_dh(elt_storage.u_right_plus.get(), elt_storage.u_right_minus.get(),
-                             outward_normal);
-        let (de, dh) = if elt.index == n_k - 1 { (2. * elt_storage.u_right_minus.get().E, 0.) } else { (de, dh) };
-//        println!("de: {}, dh: {}", de, dh);
-        let (z_minus, z_plus) = z(elt_storage.f_right_minus.get(), elt_storage.f_right_plus.get());
-        let y_minus = 1. / z_minus;
-        let y_plus = 1. / z_plus;
-        (
-            (1. / (y_minus + y_plus)) * (outward_normal * y_plus * de - dh),
-            (1. / (z_minus + z_plus)) * (outward_normal * z_plus * dh - de)
-        )
-    };
+    let (flux_left, flux_right) = compute_flux(elt, elt_storage);
+
     let dr_h = &operators.d_r * &elt_storage.u_k.H;
-    let flux_h = vector![flux_h_left, flux_h_right];
-//    println!("flux_h: {:?}", flux_h);
+    let flux_h = vector![flux_left.H, flux_right.H];
     let lifted_flux_h = &operators.lift * &elt_storage.r_x_at_faces.elemul(&flux_h);
     let rhs_e = ((&elt_storage.r_x * -1.).elemul(&dr_h) + lifted_flux_h)
         / elt.spatial_flux.epsilon;
 
     let dr_e = &operators.d_r * &elt_storage.u_k.E;
-    let flux_e = vector![flux_e_left, flux_e_right];
-//    println!("flux_e: {:?}", flux_e);
+    let flux_e = vector![flux_left.E, flux_right.E];
     let lifted_flux_e = &operators.lift * &elt_storage.r_x_at_faces.elemul(&flux_e);
     let rhs_h = ((&elt_storage.r_x * -1.).elemul(&dr_e) + lifted_flux_e)
         / elt.spatial_flux.mu;
 
     (rhs_e, rhs_h)
-}
-
-// Returns ([[E]], [[H]])
-fn de_dh(eh_plus: EHUnit, eh_minus: EHUnit, outward_normal: f64) -> (f64, f64) {
-    (
-        eh_minus.E - eh_plus.E,
-        eh_minus.H - eh_plus.H,
-    )
-}
-
-fn z(permittivity_minus: Permittivity, permittivity_plus: Permittivity) -> (f64, f64) {
-    (
-        (permittivity_minus.mu / permittivity_minus.epsilon).sqrt(),
-        (permittivity_plus.mu / permittivity_plus.epsilon).sqrt(),
-    )
 }
 
 #[cfg(test)]
