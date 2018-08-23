@@ -82,6 +82,16 @@ pub fn grad_legendre_roots(n: i32) -> Vector<f64> {
     return Vector::new(diag);
 }
 
+pub fn gauss_lobatto_points(n: i32) -> Vector<f64> {
+    let mut rs = vec![-1.];
+    let roots = grad_legendre_roots(n);
+    for r in roots.into_iter() {
+        rs.push(r);
+    }
+    rs.push(1.);
+    Vector::new(rs)
+}
+
 #[cfg(test)]
 mod tests {
     extern crate rulinalg;

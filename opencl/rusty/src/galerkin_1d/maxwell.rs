@@ -188,7 +188,7 @@ fn eh_0(xs: &Vector<f64>) -> EH {
 }
 
 pub fn maxwell_1d_example() {
-    let n_p = 6;
+    let n_p = 10;
     let reference_element = grid::ReferenceElement::legendre(n_p);
     let left_boundary_face = grid::Face {
         face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
@@ -219,15 +219,14 @@ pub fn maxwell_1d_example() {
 fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElement,
                   operators: &Operators)
     where Fx: Fn(&Vector<f64>) -> EH {
-    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);
+//    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);
 
-    let final_time = 10.0;
+    let final_time = 20.0;
     let cfl = 0.75;
     let x_scale = 0.01;
     let dt: f64 = 0.5 * cfl / (consts::PI * 2.) * x_scale;
     let n_t = (final_time / dt).ceil() as i32;
     let dt = final_time / n_t as f64;
-//    let dt: f64 = 0.021186440677966;
 
     let mut t: f64 = 0.0;
 
@@ -272,12 +271,12 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
             }
         }
         if epoch % 20 == 0 {
-            plotter.header();
-            for elt in (*grid).elements.iter() {
-                let storage = &storage[elt.index as usize];
-                plotter.plot(&elt.x_k, &storage.u_k.E);
-            }
-            plotter.replot();
+//            plotter.header();
+//            for elt in (*grid).elements.iter() {
+//                let storage = &storage[elt.index as usize];
+//                plotter.plot(&elt.x_k, &storage.u_k.E);
+//            }
+//            plotter.replot();
         }
         t = t + dt;
     }
