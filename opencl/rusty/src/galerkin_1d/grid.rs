@@ -5,7 +5,6 @@ use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
 use galerkin_1d::unknowns::Unknown;
 use std::cell::Cell;
-use galerkin_1d::flux::NumericalFlux;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxEnum;

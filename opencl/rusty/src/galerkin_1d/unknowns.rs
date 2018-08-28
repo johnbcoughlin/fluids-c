@@ -2,7 +2,7 @@ extern crate rulinalg;
 extern crate core;
 
 use std::fmt;
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell};
 use self::rulinalg::vector::Vector;
 use galerkin_1d::grid::ElementStorage;
 use galerkin_1d::grid;

@@ -6,7 +6,6 @@ use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::flux::NumericalFlux;
 use galerkin_1d::grid::Element;
 use galerkin_1d::grid::ElementStorage;
-use rulinalg::vector::Vector;
 use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::Side;
 

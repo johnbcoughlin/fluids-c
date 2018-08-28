@@ -2,13 +2,10 @@ extern crate rulinalg;
 
 use galerkin_1d::grid::{ReferenceElement, generate_grid};
 use galerkin_1d::grid;
-use std::cell::{Cell, RefCell};
 use self::rulinalg::vector::Vector;
 use galerkin_1d::operators::Operators;
 use galerkin_1d::operators::assemble_operators;
-use std::fmt;
 use functions::range_kutta::{RKA, RKB, RKC};
-use std::ops::Deref;
 use std::iter::repeat;
 use std::f64::consts;
 use galerkin_1d::unknowns::{Unknown, initialize_storage, communicate};
@@ -237,13 +234,7 @@ pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
 mod tests {
     extern crate gnuplot;
 
-    use super::rulinalg::vector::Vector;
-    use galerkin_1d::grid::{ReferenceElement, Grid, Face, generate_grid};
     use galerkin_1d::advec::advec_1d_example;
-    use galerkin_1d::operators::assemble_operators;
-    use std::f64::consts;
-
-    use self::gnuplot::{Figure, Caption, Color};
 
     #[test]
     fn test() {

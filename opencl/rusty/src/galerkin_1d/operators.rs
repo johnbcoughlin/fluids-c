@@ -1,7 +1,7 @@
 extern crate rulinalg;
 
 use rulinalg::matrix::{Matrix, BaseMatrix};
-use galerkin_1d::grid::{ReferenceElement, Grid};
+use galerkin_1d::grid::{ReferenceElement};
 use functions::vandermonde::{vandermonde, grad_vandermonde};
 use galerkin_1d::unknowns::Unknown;
 

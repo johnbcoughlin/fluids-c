@@ -1,15 +1,14 @@
 extern crate tempfile;
 extern crate rulinalg;
 
-use std::fs::{File, OpenOptions};
-use self::tempfile::{tempdir, tempfile, tempfile_in, NamedTempFile};
+use std::fs::{OpenOptions};
+use self::tempfile::{tempdir};
 use self::rulinalg::vector::Vector;
-use std::io::{Result, Write};
+use std::io::{Write};
 use std::process::{Child, Command, Stdio};
-use std::path::{Path, PathBuf};
-use std::string::ToString;
-use std::cell::RefCell;
-use std::{thread, time};
+use std::path::{PathBuf};
+use std::{thread};
+use std::time::Duration;
 
 pub struct Plotter {
     gnuplot: Child,
@@ -54,7 +53,7 @@ impl Plotter {
             .open(&self.path)
             .expect("could not open file for header");
         writeln!(file, "#\tX\tU");
-        file.flush();
+        file.flush().expect("error flushing file");
     }
 
     pub fn plot(&mut self, xs: &Vector<f64>, ys: &Vector<f64>) {
@@ -66,20 +65,20 @@ impl Plotter {
             .expect("could not open file for plotting");
 
         for (x, y) in xs.iter().zip(ys.iter()) {
-            writeln!(file, "{}\t{}", x, y);
+            writeln!(file, "{}\t{}", x, y).expect("error");
         }
-        file.flush();
+        file.flush().expect("error flushing file");
     }
 
     pub fn replot(&mut self) {
         let mut stdin = (&mut self.gnuplot.stdin).as_mut().expect("No stdin");
-        writeln!(stdin, "replot");
-        thread::sleep_ms(100);
+        writeln!(stdin, "replot").expect("error");
+        thread::sleep(Duration::from_millis(100));
     }
 }
 
 impl Drop for Plotter {
     fn drop(&mut self) {
-        self.gnuplot.kill();
+        self.gnuplot.kill().expect("error killing gnuplot");
     }
 }

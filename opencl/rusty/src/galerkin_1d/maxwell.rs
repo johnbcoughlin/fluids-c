@@ -8,8 +8,6 @@ use galerkin_1d::grid;
 use galerkin_1d::operators::{Operators, assemble_operators};
 use std::iter::repeat;
 use std::f64::consts;
-use std::cell::Cell;
-use plotter::Plotter;
 use self::core::ops::{Add, Neg, Mul, Div};
 use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxScheme;
