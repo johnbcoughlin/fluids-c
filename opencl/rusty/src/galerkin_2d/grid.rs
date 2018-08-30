@@ -10,19 +10,44 @@ use std::f64::consts::PI;
 const ALPHAS: [f64; 15] = [0.0000, 0.0000, 1.4152, 0.1001, 0.2751, 0.9800, 1.0999,
     1.2832, 1.3648, 1.4773, 1.4959, 1.5743, 1.5770, 1.6223, 1.6258];
 
+#[derive(Debug, PartialEq)]
 pub struct ReferencePoint {
     r: f64,
     s: f64,
 }
 
+#[derive(Debug)]
 pub struct ReferenceElement {
     pub n_p: i32,
 
-    pub rs: Vec<ReferencePoint>,
+    pub points: Vec<ReferencePoint>,
+    pub rs: Vector<f64>,
+    pub ss: Vector<f64>,
 }
 
 impl ReferenceElement {
-    pub fn legendre(n: i32) {
+    pub fn legendre(n: i32) -> ReferenceElement {
+        let (x, y) = ReferenceElement::equilateral_nodes(n);
+        let root_3 = 3.0_f64.sqrt();
+        let L1 = &(&y * root_3 + 1.) / 3.;
+        let L2 = &(&(&x * -3.) - &(&y * root_3) + 2.0) / 6.;
+        let L3 = &(&(&x * 3.) - &(&y * root_3) + 2.0) / 6.;
+
+        let rs: Vector<f64> = -&L2 + &L3 - &L1;
+        let ss: Vector<f64> = -&L2 - &L3 + &L1;
+
+        let points: Vec<ReferencePoint> = rs.into_iter().zip(ss.into_iter())
+            .map(|(r, s)| ReferencePoint { r, s, })
+            .collect();
+        ReferenceElement {
+            n_p: n,
+            points,
+            rs,
+            ss
+        }
+    }
+
+    fn equilateral_nodes(n: i32) -> (Vector<f64>, Vector<f64>) {
         let nf = n as f64;
         let alpha = if n < 16 { ALPHAS[n as usize - 1] } else { 1.6 };
 
@@ -63,6 +88,14 @@ impl ReferenceElement {
 
         let x_res = x + &warp_1 * 1. + &warp_2 * (2. * PI / 3.).cos() + &warp_3 * (4. * PI / 3.).cos();
         let y_res = y + &warp_1 * 0. + &warp_2 * (2. * PI / 3.).sin() + &warp_3 * (4. * PI / 3.).sin();
+
+        (x_res, y_res)
+    }
+
+    pub fn rs_to_ab(rs: Vector<f64>, ss: Vector<f64>) -> (Vector<f64>, Vector<f64>) {
+        let a = ((&rs + 1.) / (-&ss + 1.)) * 2 - 1.;
+        let b = ss.clone();
+        (a, b)
     }
 }
 
@@ -106,6 +139,7 @@ mod tests {
 
     use super::warp_factor;
     use super::ReferenceElement;
+    use super::ReferencePoint;
 
     #[test]
     fn test_warp_factor() {
@@ -116,6 +150,10 @@ mod tests {
 
     #[test]
     fn test_reference_element() {
-        ReferenceElement::legendre(10);
+        let re = ReferenceElement::legendre(10);
+        assert_eq!(re.rs[13], ReferencePoint {
+            r: -0.7309414433795846,
+            s: -0.8960431364598923,
+        });
     }
 }

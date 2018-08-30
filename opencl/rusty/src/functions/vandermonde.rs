@@ -29,6 +29,19 @@ pub fn grad_vandermonde(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
     v
 }
 
+pub fn vandermonde_2d(n: i32, a: Vector<f64>, b: Vector<f64>) {
+    assert_eq!(a.size(), b.size());
+    let n_cols = (n as usize + 1) * (n as usize + 2) / 2;
+//    let mut v = Matrix::zeros(a.size(), n_cols);
+
+    let s_k = 0;
+    (0..n+1).for_each(|i| {
+        (0..n+1-i).for_each(|j| {
+//            let mut row = v.row_mut(i as usize);
+        })
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use functions::jacobi_polynomials::grad_legendre_roots;

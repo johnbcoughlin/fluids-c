@@ -219,7 +219,7 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
     where Fx: Fn(&Vector<f64>) -> EH {
 //    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);
 
-    let final_time = 20.0;
+    let final_time = 200.0;
     let cfl = 0.75;
     let x_scale = 0.01;
     let dt: f64 = 0.5 * cfl / (consts::PI * 2.) * x_scale;

@@ -92,6 +92,17 @@ pub fn gauss_lobatto_points(n: i32) -> Vector<f64> {
     Vector::new(rs)
 }
 
+pub fn simplex_2d_polynomial(a: Vector<f64>, b: Vector<f64>, i: i32, j: i32) -> Vector<f64> {
+    let h1 = jacobi(&a, 0, 0, i);
+    let h2 = jacobi(&b, 2 * i + 1, 0, j);
+    let base: Vector<f64> = (-&b + 1.);
+    let mut x = Vector::ones(base.size());
+    (0..i).for_each(|_| {
+        x = x.elemul(&base);
+    });
+    (h1.elemul(&h2) * 2.0_f64.sqrt()).elemul(&x)
+}
+
 #[cfg(test)]
 mod tests {
     extern crate rulinalg;
