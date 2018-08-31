@@ -21,13 +21,13 @@ pub struct Operators {
     pub lift: Matrix<f64>,
 }
 
-pub fn assemble_operators<NP, U>(reference_element: &ReferenceElement) -> Operators
+pub fn assemble_operators<NP, U>(reference_element: &ReferenceElement<NP>) -> Operators
     where U: Unknown, NP: Dim {
     let n_p = reference_element.n_p;
     let rs = &reference_element.rs;
 
     let v = vandermonde::<NP>(&rs, n_p);
-    println!("{:?}", v);
+    println!("{}", v);
     let v_inv = v.clone().inverse().expect("Non-invertible Vandermonde matrix");
     let v_r = grad_vandermonde::<NP>(&rs, n_p);
     let d_r = &v_r * &v_inv;

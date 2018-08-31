@@ -1,4 +1,5 @@
 extern crate rulinalg;
+extern crate typenum;
 
 use std::fmt;
 use functions::jacobi_polynomials::grad_legendre_roots;
@@ -8,6 +9,8 @@ use std::cell::Cell;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxEnum;
+use matrices::matrix_types::Dim;
+use self::typenum::uint::Unsigned;
 
 pub trait SpatialFlux {
     type Unit: Sized + Copy;
@@ -102,7 +105,7 @@ impl<GS: GalerkinScheme> fmt::Debug for FaceType<GS> {
     }
 }
 
-pub struct ReferenceElement {
+pub struct ReferenceElement<N: Dim> {
     // The order of polynomial approximation N_p
     pub n_p: i32,
 
@@ -111,8 +114,9 @@ pub struct ReferenceElement {
     pub rs: Vector<f64>,
 }
 
-impl ReferenceElement {
-    pub fn legendre(n_p: i32) -> ReferenceElement {
+impl<N: Dim> ReferenceElement<N> {
+    pub fn legendre<N>() -> ReferenceElement<N> {
+        let n_p = <N as Unsigned>::to_usize();
         let mut rs = vec![-1.];
         let roots = grad_legendre_roots(n_p);
         for r in roots.into_iter() {
@@ -143,7 +147,7 @@ impl<GS: GalerkinScheme> fmt::Display for Grid<GS> {
 }
 
 pub fn generate_grid<GS, Fx,>(x_min: f64, x_max: f64, n_k: i32,
-                                             reference_element: &ReferenceElement,
+                                             reference_element: &ReferenceElement<GS::NP>,
                                              left_boundary: Face<GS>,
                                              right_boundary: Face<GS>,
                                              interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,

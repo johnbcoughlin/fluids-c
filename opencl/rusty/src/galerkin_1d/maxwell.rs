@@ -213,6 +213,8 @@ pub fn maxwell_1d_example() {
         right_boundary_face,
         MaxwellsInteriorFlux {},
         &permittivity);
+    println!("{}", reference_element.n_p);
+    println!("{}", reference_element.rs);
     let operators = assemble_operators::<NP, EH>(&reference_element);
 
     maxwell_1d(&eh_0,

@@ -23,7 +23,7 @@ use self::typenum::{U8, Unsigned};
 use matrices::matrix_types::Dim;
 
 #[inline(never)]
-pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
+pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement<NP>,
                     operators: &Operators, a: f64) -> Vec<UStorage>
     where Fx: Fn(&Vector<f64>) -> U {
     let mut plotter = Plotter::create(0.0, 2.0, -1.0, 1.0);
