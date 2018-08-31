@@ -27,5 +27,10 @@ gnuplot = "0.0.26"
 
 tempfile = "3.0.3"
 
+typenum = "1.5.1"
+nalgebra = "0.16.0"
+generic-array = "0.12.0"
+itertools = "0.6.5"
+
 [profile.release]
 debug = true

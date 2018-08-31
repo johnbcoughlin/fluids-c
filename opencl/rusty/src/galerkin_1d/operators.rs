@@ -4,6 +4,7 @@ use rulinalg::matrix::{Matrix, BaseMatrix};
 use galerkin_1d::grid::{ReferenceElement};
 use functions::vandermonde::{vandermonde, grad_vandermonde};
 use galerkin_1d::unknowns::Unknown;
+use matrices::matrix_types::Dim;
 
 pub struct Operators {
     // The Lax-Friedrichs flux parameter
@@ -20,14 +21,15 @@ pub struct Operators {
     pub lift: Matrix<f64>,
 }
 
-pub fn assemble_operators<U>(reference_element: &ReferenceElement) -> Operators
-    where U: Unknown {
+pub fn assemble_operators<NP, U>(reference_element: &ReferenceElement) -> Operators
+    where U: Unknown, NP: Dim {
     let n_p = reference_element.n_p;
     let rs = &reference_element.rs;
 
-    let v = vandermonde(&rs, n_p);
+    let v = vandermonde::<NP>(&rs, n_p);
+    println!("{:?}", v);
     let v_inv = v.clone().inverse().expect("Non-invertible Vandermonde matrix");
-    let v_r = grad_vandermonde(&rs, n_p);
+    let v_r = grad_vandermonde::<NP>(&rs, n_p);
     let d_r = &v_r * &v_inv;
 
     let mut vals: Vec<f64> = vec![0.0; (n_p as usize + 1) * 2];

@@ -2,13 +2,20 @@ extern crate num;
 extern crate lapack;
 extern crate accelerate_src;
 extern crate rulinalg;
+extern crate nalgebra as na;
+extern crate generic_array as ga;
+extern crate typenum;
 
 use self::num::traits::real::Real;
-use self::rulinalg::vector::Vector;
+use self::rulinalg::vector::Vector as RaVector;
 use functions::gamma::GammaFn;
 use self::lapack::*;
+use matrices::vector_ops::Vector;
+use matrices::matrix_types::Dim;
 
-pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
+pub fn jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64> {
+    let xs = Vector::from_rulinalg(xs);
+
     let alphaf = alpha as f64;
     let betaf = beta as f64;
 
@@ -16,15 +23,16 @@ pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
     // See NUDG p. 446
     let gamma_0 = 2.0.powi(alpha + beta + 1) / (alphaf + betaf + 1.) *
         (alphaf + 1.).gamma() * (betaf + 1.).gamma() / (alphaf + betaf + 1.).gamma();
-    let p_0 = Vector::ones(xs.size()) * (1.0 / gamma_0.sqrt());
+
+    let p_0: Vector<N> = Vector::from_const(1.0 / gamma_0.sqrt());
     if n == 0 {
-        return p_0;
+        return p_0.to_rulinalg();
     }
 
     let gamma_1 = (alphaf + 1.) * (betaf + 1.) / (alphaf + betaf + 3.) * gamma_0;
-    let p_1 = (xs * ((alphaf + betaf + 2.) / 2.) + (alphaf - betaf) / 2.) / gamma_1.sqrt();
+    let p_1 = (&xs * ((alphaf + betaf + 2.) / 2.) + (alphaf - betaf) / 2.) / gamma_1.sqrt();
     if n == 1 {
-        return p_1
+        return p_1.to_rulinalg();
     }
 
     let mut a_old = 2. / (2. + alphaf + betaf) *
@@ -39,30 +47,30 @@ pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
         let a_new = 2. / (h1 + 2.) * ((i + 1.) * (i + 1. + alphaf + betaf) * (i + 1. + alphaf) *
             (i + 1. + betaf) / (h1 + 1.) / (h1 + 3.)).sqrt();
         let b_new = - (alphaf * alphaf - betaf * betaf) / h1 / (h1 + 2.);
-        let mut p_i_plus_1 = (-(p_i_minus_1) * a_old + (xs - b_new).elemul(&p_i)) * (1. / a_new);
+        let mut p_i_plus_1 = (-(p_i_minus_1) * a_old + ((&xs - b_new) * &p_i)) * (1. / a_new);
         p_i_minus_1 = p_i;
         p_i = p_i_plus_1;
         a_old = a_new;
     }
-    return p_i;
+    return p_i.to_rulinalg();
 }
 
-pub fn grad_jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
+pub fn grad_jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64> {
     if n == 0 {
-        return Vector::zeros(xs.size());
+        return RaVector::zeros(xs.size());
     }
     let alphaf = alpha as f64;
     let betaf = beta as f64;
     let nf = n as f64;
     let factor: f64 = (nf * (nf + alphaf + betaf + 1.)).sqrt();
-    let j = jacobi(xs, alpha + 1, beta + 1, n - 1);
+    let j = jacobi::<N>(xs, alpha + 1, beta + 1, n - 1);
     return j * factor;
 }
 
 // The Legendre polynomials are P_n(0, 0), the Jacobi polynomials with alpha = beta = 0.
 // This function returns the zeros of (1 - x^2)P_n'(0, 0), i.e. the zeros of the derivative
 // of the nth Legendre polynomial, plus -1 and 1.
-pub fn grad_legendre_roots(n: i32) -> Vector<f64> {
+pub fn grad_legendre_roots(n: i32) -> RaVector<f64> {
     let n = n - 1;
     let mut diag = vec![0.0; n as usize];
     let mut subdiag: Vec<f64> = (2..n+1).map(|i| {
@@ -79,24 +87,24 @@ pub fn grad_legendre_roots(n: i32) -> Vector<f64> {
         dstev(b'N', n, &mut diag, &mut subdiag, &mut z, 1, &mut work, &mut info);
     }
 
-    return Vector::new(diag);
+    return RaVector::new(diag);
 }
 
-pub fn gauss_lobatto_points(n: i32) -> Vector<f64> {
+pub fn gauss_lobatto_points(n: i32) -> RaVector<f64> {
     let mut rs = vec![-1.];
     let roots = grad_legendre_roots(n);
     for r in roots.into_iter() {
         rs.push(r);
     }
     rs.push(1.);
-    Vector::new(rs)
+    RaVector::new(rs)
 }
 
-pub fn simplex_2d_polynomial(a: Vector<f64>, b: Vector<f64>, i: i32, j: i32) -> Vector<f64> {
-    let h1 = jacobi(&a, 0, 0, i);
-    let h2 = jacobi(&b, 2 * i + 1, 0, j);
-    let base: Vector<f64> = (-&b + 1.);
-    let mut x = Vector::ones(base.size());
+pub fn simplex_2d_polynomial<N: Dim>(a: RaVector<f64>, b: RaVector<f64>, i: i32, j: i32) -> RaVector<f64> {
+    let h1 = jacobi::<N>(&a, 0, 0, i);
+    let h2 = jacobi::<N>(&b, 2 * i + 1, 0, j);
+    let base: RaVector<f64> = (-&b + 1.);
+    let mut x = RaVector::ones(base.size());
     (0..i).for_each(|_| {
         x = x.elemul(&base);
     });
@@ -106,8 +114,13 @@ pub fn simplex_2d_polynomial(a: Vector<f64>, b: Vector<f64>, i: i32, j: i32) -> 
 #[cfg(test)]
 mod tests {
     extern crate rulinalg;
+    extern crate typenum;
 
     use functions::jacobi_polynomials::{jacobi, grad_jacobi, grad_legendre_roots};
+    use matrices::matrix_types::Dim;
+    use self::typenum::{U0, U1, U2, U3, U4};
+
+    impl Dim for U1 {}
 
     #[test]
     fn test_jacobi_0() {
@@ -135,7 +148,7 @@ mod tests {
 
     fn test_jacobi_val(x: f64, alpha: i32, beta: i32, n: i32, expected_value: f64) {
         let xs = vector![x];
-        let p = jacobi(&xs, alpha, beta, n);
+        let p = jacobi::<U1>(&xs, alpha, beta, n);
         assert!((p[0] - expected_value).abs() < 0.0001);
     }
 
@@ -159,7 +172,7 @@ mod tests {
 
     fn test_grad_jacobi_val(x: f64, alpha: i32, beta: i32, n: i32, expected_value: f64) {
         let xs = vector![x];
-        let p = grad_jacobi(&xs, alpha, beta, n);
+        let p = grad_jacobi::<U1>(&xs, alpha, beta, n);
         assert!((p[0] - expected_value).abs() < 0.0001);
     }
 

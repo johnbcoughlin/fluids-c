@@ -1,4 +1,5 @@
 extern crate rulinalg;
+extern crate typenum;
 extern crate core;
 
 use functions::range_kutta::{RKA, RKB, RKC};
@@ -8,6 +9,7 @@ use galerkin_1d::grid;
 use galerkin_1d::operators::{Operators, assemble_operators};
 use std::iter::repeat;
 use std::f64::consts;
+use self::typenum::{U10, Unsigned};
 use self::core::ops::{Add, Neg, Mul, Div};
 use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxScheme;
@@ -17,6 +19,7 @@ use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::Side;
 use galerkin_1d::galerkin::Formulation;
 use galerkin_1d::galerkin::compute_flux;
+use matrices::matrix_types::Dim;
 
 #[derive(Debug)]
 struct EH {
@@ -152,6 +155,10 @@ impl NumericalFlux<EH, Permittivity> for MaxwellsExteriorFlux {
     }
 }
 
+impl Dim for U10 {}
+
+type NP = U10;
+
 struct MaxwellsFluxScheme {}
 
 impl FluxScheme<EH, Permittivity> for MaxwellsFluxScheme {
@@ -186,7 +193,7 @@ fn eh_0(xs: &Vector<f64>) -> EH {
 }
 
 pub fn maxwell_1d_example() {
-    let n_p = 10;
+    let n_p = <NP as Unsigned>::to_i32();
     let reference_element = grid::ReferenceElement::legendre(n_p);
     let left_boundary_face = grid::Face {
         face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
@@ -206,7 +213,7 @@ pub fn maxwell_1d_example() {
         right_boundary_face,
         MaxwellsInteriorFlux {},
         &permittivity);
-    let operators = assemble_operators::<EH>(&reference_element);
+    let operators = assemble_operators::<NP, EH>(&reference_element);
 
     maxwell_1d(&eh_0,
                &grid,

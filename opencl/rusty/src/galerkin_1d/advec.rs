@@ -1,4 +1,5 @@
 extern crate rulinalg;
+extern crate typenum;
 
 use galerkin_1d::grid::{ReferenceElement, generate_grid};
 use galerkin_1d::grid;
@@ -18,6 +19,8 @@ use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::galerkin::Formulation;
 use galerkin_1d::galerkin::compute_flux;
+use self::typenum::{U8, Unsigned};
+use matrices::matrix_types::Dim;
 
 #[inline(never)]
 pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement,
@@ -133,6 +136,10 @@ pub struct U {
     u: Vector<f64>,
 }
 
+impl Dim for U8 {}
+
+type NP = U8;
+
 impl Unknown for U {
     type Unit = f64;
 
@@ -196,7 +203,7 @@ fn u_0(xs: &Vector<f64>) -> U {
 }
 
 pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
-    let n_p = 8;
+    let n_p = <NP as Unsigned>::to_i32();
     let reference_element = ReferenceElement::legendre(n_p);
     let a = consts::PI * 2.;
     let left_boundary_face = grid::Face {
@@ -214,7 +221,7 @@ pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
                                    move |_| a);
 
 
-    let operators = assemble_operators::<U>(&reference_element);
+    let operators = assemble_operators::<NP, U>(&reference_element);
 
     let storages = advec_1d(&u_0, &grid, &reference_element, &operators, a);
 
