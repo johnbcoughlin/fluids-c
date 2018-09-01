@@ -9,12 +9,14 @@ use galerkin_1d::grid::ElementStorage;
 use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::Side;
 use matrices::matrix_types::Dim;
+use galerkin_1d::grid::ReferenceElement;
 
 pub trait GalerkinScheme {
     type U: Unknown;
     type F: SpatialFlux;
     type FS: FluxScheme<Self::U, Self::F>;
     type NP: Dim;
+    type RE: ReferenceElement<NP=Self::NP>;
 
     const FORMULATION: Formulation;
 }

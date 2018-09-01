@@ -1,12 +1,19 @@
 extern crate rulinalg;
+extern crate typenum;
+extern crate generic_array as ga;
 
+use self::ga::ArrayLength;
 use self::rulinalg::vector::Vector;
 use self::rulinalg::matrix::Matrix;
 use rulinalg::matrix::BaseMatrixMut;
 use functions::jacobi_polynomials::{jacobi, grad_jacobi};
 use matrices::matrix_types::Dim;
+use self::typenum::uint::Unsigned;
 
-pub fn vandermonde<N: Dim>(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
+pub fn vandermonde<N>(rs: &Vector<f64>, n: i32) -> Matrix<f64>
+    where
+        N: Unsigned + ArrayLength<f64>
+{
     let mut v = Matrix::zeros(rs.size(), (n + 1) as usize);
     for j in 0..n + 1 {
         let mut column = v.col_mut(j as usize);
@@ -18,7 +25,10 @@ pub fn vandermonde<N: Dim>(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
     v
 }
 
-pub fn grad_vandermonde<N: Dim>(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
+pub fn grad_vandermonde<N>(rs: &Vector<f64>, n: i32) -> Matrix<f64>
+    where
+        N: Unsigned + ArrayLength<f64>
+{
     let mut v = Matrix::zeros(rs.size(), (n + 1) as usize);
     for j in 0..n + 1 {
         let mut column = v.col_mut(j as usize);
@@ -36,8 +46,8 @@ pub fn vandermonde_2d(n: i32, a: Vector<f64>, b: Vector<f64>) {
 //    let mut v = Matrix::zeros(a.size(), n_cols);
 
     let s_k = 0;
-    (0..n+1).for_each(|i| {
-        (0..n+1-i).for_each(|j| {
+    (0..n + 1).for_each(|i| {
+        (0..n + 1 - i).for_each(|j| {
 //            let mut row = v.row_mut(i as usize);
         })
     })
@@ -46,6 +56,7 @@ pub fn vandermonde_2d(n: i32, a: Vector<f64>, b: Vector<f64>) {
 #[cfg(test)]
 mod tests {
     extern crate typenum;
+
     use functions::jacobi_polynomials::grad_legendre_roots;
     use functions::vandermonde::{vandermonde, grad_vandermonde};
     use matrices::matrix_types::Dim;

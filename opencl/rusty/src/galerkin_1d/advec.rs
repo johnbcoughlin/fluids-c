@@ -23,9 +23,12 @@ use self::typenum::{U8, Unsigned};
 use matrices::matrix_types::Dim;
 
 #[inline(never)]
-pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &LegendreReferenceElement,
-                    operators: &Operators, a: f64) -> Vec<UStorage>
-    where Fx: Fn(&Vector<f64>) -> U {
+pub fn advec_1d<Fx, RE>(u_0: Fx, grid: &Grid, reference_element: &RE,
+                        operators: &Operators, a: f64) -> Vec<UStorage>
+    where
+        Fx: Fn(&Vector<f64>) -> U,
+        RE: ReferenceElement,
+{
     let mut plotter = Plotter::create(0.0, 2.0, -1.0, 1.0);
 
     let final_time = 1.3;
@@ -38,9 +41,9 @@ pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &LegendreReferenceE
 
     let mut t: f64 = 0.0;
 
-    let mut storage: Vec<UStorage> = initialize_storage(u_0, reference_element.n_p,
+    let mut storage: Vec<UStorage> = initialize_storage(u_0, reference_element.n_p(),
                                                         grid, operators);
-    let mut residuals: Vec<Vector<f64>> = repeat(Vector::zeros(reference_element.n_p as usize + 1))
+    let mut residuals: Vec<Vector<f64>> = repeat(Vector::zeros(reference_element.n_p() as usize + 1))
         .take(grid.elements.len())
         .collect();
 
@@ -194,6 +197,8 @@ impl GalerkinScheme for Advec {
     type U = U;
     type F = LinearFlux;
     type FS = AdvecFluxScheme;
+    type NP = NP;
+    type RE = LegendreReferenceElement<NP>;
 
     const FORMULATION: Formulation = Formulation::Strong;
 }
@@ -204,7 +209,7 @@ fn u_0(xs: &Vector<f64>) -> U {
 
 pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
     let n_p = <NP as Unsigned>::to_i32();
-    let reference_element = ReferenceElement::legendre(n_p);
+    let reference_element: LegendreReferenceElement<NP> = LegendreReferenceElement::legendre();
     let a = consts::PI * 2.;
     let left_boundary_face = grid::Face {
         face_type: FaceType::Boundary(Box::new(move |t: f64, _| -(a * t).sin()), a),
@@ -221,7 +226,7 @@ pub fn advec_1d_example() -> (Vec<f64>, Vec<f64>) {
                                    move |_| a);
 
 
-    let operators = assemble_operators::<NP, U>(&reference_element);
+    let operators = assemble_operators::<LegendreReferenceElement<NP>, U>(&reference_element);
 
     let storages = advec_1d(&u_0, &grid, &reference_element, &operators, a);
 

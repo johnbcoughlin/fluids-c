@@ -6,14 +6,19 @@ extern crate nalgebra as na;
 extern crate generic_array as ga;
 extern crate typenum;
 
+use self::ga::ArrayLength;
 use self::num::traits::real::Real;
 use self::rulinalg::vector::Vector as RaVector;
 use functions::gamma::GammaFn;
 use self::lapack::*;
 use matrices::vector_ops::Vector;
 use matrices::matrix_types::Dim;
+use self::typenum::uint::Unsigned;
 
-pub fn jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64> {
+pub fn jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
+    where
+        N: Unsigned + ArrayLength<f64>,
+{
     let xs = Vector::from_rulinalg(xs);
 
     let alphaf = alpha as f64;
@@ -46,7 +51,7 @@ pub fn jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVe
         let h1 = 2. * i + alphaf + betaf;
         let a_new = 2. / (h1 + 2.) * ((i + 1.) * (i + 1. + alphaf + betaf) * (i + 1. + alphaf) *
             (i + 1. + betaf) / (h1 + 1.) / (h1 + 3.)).sqrt();
-        let b_new = - (alphaf * alphaf - betaf * betaf) / h1 / (h1 + 2.);
+        let b_new = -(alphaf * alphaf - betaf * betaf) / h1 / (h1 + 2.);
         let mut p_i_plus_1 = (-(p_i_minus_1) * a_old + ((&xs - b_new) * &p_i)) * (1. / a_new);
         p_i_minus_1 = p_i;
         p_i = p_i_plus_1;
@@ -55,7 +60,10 @@ pub fn jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVe
     return p_i.to_rulinalg();
 }
 
-pub fn grad_jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64> {
+pub fn grad_jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
+    where
+        N: Unsigned + ArrayLength<f64>,
+{
     if n == 0 {
         return RaVector::zeros(xs.size());
     }
@@ -73,7 +81,7 @@ pub fn grad_jacobi<N: Dim>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) ->
 pub fn grad_legendre_roots(n: i32) -> RaVector<f64> {
     let n = n - 1;
     let mut diag = vec![0.0; n as usize];
-    let mut subdiag: Vec<f64> = (2..n+1).map(|i| {
+    let mut subdiag: Vec<f64> = (2..n + 1).map(|i| {
         let i = i as f64;
         let num = (i + 1.) / i;
         let denom = (2. * i - 1.) / (i - 1.) * (i * 2. + 1.) / (i);

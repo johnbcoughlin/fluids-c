@@ -6,15 +6,14 @@ extern crate core;
 
 use std::ops::{Neg, Mul, Add, Sub, Div};
 use self::tn::{U1, UInt, Prod, Unsigned};
-use matrices::matrix_types::{Dim};
 use self::ga::{GenericArray, ArrayLength};
 use self::rulinalg::vector::Vector as RaVector;
 
-pub struct Vector<N: ArrayLength<f64>> {
+pub struct Vector<N: Unsigned + ArrayLength<f64>> {
     data: ga::GenericArray<f64, N>,
 }
 
-impl<N: Dim> Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Vector<N> {
     pub fn static_size() -> usize {
         <N as Unsigned>::to_usize()
     }
@@ -40,7 +39,7 @@ impl<N: Dim> Vector<N> {
  * Mul
  */
 /* RHS=Self */
-impl<N: Dim> Mul for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Mul for Vector<N> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -51,7 +50,7 @@ impl<N: Dim> Mul for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Mul for &'a Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Mul for &'a Vector<N> {
     type Output = Vector<N>;
 
     fn mul(self, rhs: Self) -> Vector<N> {
@@ -62,7 +61,7 @@ impl<'a, N: Dim> Mul for &'a Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Mul<&'a Vector<N>> for Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Mul<&'a Vector<N>> for Vector<N> {
     type Output = Self;
 
     fn mul(self, rhs: &Self) -> Self::Output {
@@ -73,7 +72,7 @@ impl<'a, N: Dim> Mul<&'a Vector<N>> for Vector<N> {
     }
 }
 
-//impl<'a, 'b, N: Dim> Mul<&'a Vector<N>> for &'b Vector<N> {
+//impl<'a, 'b, N: Unsigned + ArrayLength<f64>> Mul<&'a Vector<N>> for &'b Vector<N> {
 //    type Output = Vector<N>;
 //
 //    fn mul(self, rhs: Self) -> Vector<N> {
@@ -85,7 +84,7 @@ impl<'a, N: Dim> Mul<&'a Vector<N>> for Vector<N> {
 //}
 
 /* RHS=f64 */
-impl<N: Dim> Mul<f64> for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Mul<f64> for Vector<N> {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
@@ -96,7 +95,7 @@ impl<N: Dim> Mul<f64> for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Mul<f64> for &'a Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Mul<f64> for &'a Vector<N> {
     type Output = Vector<N>;
 
     fn mul(self, rhs: f64) -> Vector<N> {
@@ -110,7 +109,7 @@ impl<'a, N: Dim> Mul<f64> for &'a Vector<N> {
  * Add
  */
 /* RHS=Self */
-impl<N: Dim> Add for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Add for Vector<N> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -121,7 +120,7 @@ impl<N: Dim> Add for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Add<&'a Self> for Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Add<&'a Self> for Vector<N> {
     type Output = Self;
 
     fn add(self, rhs: &Self) -> Self::Output {
@@ -132,7 +131,7 @@ impl<'a, N: Dim> Add<&'a Self> for Vector<N> {
     }
 }
 
-impl<N: Dim> Add<f64> for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Add<f64> for Vector<N> {
     type Output = Self;
 
     fn add(self, rhs: f64) -> Self {
@@ -146,7 +145,7 @@ impl<N: Dim> Add<f64> for Vector<N> {
 /**
  * Div
  */
-impl<N: Dim> Div for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Div for Vector<N> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self {
@@ -157,7 +156,7 @@ impl<N: Dim> Div for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Div<&'a Self> for Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Div<&'a Self> for Vector<N> {
     type Output = Self;
 
     fn div(self, rhs: &Self) -> Self {
@@ -168,7 +167,7 @@ impl<'a, N: Dim> Div<&'a Self> for Vector<N> {
     }
 }
 
-impl<N: Dim> Div<f64> for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Div<f64> for Vector<N> {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self {
@@ -179,7 +178,7 @@ impl<N: Dim> Div<f64> for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Div<f64> for &'a Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Div<f64> for &'a Vector<N> {
     type Output = Vector<N>;
 
     fn div(self, rhs: f64) -> Vector<N> {
@@ -193,7 +192,7 @@ impl<'a, N: Dim> Div<f64> for &'a Vector<N> {
 /**
  * Sub
  */
-impl<N: Dim> Sub for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Sub for Vector<N> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self {
@@ -204,7 +203,7 @@ impl<N: Dim> Sub for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Sub for &'a Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Sub for &'a Vector<N> {
     type Output = Vector<N>;
 
     fn sub(self, rhs: Self) -> Vector<N> {
@@ -215,7 +214,7 @@ impl<'a, N: Dim> Sub for &'a Vector<N> {
     }
 }
 
-impl<N: Dim> Sub<f64> for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Sub<f64> for Vector<N> {
     type Output = Self;
 
     fn sub(self, rhs: f64) -> Self {
@@ -226,7 +225,7 @@ impl<N: Dim> Sub<f64> for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Sub<f64> for &'a Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Sub<f64> for &'a Vector<N> {
     type Output = Vector<N>;
 
     fn sub(self, rhs: f64) -> Vector<N> {
@@ -240,7 +239,7 @@ impl<'a, N: Dim> Sub<f64> for &'a Vector<N> {
 /**
  * Neg
  */
-impl<N: Dim> Neg for Vector<N> {
+impl<N: Unsigned + ArrayLength<f64>> Neg for Vector<N> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -251,7 +250,7 @@ impl<N: Dim> Neg for Vector<N> {
     }
 }
 
-impl<'a, N: Dim> Neg for &'a Vector<N> {
+impl<'a, N: Unsigned + ArrayLength<f64>> Neg for &'a Vector<N> {
     type Output = Vector<N>;
 
     fn neg(self) -> Vector<N> {

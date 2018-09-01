@@ -20,6 +20,7 @@ use galerkin_1d::flux::Side;
 use galerkin_1d::galerkin::Formulation;
 use galerkin_1d::galerkin::compute_flux;
 use matrices::matrix_types::Dim;
+use galerkin_1d::grid::{LegendreReferenceElement, ReferenceElement};
 
 #[derive(Debug)]
 struct EH {
@@ -173,6 +174,8 @@ impl GalerkinScheme for Maxwells {
     type U = EH;
     type F = Permittivity;
     type FS = MaxwellsFluxScheme;
+    type NP = NP;
+    type RE = LegendreReferenceElement<NP>;
 
     const FORMULATION: Formulation = Formulation::Strong;
 }
@@ -194,7 +197,8 @@ fn eh_0(xs: &Vector<f64>) -> EH {
 
 pub fn maxwell_1d_example() {
     let n_p = <NP as Unsigned>::to_i32();
-    let reference_element = grid::ReferenceElement::legendre(n_p);
+    let reference_element: grid::LegendreReferenceElement<NP> =
+        grid::LegendreReferenceElement::legendre();
     let left_boundary_face = grid::Face {
         face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
             EHUnit { E: 0.0, H: other_side.H }
@@ -215,7 +219,7 @@ pub fn maxwell_1d_example() {
         &permittivity);
     println!("{}", reference_element.n_p);
     println!("{}", reference_element.rs);
-    let operators = assemble_operators::<NP, EH>(&reference_element);
+    let operators = assemble_operators::<LegendreReferenceElement<NP>, EH>(&reference_element);
 
     maxwell_1d(&eh_0,
                &grid,
@@ -223,9 +227,12 @@ pub fn maxwell_1d_example() {
                &operators);
 }
 
-fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::LegendreReferenceElement,
-                  operators: &Operators)
-    where Fx: Fn(&Vector<f64>) -> EH {
+fn maxwell_1d<Fx, RE>(eh_0: Fx, grid: &Grid, reference_element: &RE,
+                      operators: &Operators)
+    where
+        Fx: Fn(&Vector<f64>) -> EH,
+        RE: ReferenceElement,
+{
 //    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);
 
     let final_time = 200.0;
@@ -237,12 +244,12 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::LegendreRefer
 
     let mut t: f64 = 0.0;
 
-    let mut storage: Vec<EHStorage> = initialize_storage(eh_0, reference_element.n_p,
+    let mut storage: Vec<EHStorage> = initialize_storage(eh_0, reference_element.n_p(),
                                                          grid, operators);
     let mut residuals: Vec<(Vector<f64>, Vector<f64>)> =
         repeat((
-            Vector::zeros(reference_element.n_p as usize + 1),
-            Vector::zeros(reference_element.n_p as usize + 1),
+            Vector::zeros(reference_element.n_p() as usize + 1),
+            Vector::zeros(reference_element.n_p() as usize + 1),
         ))
             .take(grid.elements.len())
             .collect();

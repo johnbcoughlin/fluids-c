@@ -1,7 +1,10 @@
 extern crate rulinalg;
 extern crate typenum;
+extern crate generic_array as ga;
 
+use self::ga::ArrayLength;
 use std::fmt;
+use std::marker::PhantomData;
 use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
 use galerkin_1d::unknowns::Unknown;
@@ -12,6 +15,7 @@ use galerkin_1d::flux::FluxEnum;
 use matrices::matrix_types::Dim;
 use self::typenum::uint::Unsigned;
 use self::typenum::Add1;
+use std::ops::Add;
 
 pub trait SpatialFlux {
     type Unit: Sized + Copy;
@@ -106,15 +110,18 @@ impl<GS: GalerkinScheme> fmt::Debug for FaceType<GS> {
     }
 }
 
-pub trait ReferenceElement<NP: Unsigned> {
-    type RS: Unsigned;
+pub trait ReferenceElement {
+    type NP: Unsigned + ArrayLength<f64>;
+    type RS: Unsigned + ArrayLength<f64>;
 
     fn n_p(&self) -> i32;
 
     fn rs(&self) -> &Vector<f64>;
 }
 
-pub struct LegendreReferenceElement {
+pub struct LegendreReferenceElement<NP: Unsigned> {
+    phantom: PhantomData<NP>,
+
     // The order of polynomial approximation N_p
     pub n_p: i32,
 
@@ -123,9 +130,9 @@ pub struct LegendreReferenceElement {
     pub rs: Vector<f64>,
 }
 
-impl LegendreReferenceElement {
-    pub fn legendre<N>() -> LegendreReferenceElement {
-        let n_p = <N as Unsigned>::to_usize();
+impl<NP: Unsigned> LegendreReferenceElement<NP> {
+    pub fn legendre() -> LegendreReferenceElement<NP> {
+        let n_p = <NP as Unsigned>::to_i32();
         let mut rs = vec![-1.];
         let roots = grad_legendre_roots(n_p);
         for r in roots.into_iter() {
@@ -133,11 +140,16 @@ impl LegendreReferenceElement {
         }
         rs.push(1.);
         let rs = Vector::new(rs);
-        LegendreReferenceElement { n_p, rs }
+        LegendreReferenceElement { phantom: PhantomData, n_p, rs }
     }
 }
 
-impl<N: Unsigned> ReferenceElement<N> for LegendreReferenceElement {
+impl<N> ReferenceElement for LegendreReferenceElement<N>
+    where
+        N: Unsigned + Add<typenum::B1> + ArrayLength<f64>,
+        Add1<N>: Unsigned + ArrayLength<f64>,
+{
+    type NP = N;
     type RS = Add1<N>;
 
     fn n_p(&self) -> i32 {
@@ -168,7 +180,7 @@ impl<GS: GalerkinScheme> fmt::Display for Grid<GS> {
 }
 
 pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
-                               reference_element: &LegendreReferenceElement,
+                               reference_element: &GS::RE,
                                left_boundary: Face<GS>,
                                right_boundary: Face<GS>,
                                interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
@@ -179,7 +191,7 @@ pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
     assert!(x_max > x_min);
     let diff = (x_max - x_min) / (n_k as f64);
     let transform = |left| {
-        let s = (&reference_element.rs + 1.) / 2.;
+        let s = (reference_element.rs() + 1.) / 2.;
         let x = s * diff + left;
         x
     };
