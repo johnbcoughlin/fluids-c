@@ -60,19 +60,19 @@ pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> Vector<N>
     p_i
 }
 
-pub fn grad_jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
+pub fn grad_jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> Vector<N>
     where
         N: Unsigned + ArrayLength<f64>,
 {
     if n == 0 {
-        return RaVector::zeros(xs.size());
+        return Vector::from_const(0.0);
     }
     let alphaf = alpha as f64;
     let betaf = beta as f64;
     let nf = n as f64;
     let factor: f64 = (nf * (nf + alphaf + betaf + 1.)).sqrt();
     let j = jacobi::<N>(&xs, alpha + 1, beta + 1, n - 1);
-    return j.to_rulinalg() * factor;
+    return j * factor;
 }
 
 // The Legendre polynomials are P_n(0, 0), the Jacobi polynomials with alpha = beta = 0.
