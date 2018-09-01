@@ -32,7 +32,7 @@ pub fn grad_vandermonde<N>(rs: &RaVector<f64>, n: i32) -> Matrix<f64>
     let mut v = Matrix::zeros(rs.size(), (n + 1) as usize);
     for j in 0..n + 1 {
         let mut column = v.col_mut(j as usize);
-        let vals = grad_jacobi::<N>(rs, 0, 0, j);
+        let vals = grad_jacobi::<N>(&Vector::from_rulinalg(&rs), 0, 0, j);
         for (dest, src) in column.iter_mut().zip(vals.into_iter()) {
             *dest = src;
         }
@@ -57,15 +57,16 @@ pub fn vandermonde_2d(n: i32, a: RaVector<f64>, b: RaVector<f64>) {
 mod tests {
     extern crate typenum;
 
-    use functions::jacobi_polynomials::grad_legendre_roots;
+    use functions::jacobi_polynomials::gauss_lobatto_points;
     use functions::vandermonde::{vandermonde, grad_vandermonde};
     use matrices::vector_ops::Vector;
-    use self::typenum::{U0, U1, U2, U3, U4};
+    use self::typenum::{U0, U1, U2, U3, U6};
 
     #[test]
     fn test_vandermonde() {
-        let rs = grad_legendre_roots(5);
-        let v = vandermonde::<U4>(&Vector::from_rulinalg(&rs), 5);
+        let rs = gauss_lobatto_points(5);
+        let v = vandermonde::<U6>(&Vector::from_rulinalg(&rs), 5);
+        println!("{}", v);
         assert!((0.7071 - v[[0, 0]]).abs() < 0.001);
         assert!((-1.2247 - v[[0, 1]]).abs() < 0.001);
         assert!((-1.8708 - v[[0, 3]]).abs() < 0.001);
@@ -73,9 +74,9 @@ mod tests {
 
     #[test]
     fn test_grad_vandermonde() {
-        let rs = grad_legendre_roots(5);
-        assert_eq!(rs.size(), 4);
-        let v = grad_vandermonde::<U4>(&rs, 5);
+        let rs = gauss_lobatto_points(5);
+        assert_eq!(rs.size(), 6);
+        let v = grad_vandermonde::<U6>(&rs, 5);
         assert!((0.0000 - v[[0, 0]]).abs() < 0.001);
         assert!((1.2247 - v[[0, 1]]).abs() < 0.001);
         assert!((11.2250 - v[[0, 3]]).abs() < 0.001);

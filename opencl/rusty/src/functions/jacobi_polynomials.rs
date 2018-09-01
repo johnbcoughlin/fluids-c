@@ -59,7 +59,7 @@ pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
     return p_i.to_rulinalg();
 }
 
-pub fn grad_jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
+pub fn grad_jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
     where
         N: Unsigned + ArrayLength<f64>,
 {
@@ -70,7 +70,7 @@ pub fn grad_jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVe
     let betaf = beta as f64;
     let nf = n as f64;
     let factor: f64 = (nf * (nf + alphaf + betaf + 1.)).sqrt();
-    let j = jacobi::<N>(&Vector::from_rulinalg(xs), alpha + 1, beta + 1, n - 1);
+    let j = jacobi::<N>(&xs, alpha + 1, beta + 1, n - 1);
     return j * factor;
 }
 
@@ -177,7 +177,7 @@ mod tests {
 
     fn test_grad_jacobi_val(x: f64, alpha: i32, beta: i32, n: i32, expected_value: f64) {
         let xs = vector![x];
-        let p = grad_jacobi::<U1>(&xs, alpha, beta, n);
+        let p = grad_jacobi::<U1>(&Vector::from_rulinalg(&xs), alpha, beta, n);
         assert!((p[0] - expected_value).abs() < 0.0001);
     }
 
