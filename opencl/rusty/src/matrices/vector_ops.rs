@@ -4,7 +4,7 @@ extern crate itertools;
 extern crate rulinalg;
 extern crate core;
 
-use std::ops::{Neg, Mul, Add, Sub, Div};
+use std::ops::{Neg, Mul, Add, Sub, Div, Index};
 use self::tn::{U1, UInt, Prod, Unsigned};
 use self::ga::{GenericArray, ArrayLength};
 use self::rulinalg::vector::Vector as RaVector;
@@ -262,5 +262,22 @@ impl<'a, N: Unsigned + ArrayLength<f64>> Neg for &'a Vector<N> {
             .map(|&a| -a)
             .collect();
         Vector { data }
+    }
+}
+
+impl<N: Unsigned + ArrayLength<f64>> Index<usize> for Vector<N> {
+    type Output = f64;
+
+    fn index(&self, i: usize) -> &f64 {
+        &self.data[i]
+    }
+}
+
+impl<N: Unsigned + ArrayLength<f64>> IntoIterator for Vector<N> {
+    type Item = f64;
+    type IntoIter = self::ga::iter::GenericArrayIter<f64, N>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
     }
 }

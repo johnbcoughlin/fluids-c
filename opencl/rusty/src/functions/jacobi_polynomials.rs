@@ -17,7 +17,7 @@ use matrices::matrix_types::Dim;
 use self::typenum::uint::Unsigned;
 use self::typenum::operator_aliases::Add1;
 
-pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
+pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> Vector<N>
     where
         N: Unsigned + ArrayLength<f64>,
 {
@@ -31,13 +31,13 @@ pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
 
     let p_0: Vector<N> = Vector::from_const(1.0 / gamma_0.sqrt());
     if n == 0 {
-        return p_0.to_rulinalg();
+        return p_0;
     }
 
     let gamma_1 = (alphaf + 1.) * (betaf + 1.) / (alphaf + betaf + 3.) * gamma_0;
     let p_1 = (xs * ((alphaf + betaf + 2.) / 2.) + (alphaf - betaf) / 2.) / gamma_1.sqrt();
     if n == 1 {
-        return p_1.to_rulinalg();
+        return p_1;
     }
 
     let mut a_old = 2. / (2. + alphaf + betaf) *
@@ -57,7 +57,7 @@ pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
         p_i = p_i_plus_1;
         a_old = a_new;
     }
-    return p_i.to_rulinalg();
+    p_i
 }
 
 pub fn grad_jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
@@ -72,7 +72,7 @@ pub fn grad_jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector
     let nf = n as f64;
     let factor: f64 = (nf * (nf + alphaf + betaf + 1.)).sqrt();
     let j = jacobi::<N>(&xs, alpha + 1, beta + 1, n - 1);
-    return j * factor;
+    return j.to_rulinalg() * factor;
 }
 
 // The Legendre polynomials are P_n(0, 0), the Jacobi polynomials with alpha = beta = 0.
@@ -121,7 +121,7 @@ pub fn simplex_2d_polynomial<N: Dim>(a: RaVector<f64>, b: RaVector<f64>, i: i32,
     (0..i).for_each(|_| {
         x = x.elemul(&base);
     });
-    (h1.elemul(&h2) * 2.0_f64.sqrt()).elemul(&x)
+    (h1.to_rulinalg().elemul(&h2.to_rulinalg()) * 2.0_f64.sqrt()).elemul(&x)
 }
 
 #[cfg(test)]
