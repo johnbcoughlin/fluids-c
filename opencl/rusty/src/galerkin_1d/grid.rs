@@ -6,16 +6,17 @@ use self::ga::ArrayLength;
 use std::fmt;
 use std::marker::PhantomData;
 use functions::jacobi_polynomials::grad_legendre_roots;
-use self::rulinalg::vector::Vector;
+use functions::jacobi_polynomials::gauss_lobatto_points;
+use self::rulinalg::vector::Vector as RaVector;
 use galerkin_1d::unknowns::Unknown;
 use std::cell::Cell;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxEnum;
-use matrices::matrix_types::Dim;
+use matrices::vector_ops::Vector;
 use self::typenum::uint::Unsigned;
-use self::typenum::Add1;
-use std::ops::Add;
+use self::typenum::{Sub1, Add1};
+use std::ops::{Add, Sub};
 
 pub trait SpatialFlux {
     type Unit: Sized + Copy;
@@ -32,7 +33,7 @@ pub struct Element<GS: GalerkinScheme> {
     pub x_left: f64,
     pub x_right: f64,
 
-    pub x_k: Vector<f64>,
+    pub x_k: RaVector<f64>,
 
     pub left_face: Box<Face<GS>>,
     pub right_face: Box<Face<GS>>,
@@ -46,8 +47,8 @@ pub struct Element<GS: GalerkinScheme> {
 
 pub struct ElementStorage<U: Unknown, F: SpatialFlux> {
     // The derivative of r with respect to x, i.e. the metric of the x -> r mapping.
-    pub r_x: Vector<f64>,
-    pub r_x_at_faces: Vector<f64>,
+    pub r_x: RaVector<f64>,
+    pub r_x_at_faces: RaVector<f64>,
 
     pub u_k: U,
 
@@ -116,7 +117,7 @@ pub trait ReferenceElement {
 
     fn n_p(&self) -> i32;
 
-    fn rs(&self) -> &Vector<f64>;
+    fn rs(&self) -> &RaVector<f64>;
 }
 
 pub struct LegendreReferenceElement<NP: Unsigned> {
@@ -127,19 +128,19 @@ pub struct LegendreReferenceElement<NP: Unsigned> {
 
     // The vector of interpolation points in the reference element [-1, 1].
     // The first value in this vector is -1, and the last is 1.
-    pub rs: Vector<f64>,
+    pub rs: RaVector<f64>,
 }
 
 impl<NP: Unsigned> LegendreReferenceElement<NP> {
-    pub fn legendre() -> LegendreReferenceElement<NP> {
+    pub fn legendre() -> LegendreReferenceElement<NP>
+        where
+            NP: Unsigned + ArrayLength<f64> + Add<typenum::B1> + Sub<typenum::B1>,
+            Add1<NP>: Unsigned + ArrayLength<f64>,
+            Sub1<NP>: Unsigned + ArrayLength<f64>,
+    {
         let n_p = <NP as Unsigned>::to_i32();
-        let mut rs = vec![-1.];
-        let roots = grad_legendre_roots(n_p);
-        for r in roots.into_iter() {
-            rs.push(r);
-        }
-        rs.push(1.);
-        let rs = Vector::new(rs);
+        let rs: Vector<Add1<NP>> = gauss_lobatto_points::<NP>(n_p);
+        let rs = rs.to_rulinalg();
         LegendreReferenceElement { phantom: PhantomData, n_p, rs }
     }
 }
@@ -156,7 +157,7 @@ impl<N> ReferenceElement for LegendreReferenceElement<N>
         self.n_p
     }
 
-    fn rs(&self) -> &Vector<f64> {
+    fn rs(&self) -> &RaVector<f64> {
         &(self.rs)
     }
 }
@@ -186,7 +187,7 @@ pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
                                interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
                                f: Fx, ) -> Grid<GS>
     where GS: GalerkinScheme,
-          Fx: Fn(&Vector<f64>) -> GS::F,
+          Fx: Fn(&RaVector<f64>) -> GS::F,
 {
     assert!(x_max > x_min);
     let diff = (x_max - x_min) / (n_k as f64);

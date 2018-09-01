@@ -3,7 +3,7 @@ extern crate typenum;
 
 use galerkin_1d::grid::{LegendreReferenceElement, ReferenceElement, generate_grid};
 use galerkin_1d::grid;
-use self::rulinalg::vector::Vector;
+use self::rulinalg::vector::Vector as RaVector;
 use galerkin_1d::operators::Operators;
 use galerkin_1d::operators::assemble_operators;
 use functions::range_kutta::{RKA, RKB, RKC};
@@ -20,13 +20,13 @@ use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::galerkin::Formulation;
 use galerkin_1d::galerkin::compute_flux;
 use self::typenum::{U8, Unsigned};
-use matrices::matrix_types::Dim;
+use matrices::vector_ops::Vector;
 
 #[inline(never)]
 pub fn advec_1d<Fx, RE>(u_0: Fx, grid: &Grid, reference_element: &RE,
                         operators: &Operators, a: f64) -> Vec<UStorage>
     where
-        Fx: Fn(&Vector<f64>) -> U,
+        Fx: Fn(&RaVector<f64>) -> U,
         RE: ReferenceElement,
 {
     let mut plotter = Plotter::create(0.0, 2.0, -1.0, 1.0);
@@ -43,7 +43,7 @@ pub fn advec_1d<Fx, RE>(u_0: Fx, grid: &Grid, reference_element: &RE,
 
     let mut storage: Vec<UStorage> = initialize_storage(u_0, reference_element.n_p(),
                                                         grid, operators);
-    let mut residuals: Vec<Vector<f64>> = repeat(Vector::zeros(reference_element.n_p() as usize + 1))
+    let mut residuals: Vec<RaVector<f64>> = repeat(RaVector::zeros(reference_element.n_p() as usize + 1))
         .take(grid.elements.len())
         .collect();
 
@@ -94,29 +94,9 @@ pub fn advec_1d<Fx, RE>(u_0: Fx, grid: &Grid, reference_element: &RE,
 }
 
 fn advec_rhs_1d(elt: &Element, elt_storage: &UStorage,
-                operators: &Operators, a: f64) -> Vector<f64> {
+                operators: &Operators, a: f64) -> RaVector<f64> {
     let (du_left, du_right) = compute_flux(elt, elt_storage);
-//    let du_left = {
-//        let u_h = elt_storage.u_left_minus.get();
-//        let numerical_flux = lax_friedrichs(
-//            a,
-//            u_h,
-//            elt_storage.u_left_plus.get(),
-//            elt.left_outward_normal,
-//        );
-//        (((a * u_h) - numerical_flux) * elt.left_outward_normal)
-//    };
-//    let du_right = {
-//        let u_h = elt_storage.u_right_minus.get();
-//        let numerical_flux = lax_friedrichs(
-//            a,
-//            u_h,
-//            elt_storage.u_right_plus.get(),
-//            elt.right_outward_normal,
-//        );
-//        (((a * u_h) - numerical_flux) * elt.right_outward_normal)
-//    };
-    let du: Vector<f64> = vector![du_left, du_right];
+    let du: RaVector<f64> = vector![du_left, du_right];
     let dr_u = &operators.d_r * &elt_storage.u_k.u;
     let a_rx = &elt_storage.r_x * (-a);
     let rhs_u = &a_rx.elemul(&dr_u);
@@ -136,10 +116,8 @@ fn lax_friedrichs(a: f64, u_minus: f64, u_plus: f64, outward_normal: f64) -> f64
 
 #[derive(Debug)]
 pub struct U {
-    u: Vector<f64>,
+    u: RaVector<f64>,
 }
-
-impl Dim for U8 {}
 
 type NP = U8;
 
@@ -203,7 +181,7 @@ impl GalerkinScheme for Advec {
     const FORMULATION: Formulation = Formulation::Strong;
 }
 
-fn u_0(xs: &Vector<f64>) -> U {
+fn u_0(xs: &RaVector<f64>) -> U {
     U { u: xs.iter().map(|x: &f64| x.sin()).collect() }
 }
 

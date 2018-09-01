@@ -1,5 +1,8 @@
 extern crate rulinalg;
+extern crate typenum;
+extern crate generic_array;
 
+use self::generic_array::ArrayLength;
 use galerkin_1d::unknowns::Unknown;
 use galerkin_1d::grid::SpatialFlux;
 use galerkin_1d::flux::FluxScheme;
@@ -8,14 +11,15 @@ use galerkin_1d::grid::Element;
 use galerkin_1d::grid::ElementStorage;
 use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::Side;
-use matrices::matrix_types::Dim;
+use self::typenum::{Unsigned, Add1, Sub1};
+use std::ops::{Add, Sub};
 use galerkin_1d::grid::ReferenceElement;
 
 pub trait GalerkinScheme {
     type U: Unknown;
     type F: SpatialFlux;
     type FS: FluxScheme<Self::U, Self::F>;
-    type NP: Dim;
+    type NP: Unsigned + ArrayLength<f64>;
     type RE: ReferenceElement<NP=Self::NP>;
 
     const FORMULATION: Formulation;

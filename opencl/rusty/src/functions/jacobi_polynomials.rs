@@ -6,7 +6,7 @@ extern crate nalgebra as na;
 extern crate generic_array as ga;
 extern crate typenum;
 
-use std::ops::Add;
+use std::ops::{Add, Sub};
 use self::ga::ArrayLength;
 use self::num::traits::real::Real;
 use self::rulinalg::vector::Vector as RaVector;
@@ -15,7 +15,7 @@ use self::lapack::*;
 use matrices::vector_ops::Vector;
 use matrices::matrix_types::Dim;
 use self::typenum::uint::Unsigned;
-use self::typenum::operator_aliases::Add1;
+use self::typenum::operator_aliases::{Add1, Sub1};
 
 pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> Vector<N>
     where
@@ -78,7 +78,11 @@ pub fn grad_jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> Vector<N
 // The Legendre polynomials are P_n(0, 0), the Jacobi polynomials with alpha = beta = 0.
 // This function returns the zeros of (1 - x^2)P_n'(0, 0), i.e. the zeros of the derivative
 // of the nth Legendre polynomial, plus -1 and 1.
-pub fn grad_legendre_roots(n: i32) -> RaVector<f64> {
+pub fn grad_legendre_roots<N>(n: i32) -> Vector<Sub1<N>>
+    where
+        N: Unsigned + ArrayLength<f64> + Sub<typenum::B1>,
+        Sub1<N>: Unsigned + ArrayLength<f64>,
+{
     let n = n - 1;
     let mut diag = vec![0.0; n as usize];
     let mut subdiag: Vec<f64> = (2..n + 1).map(|i| {
@@ -95,17 +99,18 @@ pub fn grad_legendre_roots(n: i32) -> RaVector<f64> {
         dstev(b'N', n, &mut diag, &mut subdiag, &mut z, 1, &mut work, &mut info);
     }
 
-    return RaVector::new(diag);
+    Vector::from_vec(diag)
 }
 
 pub fn gauss_lobatto_points<N>(n: i32) -> Vector<Add1<N>>
     where
-        N: Unsigned + ArrayLength<f64> + Add<typenum::B1>,
+        N: Unsigned + ArrayLength<f64> + Add<typenum::B1> + Sub<typenum::B1>,
         Add1<N>: Unsigned + ArrayLength<f64>,
+        Sub1<N>: Unsigned + ArrayLength<f64>,
 {
     let n = <N as Unsigned>::to_i32();
     let mut rs = vec![-1.];
-    let roots = grad_legendre_roots(n);
+    let roots: Vector<Sub1<N>> = grad_legendre_roots::<N>(n);
     for r in roots.into_iter() {
         rs.push(r);
     }
@@ -131,7 +136,7 @@ mod tests {
 
     use functions::jacobi_polynomials::{jacobi, grad_jacobi, grad_legendre_roots};
     use matrices::vector_ops::Vector;
-    use self::typenum::{U0, U1, U2, U3, U4};
+    use self::typenum::{U0, U1, U2, U3, U4, U5, U6};
 
     #[test]
     fn test_jacobi_0() {
@@ -189,8 +194,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let roots = grad_legendre_roots(5);
-        for &x in roots.iter() {
+        let roots: Vector<U4> = grad_legendre_roots::<U5>(5);
+        for x in roots.into_iter() {
             assert!((l_prime_5(x).abs() < 1e-5));
         }
     }

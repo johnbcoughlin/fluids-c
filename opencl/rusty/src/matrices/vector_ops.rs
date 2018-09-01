@@ -23,6 +23,7 @@ impl<N: Unsigned + ArrayLength<f64>> Vector<N> {
     }
 
     pub fn from_vec(vec: Vec<f64>) -> Vector<N> {
+        assert_eq!(vec.len(), Self::static_size());
         Vector { data: vec.into_iter().map(|x| x).collect() }
     }
 
