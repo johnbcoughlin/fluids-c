@@ -223,7 +223,7 @@ pub fn maxwell_1d_example() {
                &operators);
 }
 
-fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElement,
+fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::LegendreReferenceElement,
                   operators: &Operators)
     where Fx: Fn(&Vector<f64>) -> EH {
 //    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);

@@ -1,7 +1,7 @@
 extern crate rulinalg;
 extern crate typenum;
 
-use galerkin_1d::grid::{ReferenceElement, generate_grid};
+use galerkin_1d::grid::{LegendreReferenceElement, ReferenceElement, generate_grid};
 use galerkin_1d::grid;
 use self::rulinalg::vector::Vector;
 use galerkin_1d::operators::Operators;
@@ -23,7 +23,7 @@ use self::typenum::{U8, Unsigned};
 use matrices::matrix_types::Dim;
 
 #[inline(never)]
-pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &ReferenceElement<NP>,
+pub fn advec_1d<Fx>(u_0: Fx, grid: &Grid, reference_element: &LegendreReferenceElement,
                     operators: &Operators, a: f64) -> Vec<UStorage>
     where Fx: Fn(&Vector<f64>) -> U {
     let mut plotter = Plotter::create(0.0, 2.0, -1.0, 1.0);

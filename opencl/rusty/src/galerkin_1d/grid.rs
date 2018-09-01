@@ -11,6 +11,7 @@ use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxEnum;
 use matrices::matrix_types::Dim;
 use self::typenum::uint::Unsigned;
+use self::typenum::Add1;
 
 pub trait SpatialFlux {
     type Unit: Sized + Copy;
@@ -105,7 +106,15 @@ impl<GS: GalerkinScheme> fmt::Debug for FaceType<GS> {
     }
 }
 
-pub struct ReferenceElement<N: Dim> {
+pub trait ReferenceElement<NP: Unsigned> {
+    type RS: Unsigned;
+
+    fn n_p(&self) -> i32;
+
+    fn rs(&self) -> &Vector<f64>;
+}
+
+pub struct LegendreReferenceElement {
     // The order of polynomial approximation N_p
     pub n_p: i32,
 
@@ -114,8 +123,8 @@ pub struct ReferenceElement<N: Dim> {
     pub rs: Vector<f64>,
 }
 
-impl<N: Dim> ReferenceElement<N> {
-    pub fn legendre<N>() -> ReferenceElement<N> {
+impl LegendreReferenceElement {
+    pub fn legendre<N>() -> LegendreReferenceElement {
         let n_p = <N as Unsigned>::to_usize();
         let mut rs = vec![-1.];
         let roots = grad_legendre_roots(n_p);
@@ -124,7 +133,19 @@ impl<N: Dim> ReferenceElement<N> {
         }
         rs.push(1.);
         let rs = Vector::new(rs);
-        ReferenceElement { n_p, rs }
+        LegendreReferenceElement { n_p, rs }
+    }
+}
+
+impl<N: Unsigned> ReferenceElement<N> for LegendreReferenceElement {
+    type RS = Add1<N>;
+
+    fn n_p(&self) -> i32 {
+        self.n_p
+    }
+
+    fn rs(&self) -> &Vector<f64> {
+        &(self.rs)
     }
 }
 
@@ -146,12 +167,12 @@ impl<GS: GalerkinScheme> fmt::Display for Grid<GS> {
     }
 }
 
-pub fn generate_grid<GS, Fx,>(x_min: f64, x_max: f64, n_k: i32,
-                                             reference_element: &ReferenceElement<GS::NP>,
-                                             left_boundary: Face<GS>,
-                                             right_boundary: Face<GS>,
-                                             interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
-                                             f: Fx, ) -> Grid<GS>
+pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
+                               reference_element: &LegendreReferenceElement,
+                               left_boundary: Face<GS>,
+                               right_boundary: Face<GS>,
+                               interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
+                               f: Fx, ) -> Grid<GS>
     where GS: GalerkinScheme,
           Fx: Fn(&Vector<f64>) -> GS::F,
 {
