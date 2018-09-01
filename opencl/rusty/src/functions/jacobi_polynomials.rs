@@ -15,11 +15,10 @@ use matrices::vector_ops::Vector;
 use matrices::matrix_types::Dim;
 use self::typenum::uint::Unsigned;
 
-pub fn jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
+pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
     where
         N: Unsigned + ArrayLength<f64>,
 {
-    let xs = Vector::from_rulinalg(xs);
 
     let alphaf = alpha as f64;
     let betaf = beta as f64;
@@ -35,7 +34,7 @@ pub fn jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<
     }
 
     let gamma_1 = (alphaf + 1.) * (betaf + 1.) / (alphaf + betaf + 3.) * gamma_0;
-    let p_1 = (&xs * ((alphaf + betaf + 2.) / 2.) + (alphaf - betaf) / 2.) / gamma_1.sqrt();
+    let p_1 = (xs * ((alphaf + betaf + 2.) / 2.) + (alphaf - betaf) / 2.) / gamma_1.sqrt();
     if n == 1 {
         return p_1.to_rulinalg();
     }
@@ -52,7 +51,7 @@ pub fn jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVector<
         let a_new = 2. / (h1 + 2.) * ((i + 1.) * (i + 1. + alphaf + betaf) * (i + 1. + alphaf) *
             (i + 1. + betaf) / (h1 + 1.) / (h1 + 3.)).sqrt();
         let b_new = -(alphaf * alphaf - betaf * betaf) / h1 / (h1 + 2.);
-        let mut p_i_plus_1 = (-(p_i_minus_1) * a_old + ((&xs - b_new) * &p_i)) * (1. / a_new);
+        let mut p_i_plus_1 = (-(p_i_minus_1) * a_old + ((xs - b_new) * &p_i)) * (1. / a_new);
         p_i_minus_1 = p_i;
         p_i = p_i_plus_1;
         a_old = a_new;
@@ -71,7 +70,7 @@ pub fn grad_jacobi<N>(xs: &RaVector<f64>, alpha: i32, beta: i32, n: i32) -> RaVe
     let betaf = beta as f64;
     let nf = n as f64;
     let factor: f64 = (nf * (nf + alphaf + betaf + 1.)).sqrt();
-    let j = jacobi::<N>(xs, alpha + 1, beta + 1, n - 1);
+    let j = jacobi::<N>(&Vector::from_rulinalg(xs), alpha + 1, beta + 1, n - 1);
     return j * factor;
 }
 
@@ -109,8 +108,8 @@ pub fn gauss_lobatto_points(n: i32) -> RaVector<f64> {
 }
 
 pub fn simplex_2d_polynomial<N: Dim>(a: RaVector<f64>, b: RaVector<f64>, i: i32, j: i32) -> RaVector<f64> {
-    let h1 = jacobi::<N>(&a, 0, 0, i);
-    let h2 = jacobi::<N>(&b, 2 * i + 1, 0, j);
+    let h1 = jacobi::<N>(&Vector::from_rulinalg(&a), 0, 0, i);
+    let h2 = jacobi::<N>(&Vector::from_rulinalg(&b), 2 * i + 1, 0, j);
     let base: RaVector<f64> = (-&b + 1.);
     let mut x = RaVector::ones(base.size());
     (0..i).for_each(|_| {
@@ -125,10 +124,8 @@ mod tests {
     extern crate typenum;
 
     use functions::jacobi_polynomials::{jacobi, grad_jacobi, grad_legendre_roots};
-    use matrices::matrix_types::Dim;
+    use matrices::vector_ops::Vector;
     use self::typenum::{U0, U1, U2, U3, U4};
-
-    impl Dim for U1 {}
 
     #[test]
     fn test_jacobi_0() {
@@ -156,7 +153,7 @@ mod tests {
 
     fn test_jacobi_val(x: f64, alpha: i32, beta: i32, n: i32, expected_value: f64) {
         let xs = vector![x];
-        let p = jacobi::<U1>(&xs, alpha, beta, n);
+        let p = jacobi::<U1>(&Vector::from_rulinalg(&xs), alpha, beta, n);
         assert!((p[0] - expected_value).abs() < 0.0001);
     }
 
