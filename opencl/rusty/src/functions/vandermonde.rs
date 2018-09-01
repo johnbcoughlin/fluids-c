@@ -60,12 +60,12 @@ mod tests {
     use functions::jacobi_polynomials::gauss_lobatto_points;
     use functions::vandermonde::{vandermonde, grad_vandermonde};
     use matrices::vector_ops::Vector;
-    use self::typenum::{U0, U1, U2, U3, U6};
+    use self::typenum::{U0, U1, U2, U3, U5, U6};
 
     #[test]
     fn test_vandermonde() {
-        let rs = gauss_lobatto_points(5);
-        let v = vandermonde::<U6>(&Vector::from_rulinalg(&rs), 5);
+        let rs: Vector<U6> = gauss_lobatto_points::<U5>(5);
+        let v = vandermonde::<U6>(&rs, 5);
         println!("{}", v);
         assert!((0.7071 - v[[0, 0]]).abs() < 0.001);
         assert!((-1.2247 - v[[0, 1]]).abs() < 0.001);
@@ -74,9 +74,9 @@ mod tests {
 
     #[test]
     fn test_grad_vandermonde() {
-        let rs = gauss_lobatto_points(5);
+        let rs: Vector<U6> = gauss_lobatto_points::<U5>(5);
         assert_eq!(rs.size(), 6);
-        let v = grad_vandermonde::<U6>(&rs, 5);
+        let v = grad_vandermonde::<U6>(&rs.to_rulinalg(), 5);
         assert!((0.0000 - v[[0, 0]]).abs() < 0.001);
         assert!((1.2247 - v[[0, 1]]).abs() < 0.001);
         assert!((11.2250 - v[[0, 3]]).abs() < 0.001);

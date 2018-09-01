@@ -22,6 +22,10 @@ impl<N: Unsigned + ArrayLength<f64>> Vector<N> {
         Self::static_size()
     }
 
+    pub fn from_vec(vec: Vec<f64>) -> Vector<N> {
+        Vector { data: vec.into_iter().map(|x| x).collect() }
+    }
+
     pub fn from_rulinalg(vector: &RaVector<f64>) -> Vector<N> {
         Vector { data: vector.into_iter().map(|x| *x).collect() }
     }

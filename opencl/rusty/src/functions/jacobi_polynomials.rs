@@ -6,6 +6,7 @@ extern crate nalgebra as na;
 extern crate generic_array as ga;
 extern crate typenum;
 
+use std::ops::Add;
 use self::ga::ArrayLength;
 use self::num::traits::real::Real;
 use self::rulinalg::vector::Vector as RaVector;
@@ -14,12 +15,12 @@ use self::lapack::*;
 use matrices::vector_ops::Vector;
 use matrices::matrix_types::Dim;
 use self::typenum::uint::Unsigned;
+use self::typenum::operator_aliases::Add1;
 
 pub fn jacobi<N>(xs: &Vector<N>, alpha: i32, beta: i32, n: i32) -> RaVector<f64>
     where
         N: Unsigned + ArrayLength<f64>,
 {
-
     let alphaf = alpha as f64;
     let betaf = beta as f64;
 
@@ -97,14 +98,19 @@ pub fn grad_legendre_roots(n: i32) -> RaVector<f64> {
     return RaVector::new(diag);
 }
 
-pub fn gauss_lobatto_points(n: i32) -> RaVector<f64> {
+pub fn gauss_lobatto_points<N>(n: i32) -> Vector<Add1<N>>
+    where
+        N: Unsigned + ArrayLength<f64> + Add<typenum::B1>,
+        Add1<N>: Unsigned + ArrayLength<f64>,
+{
+    let n = <N as Unsigned>::to_i32();
     let mut rs = vec![-1.];
     let roots = grad_legendre_roots(n);
     for r in roots.into_iter() {
         rs.push(r);
     }
     rs.push(1.);
-    RaVector::new(rs)
+    Vector::from_vec(rs)
 }
 
 pub fn simplex_2d_polynomial<N: Dim>(a: RaVector<f64>, b: RaVector<f64>, i: i32, j: i32) -> RaVector<f64> {
