@@ -218,7 +218,7 @@ pub fn maxwell_1d_example() {
         MaxwellsInteriorFlux {},
         &permittivity);
     println!("{}", reference_element.n_p);
-    println!("{}", reference_element.rs);
+    println!("{}", reference_element.rs.to_rulinalg());
     let operators = assemble_operators::<LegendreReferenceElement<NP>, EH>(&reference_element);
 
     maxwell_1d(&eh_0,

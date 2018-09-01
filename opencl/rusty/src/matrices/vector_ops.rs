@@ -147,6 +147,17 @@ impl<N: Unsigned + ArrayLength<f64>> Add<f64> for Vector<N> {
     }
 }
 
+impl<'a, N: Unsigned + ArrayLength<f64>> Add<f64> for &'a Vector<N> {
+    type Output = Vector<N>;
+
+    fn add(self, rhs: f64) -> Vector<N> {
+        let data: GenericArray<f64, N> = self.data.iter()
+            .map(|&a| a + rhs)
+            .collect();
+        Vector { data }
+    }
+}
+
 /**
  * Div
  */

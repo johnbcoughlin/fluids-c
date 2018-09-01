@@ -15,7 +15,7 @@ use galerkin_1d::galerkin::GalerkinScheme;
 use galerkin_1d::flux::FluxEnum;
 use matrices::vector_ops::Vector;
 use self::typenum::uint::Unsigned;
-use self::typenum::{Sub1, Add1};
+use self::typenum::{Sub1, Add1, B1};
 use std::ops::{Add, Sub};
 
 pub trait SpatialFlux {
@@ -117,10 +117,14 @@ pub trait ReferenceElement {
 
     fn n_p(&self) -> i32;
 
-    fn rs(&self) -> &RaVector<f64>;
+    fn rs(&self) -> &Vector<Self::RS>;
 }
 
-pub struct LegendreReferenceElement<NP: Unsigned> {
+pub struct LegendreReferenceElement<NP>
+    where
+        NP: Unsigned + Add<B1>,
+        Add1<NP>: Unsigned + ArrayLength<f64>,
+{
     phantom: PhantomData<NP>,
 
     // The order of polynomial approximation N_p
@@ -128,10 +132,14 @@ pub struct LegendreReferenceElement<NP: Unsigned> {
 
     // The vector of interpolation points in the reference element [-1, 1].
     // The first value in this vector is -1, and the last is 1.
-    pub rs: RaVector<f64>,
+    pub rs: Vector<Add1<NP>>,
 }
 
-impl<NP: Unsigned> LegendreReferenceElement<NP> {
+impl<NP> LegendreReferenceElement<NP>
+    where
+        NP: Unsigned + Add<B1>,
+        Add1<NP>: Unsigned + ArrayLength<f64>,
+{
     pub fn legendre() -> LegendreReferenceElement<NP>
         where
             NP: Unsigned + ArrayLength<f64> + Add<typenum::B1> + Sub<typenum::B1>,
@@ -140,7 +148,6 @@ impl<NP: Unsigned> LegendreReferenceElement<NP> {
     {
         let n_p = <NP as Unsigned>::to_i32();
         let rs: Vector<Add1<NP>> = gauss_lobatto_points::<NP>(n_p);
-        let rs = rs.to_rulinalg();
         LegendreReferenceElement { phantom: PhantomData, n_p, rs }
     }
 }
@@ -157,7 +164,7 @@ impl<N> ReferenceElement for LegendreReferenceElement<N>
         self.n_p
     }
 
-    fn rs(&self) -> &RaVector<f64> {
+    fn rs(&self) -> &Vector<Self::RS> {
         &(self.rs)
     }
 }
@@ -197,7 +204,7 @@ pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
         x
     };
     let mut elements = vec![];
-    let x_k = transform(x_min);
+    let x_k = transform(x_min).to_rulinalg();
     let spatial_flux = f(&x_k);
     elements.push(Element {
         index: 0,
@@ -215,7 +222,7 @@ pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
     });
     elements.extend((1..n_k - 1).map(|k| {
         let left = x_min + diff * (k as f64);
-        let x_k = transform(left);
+        let x_k = transform(left).to_rulinalg();
         let spatial_flux = f(&x_k);
         Element {
             index: k,
@@ -235,7 +242,7 @@ pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
             spatial_flux,
         }
     }));
-    let x_k = transform(x_max - diff);
+    let x_k = transform(x_max - diff).to_rulinalg();
     let spatial_flux = f(&x_k);
     elements.push(Element {
         index: n_k - 1,
