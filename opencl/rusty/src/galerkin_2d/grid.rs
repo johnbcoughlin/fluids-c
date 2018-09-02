@@ -36,14 +36,14 @@ impl ReferenceElement {
         let rs: Vector<f64> = -&L2 + &L3 - &L1;
         let ss: Vector<f64> = -&L2 - &L3 + &L1;
 
-        let points: Vec<ReferencePoint> = rs.into_iter().zip(ss.into_iter())
-            .map(|(r, s)| ReferencePoint { r, s, })
+        let points: Vec<ReferencePoint> = rs.iter().zip(ss.iter())
+            .map(|(&r, &s)| ReferencePoint { r, s })
             .collect();
         ReferenceElement {
             n_p: n,
             points,
             rs,
-            ss
+            ss,
         }
     }
 
@@ -58,8 +58,8 @@ impl ReferenceElement {
         let mut L1 = Vector::zeros(n_p as usize);
         let mut L3 = Vector::zeros(n_p as usize);
         let mut sk = 0;
-        (0..n+1).into_iter().for_each(|i| {
-            (0..n+1-i).into_iter().for_each(|j| {
+        (0..n + 1).into_iter().for_each(|i| {
+            (0..n + 1 - i).into_iter().for_each(|j| {
                 L1[sk] = (i as f64) / nf;
                 L3[sk] = (j as f64) / nf;
                 sk = sk + 1;
@@ -93,7 +93,7 @@ impl ReferenceElement {
     }
 
     pub fn rs_to_ab(rs: Vector<f64>, ss: Vector<f64>) -> (Vector<f64>, Vector<f64>) {
-        let a = ((&rs + 1.) / (-&ss + 1.)) * 2 - 1.;
+        let a = ((&rs + 1.).elediv(&(-&ss + 1.))) * 2. - 1.;
         let b = ss.clone();
         (a, b)
     }
@@ -151,9 +151,7 @@ mod tests {
     #[test]
     fn test_reference_element() {
         let re = ReferenceElement::legendre(10);
-        assert_eq!(re.rs[13], ReferencePoint {
-            r: -0.7309414433795846,
-            s: -0.8960431364598923,
-        });
+        assert_eq!(re.rs[13], -0.7309414433795846);
+        assert_eq!(re.ss[13], -0.8960431364598923);
     }
 }

@@ -4,7 +4,7 @@ extern crate gnuplot;
 
 mod functions;
 mod galerkin_1d;
-//mod galerkin_2d;
+mod galerkin_2d;
 mod plotter;
 mod distmesh;
 

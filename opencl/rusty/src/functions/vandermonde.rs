@@ -3,7 +3,7 @@ extern crate rulinalg;
 use self::rulinalg::vector::Vector;
 use self::rulinalg::matrix::Matrix;
 use rulinalg::matrix::BaseMatrixMut;
-use functions::jacobi_polynomials::{jacobi, grad_jacobi};
+use functions::jacobi_polynomials::{jacobi, grad_jacobi, simplex_2d_polynomial};
 
 pub fn vandermonde(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
     let mut v = Matrix::zeros(rs.size(), (n + 1) as usize);
@@ -29,23 +29,30 @@ pub fn grad_vandermonde(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
     v
 }
 
-pub fn vandermonde_2d(n: i32, a: Vector<f64>, b: Vector<f64>) {
+pub fn vandermonde_2d(n: i32, a: &Vector<f64>, b: &Vector<f64>) -> Matrix<f64> {
     assert_eq!(a.size(), b.size());
     let n_cols = (n as usize + 1) * (n as usize + 2) / 2;
-//    let mut v = Matrix::zeros(a.size(), n_cols);
+    let mut v = Matrix::zeros(a.size(), n_cols);
 
-    let s_k = 0;
-    (0..n+1).for_each(|i| {
-        (0..n+1-i).for_each(|j| {
-//            let mut row = v.row_mut(i as usize);
+    let mut s_k = 0;
+    (0..n + 1).for_each(|i| {
+        (0..n + 1 - i).for_each(|j| {
+            let mut row = v.col_mut(s_k as usize);
+            let simplex = simplex_2d_polynomial(a, b, i, j);
+            println!("{}", simplex);
+            simplex.into_iter().zip(row.iter_mut())
+                .for_each(|(x, dest)| *dest = x);
+            s_k = s_k + 1;
         })
-    })
+    });
+    v
 }
 
 #[cfg(test)]
 mod tests {
     use functions::jacobi_polynomials::grad_legendre_roots;
-    use functions::vandermonde::{vandermonde, grad_vandermonde};
+    use functions::vandermonde::{vandermonde, grad_vandermonde, vandermonde_2d};
+    use std::ops::Index;
 
     #[test]
     fn test_vandermonde() {
@@ -63,5 +70,14 @@ mod tests {
         assert!((0.0000 - v[[0, 0]]).abs() < 0.001);
         assert!((1.2247 - v[[0, 1]]).abs() < 0.001);
         assert!((11.2250 - v[[0, 3]]).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_vandermonde_2d() {
+        let a = vector![-1., -0.733782082764989, 0.112279732256502, 2.59621764561432, 14.0252847048942, -1.];
+        let b = vector![-1., -0.765055323929465, -0.285231516480645, 0.285231516480645, 0.765055323929465, 1.];
+        let v = vandermonde_2d(5, &a, &b);
+        assert_eq!(*v.index([1, 2]), 0.24276745596088087);
+        assert_eq!(*v.index([4, 11]), 11.132172517758661);
     }
 }
