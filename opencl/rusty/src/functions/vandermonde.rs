@@ -3,7 +3,7 @@ extern crate rulinalg;
 use self::rulinalg::vector::Vector;
 use self::rulinalg::matrix::Matrix;
 use rulinalg::matrix::BaseMatrixMut;
-use functions::jacobi_polynomials::{jacobi, grad_jacobi, simplex_2d_polynomial};
+use functions::jacobi_polynomials::{jacobi, grad_jacobi, simplex_2d_polynomial, grad_simplex_2d_polynomials};
 
 pub fn vandermonde(rs: &Vector<f64>, n: i32) -> Matrix<f64> {
     let mut v = Matrix::zeros(rs.size(), (n + 1) as usize);
@@ -37,15 +37,37 @@ pub fn vandermonde_2d(n: i32, a: &Vector<f64>, b: &Vector<f64>) -> Matrix<f64> {
     let mut s_k = 0;
     (0..n + 1).for_each(|i| {
         (0..n + 1 - i).for_each(|j| {
-            let mut row = v.col_mut(s_k as usize);
+            let mut col = v.col_mut(s_k as usize);
             let simplex = simplex_2d_polynomial(a, b, i, j);
-            println!("{}", simplex);
-            simplex.into_iter().zip(row.iter_mut())
+            simplex.into_iter().zip(col.iter_mut())
                 .for_each(|(x, dest)| *dest = x);
             s_k = s_k + 1;
         })
     });
     v
+}
+
+pub fn grad_vandermonde_2d(n: i32, a: &Vector<f64>, b: &Vector<f64>) -> (Matrix<f64>, Matrix<f64>) {
+    assert_eq!(a.size(), b.size());
+    let n_cols = (n as usize + 1) * (n as usize + 2) / 2;
+
+    let mut v_r = Matrix::zeros(a.size(), n_cols);
+    let mut v_s = Matrix::zeros(a.size(), n_cols);
+
+    let mut s_k = 0;
+    (0..n+1).for_each(|i| {
+        (0..n + 1 - i).for_each(|j| {
+            let mut col_r = v_r.col_mut(s_k as usize);
+            let mut col_s = v_s.col_mut(s_k as usize);
+            let (simplex_r, simplex_s) = grad_simplex_2d_polynomials(a, b, i, j);
+            simplex_r.into_iter().zip(col_r.iter_mut())
+                .for_each(|(x, dest)| *dest = x);
+            simplex_s.into_iter().zip(col_s.iter_mut())
+                .for_each(|(x, dest)| *dest = x);
+            s_k = s_k + 1;
+        })
+    });
+    (v_r, v_s)
 }
 
 #[cfg(test)]

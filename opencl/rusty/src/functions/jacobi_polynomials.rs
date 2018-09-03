@@ -103,11 +103,56 @@ pub fn simplex_2d_polynomial(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: i32) -
     (h1.elemul(&h2) * 2.0_f64.sqrt()).elemul(&x)
 }
 
+/**
+ * GradSimplex2DP.m
+ * Returns the r- and s-derivatives of the modal basis functions at the points (a, b),
+ * on the 2D reference simplex.
+ *
+ * Hesthaven and Warburton, p. 184
+ */
+pub fn grad_simplex_2d_polynomials(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: i32) -> (Vector<f64>, Vector<f64>) {
+    let fa = jacobi(a, 0, 0, i);
+    let d_fa = grad_jacobi(a, 0, 0, i);
+    let gb = jacobi(b, 2 * i +1, 0, j);
+    let d_gb = grad_jacobi(b, 2 * i + 1, 0, j);
+
+    // r-derivative
+    let mut dmode_dr = d_fa.elemul(&gb);
+    if i > 0 {
+        dmode_dr = dmode_dr.into_iter().zip(b.iter())
+            .map(|(x, b)| x * ((0.5 * (1. - b)).powi(i - 1)))
+            .collect();
+    }
+
+    // s-derivative
+    let mut dmode_ds = ((a + 1.) * 0.5).elemul(&gb).elemul(&d_fa);
+    if i > 0 {
+        dmode_ds = dmode_ds.iter().zip(b.iter())
+            .map(|(x, b)| *x * ((0.5 * (1. - *b)).powi(i - 1)))
+            .collect();
+    }
+    let mut tmp: Vector<f64> = d_gb.iter().zip(b.iter())
+        .map(|(x, b)| *x * ((0.5 * (1. - *b)).powi(i)))
+        .collect();
+    if i > 0 {
+        let diff: Vector<f64> = gb.iter().zip(b.iter())
+            .map(|(x, b)| *x * ((0.5 * (1. - *b)).powi(i - 1)))
+            .collect::<Vector<f64>>();
+        tmp = tmp - &(diff * 0.5 * (i as f64));
+    }
+    dmode_ds = dmode_ds + fa.elemul(&tmp);
+
+    dmode_dr = dmode_dr * 2.0_f64.powf(i as f64 + 0.5);
+    dmode_ds = dmode_ds * 2.0_f64.powf(i as f64 + 0.5);
+
+    (dmode_dr, dmode_ds)
+}
+
 #[cfg(test)]
 mod tests {
     extern crate rulinalg;
 
-    use functions::jacobi_polynomials::{jacobi, grad_jacobi, grad_legendre_roots};
+    use functions::jacobi_polynomials::{jacobi, grad_jacobi, grad_legendre_roots, grad_simplex_2d_polynomials};
 
     #[test]
     fn test_jacobi_0() {
@@ -173,5 +218,14 @@ mod tests {
 
     fn l_prime_5(x: f64) -> f64 {
         (5. * x.powi(4) * 63. - 3. * x.powi(2) * 70. + 15.) / 8.
+    }
+
+    #[test]
+    fn test_grad_simplex_2d(){
+        let a = vector![-1., -0.733782082764989, 0.112279732256502, 2.59621764561432, 14.0252847048942, -1.];
+        let b = vector![-1., -0.765055323929465, -0.285231516480645, 0.285231516480645, 0.765055323929465, 1.];
+        let (dr, ds) = grad_simplex_2d_polynomials(&a, &b, 1, 1);
+        assert_eq!(dr[1], -0.8753380411610013);
+        assert_eq!(ds[4], 12.357277800120185);
     }
 }

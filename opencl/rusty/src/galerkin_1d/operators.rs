@@ -6,9 +6,6 @@ use functions::vandermonde::{vandermonde, grad_vandermonde};
 use galerkin_1d::unknowns::Unknown;
 
 pub struct Operators {
-    // The Lax-Friedrichs flux parameter
-    pub alpha: f64,
-
     // The Vandermonde matrix
     pub v: Matrix<f64>,
 
@@ -37,7 +34,6 @@ pub fn assemble_operators<U>(reference_element: &ReferenceElement) -> Operators
     let lift = &v * &(v.transpose() * e_mat);
 
     Operators {
-        alpha: 1.0,
         v,
         d_r,
         lift,
