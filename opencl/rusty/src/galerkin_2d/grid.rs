@@ -139,7 +139,6 @@ mod tests {
 
     use super::warp_factor;
     use super::ReferenceElement;
-    use super::ReferencePoint;
 
     #[test]
     fn test_warp_factor() {
