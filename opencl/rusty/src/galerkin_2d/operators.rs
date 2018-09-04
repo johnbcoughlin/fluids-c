@@ -3,7 +3,7 @@ extern crate itertools;
 
 use rulinalg::matrix::{Matrix, BaseMatrix, BaseMatrixMut};
 use rulinalg::vector::Vector;
-use galerkin_2d::grid::ReferenceElement;
+use galerkin_2d::reference_element::ReferenceElement;
 use functions::vandermonde::{vandermonde, vandermonde_2d, grad_vandermonde_2d};
 
 pub struct Operators {
@@ -53,54 +53,32 @@ fn assemble_lift(reference_element: &ReferenceElement) -> Matrix<f64> {
 
     let ss = &reference_element.ss;
     let rs = &reference_element.rs;
-    let face1_r: Vector<f64> = ss.iter().zip(rs.iter())
-        .filter(|(&s, &r)| (s + 1.).abs() < epsilon)
-        .map(|(&s, &r)| r)
-        .collect();
+    let face1_r: Vector<f64> = rs.select(&reference_element.face1.as_slice());
     let v = vandermonde(&face1_r, n_p);
-    let mass_edge1 = (&v * &v.transpose()).inverse().expect("non-invertible");
-    // for each row in E
-    (0..n).into_iter()
-        // for face 1
-        .filter(|&i| (ss[i as usize] + 1.).abs() < epsilon)
-        .enumerate()
-        .for_each(|(j, i)| E.row_mut(i as usize).sub_slice_mut([0, 0], 1, n_fp as usize).iter_mut()
-            .zip(mass_edge1.row(j).into_iter())
+    let mass_face1 = (&v * &v.transpose()).inverse().expect("non-invertible");
+    &reference_element.face1.iter().enumerate()
+        .for_each(|(j, &i)| E.row_mut(i as usize).sub_slice_mut([0, 0], 1, n_fp as usize).iter_mut()
+            .zip(mass_face1.row(j).into_iter())
             .for_each(|(dest, x)| *dest = *x));
 
     // Can use either r or s here; the important thing is that they are distributed in the
     // same way along the diagonal edge.
-    let face2_r: Vector<f64> = reference_element.ss.iter().zip(reference_element.rs.iter())
-        .filter(|(&s, &r)| (r + s).abs() < epsilon)
-        .map(|(&s, &r)| r)
-        .collect();
+    let face2_r: Vector<f64> = rs.select(&reference_element.face2.as_slice());
     let v = vandermonde(&face2_r, n_p);
-    let mass_edge2 = (&v * &v.transpose()).inverse().expect("non-invertible");
-    // for each row in E
-    (0..n).into_iter()
-        // for face 1
-        .filter(|&i| (rs[i as usize] + ss[i as usize]).abs() < epsilon)
-        .enumerate()
-        .for_each(|(j, i)| E.row_mut(i as usize).sub_slice_mut([0, n_fp as usize], 1, n_fp as usize).iter_mut()
-            .zip(mass_edge1.row(j).into_iter())
+    let mass_face2 = (&v * &v.transpose()).inverse().expect("non-invertible");
+    &reference_element.face2.iter().enumerate()
+        .for_each(|(j, &i)| E.row_mut(i as usize).sub_slice_mut([0, n_fp as usize], 1, n_fp as usize).iter_mut()
+            .zip(mass_face1.row(j).into_iter())
             .for_each(|(dest, x)| *dest = *x));
 
-    let face3_s: Vector<f64> = reference_element.ss.iter().zip(reference_element.rs.iter())
-        .filter(|(&s, &r)| (r + 1.).abs() < epsilon)
-        .map(|(&s, &r)| s)
-        .collect();
+    let face3_s: Vector<f64> = ss.select(&reference_element.face3.as_slice());
     let v = vandermonde(&face3_s, n_p);
-    let mass_edge3 = (&v * &v.transpose()).inverse().expect("non-invertible");
-    // for each row in E
-    (0..n).into_iter()
-        // for face 1
-        .filter(|&i| (rs[i as usize] + 1.).abs() < epsilon)
-        .enumerate()
-        .for_each(|(j, i)| E.row_mut(i as usize).sub_slice_mut([0, 2 * n_fp], 1, n_fp as usize).iter_mut()
-            .zip(mass_edge1.row(j).into_iter())
+    let mass_face3 = (&v * &v.transpose()).inverse().expect("non-invertible");
+    &reference_element.face3.iter().enumerate()
+        .for_each(|(j, &i)| E.row_mut(i as usize).sub_slice_mut([0, 2 * n_fp], 1, n_fp as usize).iter_mut()
+            .zip(mass_face1.row(j).into_iter())
             .for_each(|(dest, x)| *dest = *x));
 
-    println!("{}", E);
     E
 }
 

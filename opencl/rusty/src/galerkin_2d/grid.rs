@@ -1,156 +1,136 @@
 extern crate rulinalg;
 
-use self::rulinalg::vector::Vector;
-use functions::jacobi_polynomials;
-use functions::vandermonde;
-use self::rulinalg::matrix::{Matrix, BaseMatrix};
-use std::iter::FromIterator;
-use std::f64::consts::PI;
+use rulinalg::vector::Vector;
+use distmesh::mesh::{Mesh, Triangle};
+use galerkin_2d::reference_element::ReferenceElement;
+use galerkin_2d::operators::Operators;
+use std::collections::HashMap;
 
-const ALPHAS: [f64; 15] = [0.0000, 0.0000, 1.4152, 0.1001, 0.2751, 0.9800, 1.0999,
-    1.2832, 1.3648, 1.4773, 1.4959, 1.5743, 1.5770, 1.6223, 1.6258];
+pub struct Element {
+    pub index: i32,
+    pub x_k: Vector<f64>,
+    pub y_k: Vector<f64>,
 
-#[derive(Debug, PartialEq)]
-pub struct ReferencePoint {
-    r: f64,
-    s: f64,
+    // Derivatives of the metric mapping at each point
+    // dx/dr
+    pub x_r: Vector<f64>,
+    // dy/dr
+    pub y_r: Vector<f64>,
+    // dx/ds
+    pub x_s: Vector<f64>,
+    // dy/ds
+    pub y_s: Vector<f64>,
+    // The Jacobian, x_r * y_s - x_s * y_r
+    pub jacobian: Vector<f64>,
+
+    // derivatives in the other direction
+    r_x: Vector<f64>,
+    s_x: Vector<f64>,
+    r_y: Vector<f64>,
+    s_y: Vector<f64>,
 }
 
-#[derive(Debug)]
-pub struct ReferenceElement {
-    pub n_p: i32,
-
-    pub points: Vec<ReferencePoint>,
-    pub rs: Vector<f64>,
-    pub ss: Vector<f64>,
+pub struct Grid {
+    elements: Vec<Element>,
 }
 
-impl ReferenceElement {
-    pub fn legendre(n: i32) -> ReferenceElement {
-        let (x, y) = ReferenceElement::equilateral_nodes(n);
-        let root_3 = 3.0_f64.sqrt();
-        let L1 = &(&y * root_3 + 1.) / 3.;
-        let L2 = &(&(&x * -3.) - &(&y * root_3) + 2.0) / 6.;
-        let L3 = &(&(&x * 3.) - &(&y * root_3) + 2.0) / 6.;
+pub fn assemble_grid(
+    reference_element: &ReferenceElement,
+    operators: &Operators,
+    mesh: &Mesh) -> Grid {
+    let points = &mesh.points;
+    let rs = &reference_element.rs;
+    let ss = &reference_element.ss;
+    let triangles = &reference_element.triangles;
 
-        let rs: Vector<f64> = -&L2 + &L3 - &L1;
-        let ss: Vector<f64> = -&L2 - &L3 + &L1;
+    let mut edges_to_triangle: HashMap<Edge, EdgeType> = HashMap::new();
+    for (i, ref triangle) in mesh.triangles.iter().enumerate() {
+        let (e1, e2, e3) = triangle.edges();
+        let edge_creator = || EdgeType::Exterior(i as usize);
+        edges_to_triangle.entry(e1).or_insert(edge_creator);
+        edges_to_triangle.entry(e2).or_insert(edge_creator);
+        edges_to_triangle.entry(e3).or_insert(edge_creator);
+    }
 
-        let points: Vec<ReferencePoint> = rs.iter().zip(ss.iter())
-            .map(|(&r, &s)| ReferencePoint { r, s })
-            .collect();
-        ReferenceElement {
-            n_p: n,
-            points,
-            rs,
-            ss,
+    let mut elements = Vec::new();
+
+    for (i, ref triangle) in mesh.triangles.iter().enumerate() {
+        let (ref a, ref b, ref c) = (
+            &points[triangle.a as usize],
+            &points[triangle.b as usize],
+            &points[triangle.c as usize],
+        );
+
+        let x: Vector<f64> = -(&(rs + ss) * a.x + (rs + 1.) * b.x + (ss + 1.) * c.x) * 0.5;
+        let y: Vector<f64> = -(&(rs + ss) * a.y + (rs + 1.) * b.y + (ss + 1.) * c.x) * 0.5;
+
+        let x_r = &operators.d_r * &x;
+        let x_s = &operators.d_s * &x;
+        let y_r = &operators.d_r * &y;
+        let y_s = &operators.d_s * &y;
+        let jacobian = x_r.elemul(&y_s) - &(x_s.elemul(&y_r));
+
+        let r_x = y_s.elediv(&jacobian);
+        let s_x = -y_r.elediv(&jacobian);
+        let r_y = x_s.elediv(&jacobian);
+        let s_y = -x_r.elediv(&jacobian);
+
+        elements.push(Element {
+            index: i as i32,
+            x_k: x,
+            y_k: y,
+            x_r,
+            y_r,
+            x_s,
+            y_s,
+            jacobian,
+            r_x,
+            s_x,
+            r_y,
+            s_y,
+        });
+    }
+
+    Grid { elements }
+}
+
+struct Edge {
+    n1: i32,
+    n2: i32,
+}
+
+impl Edge {
+    fn from(a: i32, b: i32) -> Edge {
+        if a > b {
+            Edge { n1: b, n2: a }
+        } else {
+            Edge { n1: a, n2: b }
         }
     }
+}
 
-    fn equilateral_nodes(n: i32) -> (Vector<f64>, Vector<f64>) {
-        let nf = n as f64;
-        let alpha = if n < 16 { ALPHAS[n as usize - 1] } else { 1.6 };
-
-        // total number of nodes
-        let n_p = (n + 1) * (n + 2) / 2;
-        println!("np: {}", n_p);
-
-        let mut L1 = Vector::zeros(n_p as usize);
-        let mut L3 = Vector::zeros(n_p as usize);
-        let mut sk = 0;
-        (0..n + 1).into_iter().for_each(|i| {
-            (0..n + 1 - i).into_iter().for_each(|j| {
-                L1[sk] = (i as f64) / nf;
-                L3[sk] = (j as f64) / nf;
-                sk = sk + 1;
-            })
-        });
-        let L2 = &L1 * -1. - &L3 + 1.;
-        let x = &L3 - &L2;
-        let y = (&L1 * 2. - &L2 - &L3) / 3.0_f64.sqrt();
-
-        // Blending functions
-        let blend_1 = &(L2.elemul(&L3)) * 4.;
-        let blend_2 = &(L1.elemul(&L3)) * 4.;
-        let blend_3 = &(L1.elemul(&L2)) * 4.;
-
-        let warpf_1 = warp_factor(n, &L3 - &L2);
-        let warpf_2 = warp_factor(n, &L1 - &L3);
-        let warpf_3 = warp_factor(n, &L2 - &L1);
-
-        let alpha_1 = &L1 * alpha;
-        let alpha_2 = &L2 * alpha;
-        let alpha_3 = &L3 * alpha;
-
-        let warp_1 = blend_1.elemul(&warpf_1).elemul(&(alpha_1.elemul(&alpha_1) + 1.));
-        let warp_2 = blend_2.elemul(&warpf_2).elemul(&(alpha_2.elemul(&alpha_2) + 1.));
-        let warp_3 = blend_3.elemul(&warpf_3).elemul(&(alpha_3.elemul(&alpha_3) + 1.));
-
-        let x_res = x + &warp_1 * 1. + &warp_2 * (2. * PI / 3.).cos() + &warp_3 * (4. * PI / 3.).cos();
-        let y_res = y + &warp_1 * 0. + &warp_2 * (2. * PI / 3.).sin() + &warp_3 * (4. * PI / 3.).sin();
-
-        (x_res, y_res)
-    }
-
-    pub fn rs_to_ab(rs: &Vector<f64>, ss: &Vector<f64>) -> (Vector<f64>, Vector<f64>) {
-        let a = ((rs + 1.).elediv(&(-ss + 1.))) * 2. - 1.;
-        let b = ss.clone();
-        (a, b)
+impl Triangle {
+    fn edges(&self) -> (Edge, Edge, Edge, ) {
+        (
+            Edge::from(self.a, self.b),
+            Edge::from(self.b, self.c),
+            Edge::from(self.c, self.a),
+        )
     }
 }
 
-fn warp_factor(n_p: i32, gammas: Vector<f64>) -> Vector<f64> {
-    let dist_gl = jacobi_polynomials::gauss_lobatto_points(n_p);
-    let dist_eq: Vector<f64> = Vector::new(
-        (0..n_p + 1).into_iter().map(|i| {
-            (i as f64) / (n_p as f64) * 2. - 1.
-        }).collect::<Vec<f64>>()
-    );
-
-    let v = vandermonde::vandermonde(&dist_eq, n_p);
-
-    let n_r = gammas.size();
-
-    let data: Vec<Vector<f64>> = (0..n_p + 1).into_iter().map(|i| {
-        jacobi_polynomials::jacobi(&gammas, 0, 0, i)
-    }).collect();
-
-    let p_mat = Matrix::from_iter(data.iter().map(|vec| {
-        vec.data().as_slice()
-    }));
-
-    let v_transpose_inv = v.transpose().inverse().expect("could not invert V'");
-    let l_mat: Matrix<f64> = v_transpose_inv * p_mat;
-
-    let warp = l_mat.transpose() * (dist_gl - dist_eq);
-
-    let zero_f: Vector<f64> = Vector::from_fn(gammas.size(), |i: usize|
-        if { gammas[i].abs() < 1.0 - 1.0e-10 } { 1. } else { 0. });
-
-    let zero_f_gammas = zero_f.elemul(&gammas);
-    let scaling_factor = zero_f_gammas.elemul(&zero_f_gammas) * -1. + 1.;
-
-    warp.elediv(&scaling_factor) + warp.elemul(&(&zero_f - 1.))
+enum EdgeType {
+    None,
+    Exterior(i32),
+    Interior(i32, i32),
 }
 
-#[cfg(test)]
-mod tests {
-    extern crate rulinalg;
-
-    use super::warp_factor;
-    use super::ReferenceElement;
-
-    #[test]
-    fn test_warp_factor() {
-        let gammas = vector![-1., -0.5, 0., 0.5, 1.];
-        let actual = warp_factor(10, gammas);
-        assert_eq!(actual[1], -0.24330999741877501);
-    }
-
-    #[test]
-    fn test_reference_element() {
-        let re = ReferenceElement::legendre(10);
-        assert_eq!(re.rs[13], -0.7309414433795846);
-        assert_eq!(re.ss[13], -0.8960431364598923);
+impl EdgeType {
+    fn with_other_triangle(self, triangle: i32) -> EdgeType {
+        match self {
+            EdgeType::None => EdgeType::Exterior(triangle),
+            EdgeType::Exterior(t1) => EdgeType::Interior(t1, triangle),
+            EdgeType::Interior(_, _) => panic!("found an edge with more than two faces"),
+        }
     }
 }

@@ -39,9 +39,10 @@ impl FromStr for Triangle {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let coords: Vec<&str> = s.split("\t").collect();
-        let a = coords[0].parse::<i32>()?;
-        let b = coords[1].parse::<i32>()?;
-        let c = coords[2].parse::<i32>()?;
+        // subtract 1 because Matlab is 1-indexed
+        let a = coords[0].parse::<i32>()? - 1;
+        let b = coords[1].parse::<i32>()? - 1;
+        let c = coords[2].parse::<i32>()? - 1;
         Ok(Triangle { a, b, c, })
     }
 }
