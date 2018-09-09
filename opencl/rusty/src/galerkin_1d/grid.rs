@@ -142,12 +142,12 @@ impl<GS: GalerkinScheme> fmt::Display for Grid<GS> {
     }
 }
 
-pub fn generate_grid<GS, Fx,>(x_min: f64, x_max: f64, n_k: i32,
-                                             reference_element: &ReferenceElement,
-                                             left_boundary: Face<GS>,
-                                             right_boundary: Face<GS>,
-                                             interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
-                                             f: Fx, ) -> Grid<GS>
+pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
+                               reference_element: &ReferenceElement,
+                               left_boundary: Face<GS>,
+                               right_boundary: Face<GS>,
+                               interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
+                               f: Fx, ) -> Grid<GS>
     where GS: GalerkinScheme,
           Fx: Fn(&Vector<f64>) -> GS::F,
 {

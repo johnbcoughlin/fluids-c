@@ -5,8 +5,40 @@ use distmesh::mesh::{Mesh, Triangle};
 use galerkin_2d::reference_element::ReferenceElement;
 use galerkin_2d::operators::Operators;
 use std::collections::HashMap;
+use galerkin_2d::unknowns::Unknown;
+use galerkin_2d::galerkin::GalerkinScheme;
+use std::cell::Cell;
 
-pub struct Element {
+#[derive(Clone, Copy)]
+pub enum FaceNumber {
+    One,
+    Two,
+    Three,
+}
+
+pub enum FaceType<'grid, GS: GalerkinScheme>
+    where
+        <GS::U as Unknown>::Line: 'grid,
+{
+    // An interior face with the index of the element on the other side.
+    Interior(i32, FaceNumber),
+
+    // A complex boundary condition which may depend on the other side of the boundary and on
+    // the time parameter.
+    Boundary(&'grid Fn(f64) -> <GS::U as Unknown>::Line),
+}
+
+pub struct Face<'grid, GS: GalerkinScheme>
+    where
+        <GS::U as Unknown>::Line: 'grid,
+{
+    pub face_type: FaceType<'grid, GS>,
+}
+
+pub struct Element<'grid, GS: GalerkinScheme>
+    where
+        <GS::U as Unknown>::Line: 'grid,
+{
     pub index: i32,
     pub x_k: Vector<f64>,
     pub y_k: Vector<f64>,
@@ -28,28 +60,61 @@ pub struct Element {
     s_x: Vector<f64>,
     r_y: Vector<f64>,
     s_y: Vector<f64>,
+
+    pub face1: Face<'grid, GS>,
+    pub face2: Face<'grid, GS>,
+    pub face3: Face<'grid, GS>,
 }
 
-pub struct Grid {
-    elements: Vec<Element>,
+pub struct ElementStorage<U: Unknown> {
+    pub u_k: U,
+
+    // minus is interior, plus is exterior
+    pub u_face1_minus: Cell<U::Line>,
+    pub u_face1_plus: Cell<U::Line>,
+    pub u_face2_minus: Cell<U::Line>,
+    pub u_face2_plus: Cell<U::Line>,
+    pub u_face3_minus: Cell<U::Line>,
+    pub u_face3_plus: Cell<U::Line>,
 }
 
-pub fn assemble_grid(
+pub struct Grid<'grid, GS: GalerkinScheme>
+    where
+        <GS::U as Unknown>::Line: 'grid,
+{
+    pub elements: Vec<Element<'grid, GS>>,
+}
+
+pub fn assemble_grid<'grid, GS, F>(
     reference_element: &ReferenceElement,
     operators: &Operators,
-    mesh: &Mesh) -> Grid {
+    mesh: &Mesh,
+    boundary_condition: &'grid F,
+) -> Grid<'grid, GS>
+    where
+        GS: GalerkinScheme,
+        F: Fn(f64) -> <GS::U as Unknown>::Line + 'grid,
+{
     let points = &mesh.points;
     let rs = &reference_element.rs;
     let ss = &reference_element.ss;
-    let triangles = &reference_element.triangles;
+    let triangles = &mesh.triangles;
 
     let mut edges_to_triangle: HashMap<Edge, EdgeType> = HashMap::new();
     for (i, ref triangle) in mesh.triangles.iter().enumerate() {
         let (e1, e2, e3) = triangle.edges();
-        let edge_creator = || EdgeType::Exterior(i as usize);
-        edges_to_triangle.entry(e1).or_insert(edge_creator);
-        edges_to_triangle.entry(e2).or_insert(edge_creator);
-        edges_to_triangle.entry(e3).or_insert(edge_creator);
+        let modifier = |e: Edge, face_number: FaceNumber, map: &mut HashMap<Edge, EdgeType>| {
+            let new_value = if map.contains_key(&e) {
+                let existing = map.get(&e).expect("we just checked");
+                existing.with_other_triangle(i as i32, face_number)
+            } else {
+                EdgeType::Exterior(i as i32, face_number)
+            };
+            map.insert(e, new_value);
+        };
+        modifier(e1, FaceNumber::One, &mut edges_to_triangle);
+        modifier(e2, FaceNumber::Two, &mut edges_to_triangle);
+        modifier(e3, FaceNumber::Three, &mut edges_to_triangle);
     }
 
     let mut elements = Vec::new();
@@ -75,6 +140,20 @@ pub fn assemble_grid(
         let r_y = x_s.elediv(&jacobian);
         let s_y = -x_r.elediv(&jacobian);
 
+        let (e1, e2, e3) = triangle.edges();
+        let edge_to_face_type = |e: &Edge| match edges_to_triangle.get(e) {
+            Some(EdgeType::Interior(a, a_number, b, b_number)) => if *a == i as i32 {
+                FaceType::Interior(*b, *b_number)
+            } else {
+                FaceType::Interior(*a, *a_number)
+            },
+            Some(EdgeType::Exterior(_, _)) => FaceType::Boundary(boundary_condition),
+            None => panic!("edge_to_triangle did not contain {:?}", e),
+        };
+        let face1: Face<'grid, GS> = Face { face_type: edge_to_face_type(&e1) };
+        let face2: Face<'grid, GS> = Face { face_type: edge_to_face_type(&e2) };
+        let face3: Face<'grid, GS> = Face { face_type: edge_to_face_type(&e3) };
+
         elements.push(Element {
             index: i as i32,
             x_k: x,
@@ -88,12 +167,16 @@ pub fn assemble_grid(
             s_x,
             r_y,
             s_y,
+            face1,
+            face2,
+            face3,
         });
     }
 
     Grid { elements }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct Edge {
     n1: i32,
     n2: i32,
@@ -119,18 +202,18 @@ impl Triangle {
     }
 }
 
+#[derive(Clone, Copy)]
 enum EdgeType {
-    None,
-    Exterior(i32),
-    Interior(i32, i32),
+    Exterior(i32, FaceNumber),
+    Interior(i32, FaceNumber, i32, FaceNumber),
 }
 
 impl EdgeType {
-    fn with_other_triangle(self, triangle: i32) -> EdgeType {
+    fn with_other_triangle(&self, triangle: i32, neighbors_face_number: FaceNumber) -> EdgeType {
         match self {
-            EdgeType::None => EdgeType::Exterior(triangle),
-            EdgeType::Exterior(t1) => EdgeType::Interior(t1, triangle),
-            EdgeType::Interior(_, _) => panic!("found an edge with more than two faces"),
+            EdgeType::Exterior(t1, t1_number) => EdgeType::Interior(*t1, *t1_number,
+                                                                    triangle, neighbors_face_number),
+            EdgeType::Interior(_, _, _, _) => panic!("found an edge with more than two faces"),
         }
     }
 }

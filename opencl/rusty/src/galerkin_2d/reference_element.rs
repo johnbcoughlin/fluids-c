@@ -19,7 +19,8 @@ pub struct ReferencePoint {
 
 #[derive(Debug)]
 pub struct ReferenceElement {
-    pub n_p: i32,
+    pub n: i32,
+    pub n_p: usize,
 
     pub points: Vec<ReferencePoint>,
     pub rs: Vector<f64>,
@@ -33,6 +34,7 @@ pub struct ReferenceElement {
 
 impl ReferenceElement {
     pub fn legendre(n: i32) -> ReferenceElement {
+        let n_p = (n + 1) * (n + 2) / 2;
         let (x, y) = ReferenceElement::equilateral_nodes(n);
         let root_3 = 3.0_f64.sqrt();
         let L1 = &(&y * root_3 + 1.) / 3.;
@@ -55,7 +57,8 @@ impl ReferenceElement {
             .map(|(&r, &s)| ReferencePoint { r, s })
             .collect();
         ReferenceElement {
-            n_p: n,
+            n,
+            n_p: n_p as usize,
             points,
             rs,
             ss,
