@@ -1,56 +1,30 @@
 extern crate rulinalg;
 
-use std::fmt;
-use std::ops::{Neg, Add, Mul, Div};
 use galerkin_2d::galerkin::GalerkinScheme;
-use galerkin_2d::grid::{FaceType, FaceNumber, ElementStorage, Grid};
-use std::cell::Cell;
-use rulinalg::vector::Vector;
+use galerkin_2d::grid::{ElementStorage, FaceNumber, FaceType, Grid, SpatialVariable};
 use galerkin_2d::operators::Operators;
 use galerkin_2d::reference_element::ReferenceElement;
+use rulinalg::vector::Vector;
+use std::cell::Cell;
+use std::fmt;
+use std::ops::{Add, Div, Mul, Neg};
 
-pub trait Unknown {
-    type Unit: Neg<Output=Self::Unit> +
-    Add<Output=Self::Unit> +
-    Mul<f64, Output=Self::Unit> +
-    Div<f64, Output=Self::Unit> +
-    Copy + fmt::Debug;
-
-    type Line: Neg<Output=Self::Line> +
-    Add<Output=Self::Line> +
-    Mul<f64, Output=Self::Line> +
-    Div<f64, Output=Self::Line> +
-    fmt::Debug;
-
-    fn edge_1(&self, reference_element: &ReferenceElement) -> Self::Line;
-
-    fn edge_2(&self, reference_element: &ReferenceElement) -> Self::Line;
-
-    fn edge_3(&self, reference_element: &ReferenceElement) -> Self::Line;
-
-    fn face(&self, number: FaceNumber, reference_element: &ReferenceElement) -> Self::Line {
-        match number {
-            FaceNumber::One => self.edge_1(reference_element),
-            FaceNumber::Two => self.edge_2(reference_element),
-            FaceNumber::Three => self.edge_3(reference_element),
-        }
-    }
-
-    fn zero() -> Self::Unit;
-
-    fn face1_zero(reference_element: &ReferenceElement) -> Self::Line;
-
-    fn face2_zero(reference_element: &ReferenceElement) -> Self::Line;
-
-    fn face3_zero(reference_element: &ReferenceElement) -> Self::Line;
+pub trait Unknown<L>: SpatialVariable<Line = L>
+where
+    L: Neg<Output = L> + Add<Output = L> + Mul<f64, Output = L> + Div<f64, Output = L> + fmt::Debug,
+{
 }
 
-pub fn initialize_storage<GS, Fx>(u_0: Fx, n_p: i32, reference_element: &ReferenceElement,
-                                  grid: &Grid<GS>, operators: &Operators
+pub fn initialize_storage<GS, Fx>(
+    u_0: Fx,
+    n_p: i32,
+    reference_element: &ReferenceElement,
+    grid: &Grid<GS>,
+    operators: &Operators,
 ) -> Vec<ElementStorage<GS::U>>
-    where
-        GS: GalerkinScheme,
-        Fx: Fn(&Vector<f64>) -> GS::U
+where
+    GS: GalerkinScheme,
+    Fx: Fn(&Vector<f64>) -> GS::U,
 {
     let mut result: Vec<ElementStorage<GS::U>> = vec![];
     for (i, elt) in grid.elements.iter().enumerate() {
@@ -67,13 +41,16 @@ pub fn initialize_storage<GS, Fx>(u_0: Fx, n_p: i32, reference_element: &Referen
     result
 }
 
-pub fn communicate<GS>(t: f64, reference_element: &ReferenceElement,
-                       grid: &Grid<GS>, storages: &Vec<ElementStorage<GS::U>>)
-    where
-        GS: GalerkinScheme
+pub fn communicate<GS>(
+    t: f64,
+    reference_element: &ReferenceElement,
+    grid: &Grid<GS>,
+    storages: &Vec<ElementStorage<GS::U>>,
+) where
+    GS: GalerkinScheme,
 {
     for (i, elt) in grid.elements.iter().enumerate() {
-        let mut storage: ElementStorage<GS::U> = storages.get(i).expect("index mismatch");
+        let mut storage: &ElementStorage<GS::U> = storages.get(i).expect("index mismatch");
         let mut u_k: &GS::U = &storage.u_k;
 
         let face1 = u_k.edge_1(reference_element);
@@ -81,17 +58,11 @@ pub fn communicate<GS>(t: f64, reference_element: &ReferenceElement,
             FaceType::Interior(j, face_number) => {
                 let u_k_neighbor: &GS::U = &storages[j as usize].u_k;
                 // minus is interior, plus is neighbor
-                (
-                    face1,
-                    u_k_neighbor.face(face_number, reference_element),
-                )
+                (face1, u_k_neighbor.face(face_number, reference_element))
             }
             FaceType::Boundary(bc) => {
                 // minus is interior, plus is neighbor
-                (
-                    face1,
-                    bc(t),
-                )
+                (face1, bc(t))
             }
         };
         storage.u_face1_minus.set(face1_minus);
@@ -102,17 +73,11 @@ pub fn communicate<GS>(t: f64, reference_element: &ReferenceElement,
             FaceType::Interior(j, face_number) => {
                 let u_k_neighbor: &GS::U = &storages[j as usize].u_k;
                 // minus is interior, plus is neighbor
-                (
-                    face2,
-                    u_k_neighbor.face(face_number, reference_element),
-                )
+                (face2, u_k_neighbor.face(face_number, reference_element))
             }
             FaceType::Boundary(bc) => {
                 // minus is interior, plus is neighbor
-                (
-                    face2,
-                    bc(t),
-                )
+                (face2, bc(t))
             }
         };
         storage.u_face2_minus.set(face2_minus);
@@ -123,17 +88,11 @@ pub fn communicate<GS>(t: f64, reference_element: &ReferenceElement,
             FaceType::Interior(j, face_number) => {
                 let u_k_neighbor: &GS::U = &storages[j as usize].u_k;
                 // minus is interior, plus is neighbor
-                (
-                    face3,
-                    u_k_neighbor.face(face_number, reference_element),
-                )
+                (face3, u_k_neighbor.face(face_number, reference_element))
             }
             FaceType::Boundary(bc) => {
                 // minus is interior, plus is neighbor
-                (
-                    face3,
-                    bc(t),
-                )
+                (face3, bc(t))
             }
         };
         storage.u_face3_minus.set(face3_minus);

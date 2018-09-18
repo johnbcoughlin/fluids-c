@@ -1,12 +1,12 @@
-extern crate num;
-extern crate lapack;
 extern crate accelerate_src;
+extern crate lapack;
+extern crate num;
 extern crate rulinalg;
 
+use self::lapack::*;
 use self::num::traits::real::Real;
 use self::rulinalg::vector::Vector;
 use functions::gamma::GammaFn;
-use self::lapack::*;
 
 pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
     let alphaf = alpha as f64;
@@ -14,8 +14,10 @@ pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
 
     // initial values
     // See NUDG p. 446
-    let gamma_0 = 2.0.powi(alpha + beta + 1) / (alphaf + betaf + 1.) *
-        (alphaf + 1.).gamma() * (betaf + 1.).gamma() / (alphaf + betaf + 1.).gamma();
+    let gamma_0 = 2.0.powi(alpha + beta + 1) / (alphaf + betaf + 1.)
+        * (alphaf + 1.).gamma()
+        * (betaf + 1.).gamma()
+        / (alphaf + betaf + 1.).gamma();
     let p_0 = Vector::ones(xs.size()) * (1.0 / gamma_0.sqrt());
     if n == 0 {
         return p_0;
@@ -24,11 +26,11 @@ pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
     let gamma_1 = (alphaf + 1.) * (betaf + 1.) / (alphaf + betaf + 3.) * gamma_0;
     let p_1 = (xs * ((alphaf + betaf + 2.) / 2.) + (alphaf - betaf) / 2.) / gamma_1.sqrt();
     if n == 1 {
-        return p_1
+        return p_1;
     }
 
-    let mut a_old = 2. / (2. + alphaf + betaf) *
-        ((alphaf + 1.) * (betaf + 1.) / (alphaf + betaf + 3.)).sqrt();
+    let mut a_old =
+        2. / (2. + alphaf + betaf) * ((alphaf + 1.) * (betaf + 1.) / (alphaf + betaf + 3.)).sqrt();
 
     let mut p_i_minus_1 = p_0;
     let mut p_i = p_1;
@@ -36,9 +38,12 @@ pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
     for i in 1..n {
         let i = i as f64;
         let h1 = 2. * i + alphaf + betaf;
-        let a_new = 2. / (h1 + 2.) * ((i + 1.) * (i + 1. + alphaf + betaf) * (i + 1. + alphaf) *
-            (i + 1. + betaf) / (h1 + 1.) / (h1 + 3.)).sqrt();
-        let b_new = - (alphaf * alphaf - betaf * betaf) / h1 / (h1 + 2.);
+        let a_new = 2. / (h1 + 2.)
+            * ((i + 1.) * (i + 1. + alphaf + betaf) * (i + 1. + alphaf) * (i + 1. + betaf)
+                / (h1 + 1.)
+                / (h1 + 3.))
+                .sqrt();
+        let b_new = -(alphaf * alphaf - betaf * betaf) / h1 / (h1 + 2.);
         let mut p_i_plus_1 = (-(p_i_minus_1) * a_old + (xs - b_new).elemul(&p_i)) * (1. / a_new);
         p_i_minus_1 = p_i;
         p_i = p_i_plus_1;
@@ -65,18 +70,28 @@ pub fn grad_jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f6
 pub fn grad_legendre_roots(n: i32) -> Vector<f64> {
     let n = n - 1;
     let mut diag = vec![0.0; n as usize];
-    let mut subdiag: Vec<f64> = (2..n+1).map(|i| {
-        let i = i as f64;
-        let num = (i + 1.) / i;
-        let denom = (2. * i - 1.) / (i - 1.) * (i * 2. + 1.) / (i);
-        (num / denom).sqrt()
-    }).collect();
+    let mut subdiag: Vec<f64> = (2..n + 1)
+        .map(|i| {
+            let i = i as f64;
+            let num = (i + 1.) / i;
+            let denom = (2. * i - 1.) / (i - 1.) * (i * 2. + 1.) / (i);
+            (num / denom).sqrt()
+        }).collect();
     let mut z = vec![];
     let mut work = vec![0.0; 4 * n as usize];
     let mut info = 0;
 
     unsafe {
-        dstev(b'N', n, &mut diag, &mut subdiag, &mut z, 1, &mut work, &mut info);
+        dstev(
+            b'N',
+            n,
+            &mut diag,
+            &mut subdiag,
+            &mut z,
+            1,
+            &mut work,
+            &mut info,
+        );
     }
 
     return Vector::new(diag);
@@ -110,16 +125,23 @@ pub fn simplex_2d_polynomial(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: i32) -
  *
  * Hesthaven and Warburton, p. 184
  */
-pub fn grad_simplex_2d_polynomials(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: i32) -> (Vector<f64>, Vector<f64>) {
+pub fn grad_simplex_2d_polynomials(
+    a: &Vector<f64>,
+    b: &Vector<f64>,
+    i: i32,
+    j: i32,
+) -> (Vector<f64>, Vector<f64>) {
     let fa = jacobi(a, 0, 0, i);
     let d_fa = grad_jacobi(a, 0, 0, i);
-    let gb = jacobi(b, 2 * i +1, 0, j);
+    let gb = jacobi(b, 2 * i + 1, 0, j);
     let d_gb = grad_jacobi(b, 2 * i + 1, 0, j);
 
     // r-derivative
     let mut dmode_dr = d_fa.elemul(&gb);
     if i > 0 {
-        dmode_dr = dmode_dr.into_iter().zip(b.iter())
+        dmode_dr = dmode_dr
+            .into_iter()
+            .zip(b.iter())
             .map(|(x, b)| x * ((0.5 * (1. - b)).powi(i - 1)))
             .collect();
     }
@@ -127,15 +149,21 @@ pub fn grad_simplex_2d_polynomials(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: 
     // s-derivative
     let mut dmode_ds = ((a + 1.) * 0.5).elemul(&gb).elemul(&d_fa);
     if i > 0 {
-        dmode_ds = dmode_ds.iter().zip(b.iter())
+        dmode_ds = dmode_ds
+            .iter()
+            .zip(b.iter())
             .map(|(x, b)| *x * ((0.5 * (1. - *b)).powi(i - 1)))
             .collect();
     }
-    let mut tmp: Vector<f64> = d_gb.iter().zip(b.iter())
+    let mut tmp: Vector<f64> = d_gb
+        .iter()
+        .zip(b.iter())
         .map(|(x, b)| *x * ((0.5 * (1. - *b)).powi(i)))
         .collect();
     if i > 0 {
-        let diff: Vector<f64> = gb.iter().zip(b.iter())
+        let diff: Vector<f64> = gb
+            .iter()
+            .zip(b.iter())
             .map(|(x, b)| *x * ((0.5 * (1. - *b)).powi(i - 1)))
             .collect::<Vector<f64>>();
         tmp = tmp - &(diff * 0.5 * (i as f64));
@@ -152,7 +180,9 @@ pub fn grad_simplex_2d_polynomials(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: 
 mod tests {
     extern crate rulinalg;
 
-    use functions::jacobi_polynomials::{jacobi, grad_jacobi, grad_legendre_roots, grad_simplex_2d_polynomials};
+    use functions::jacobi_polynomials::{
+        grad_jacobi, grad_legendre_roots, grad_simplex_2d_polynomials, jacobi,
+    };
 
     #[test]
     fn test_jacobi_0() {
@@ -221,9 +251,23 @@ mod tests {
     }
 
     #[test]
-    fn test_grad_simplex_2d(){
-        let a = vector![-1., -0.733782082764989, 0.112279732256502, 2.59621764561432, 14.0252847048942, -1.];
-        let b = vector![-1., -0.765055323929465, -0.285231516480645, 0.285231516480645, 0.765055323929465, 1.];
+    fn test_grad_simplex_2d() {
+        let a = vector![
+            -1.,
+            -0.733782082764989,
+            0.112279732256502,
+            2.59621764561432,
+            14.0252847048942,
+            -1.
+        ];
+        let b = vector![
+            -1.,
+            -0.765055323929465,
+            -0.285231516480645,
+            0.285231516480645,
+            0.765055323929465,
+            1.
+        ];
         let (dr, ds) = grad_simplex_2d_polynomials(&a, &b, 1, 1);
         assert_eq!(dr[1], -0.8753380411610013);
         assert_eq!(ds[4], 12.357277800120185);

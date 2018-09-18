@@ -1,9 +1,9 @@
 extern crate rulinalg;
 
-use rulinalg::matrix::{Matrix, BaseMatrix};
-use galerkin_1d::grid::{ReferenceElement};
-use functions::vandermonde::{vandermonde, grad_vandermonde};
+use functions::vandermonde::{grad_vandermonde, vandermonde};
+use galerkin_1d::grid::ReferenceElement;
 use galerkin_1d::unknowns::Unknown;
+use rulinalg::matrix::{BaseMatrix, Matrix};
 
 pub struct Operators {
     // The Vandermonde matrix
@@ -18,12 +18,17 @@ pub struct Operators {
 }
 
 pub fn assemble_operators<U>(reference_element: &ReferenceElement) -> Operators
-    where U: Unknown {
+where
+    U: Unknown,
+{
     let n_p = reference_element.n_p;
     let rs = &reference_element.rs;
 
     let v = vandermonde(&rs, n_p);
-    let v_inv = v.clone().inverse().expect("Non-invertible Vandermonde matrix");
+    let v_inv = v
+        .clone()
+        .inverse()
+        .expect("Non-invertible Vandermonde matrix");
     let v_r = grad_vandermonde(&rs, n_p);
     let d_r = &v_r * &v_inv;
 
@@ -33,9 +38,5 @@ pub fn assemble_operators<U>(reference_element: &ReferenceElement) -> Operators
     let e_mat = Matrix::new(n_p as usize + 1, 2, vals);
     let lift = &v * &(v.transpose() * e_mat);
 
-    Operators {
-        v,
-        d_r,
-        lift,
-    }
+    Operators { v, d_r, lift }
 }

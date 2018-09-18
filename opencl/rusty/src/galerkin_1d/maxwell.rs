@@ -1,22 +1,22 @@
-extern crate rulinalg;
 extern crate core;
+extern crate rulinalg;
 
+use self::core::ops::{Add, Div, Mul, Neg};
 use functions::range_kutta::{RKA, RKB, RKC};
-use galerkin_1d::unknowns::{Unknown, communicate, initialize_storage};
-use rulinalg::vector::Vector;
-use galerkin_1d::grid;
-use galerkin_1d::operators::{Operators, assemble_operators};
-use std::iter::repeat;
-use std::f64::consts;
-use self::core::ops::{Add, Neg, Mul, Div};
-use galerkin_1d::galerkin::GalerkinScheme;
+use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::flux::NumericalFlux;
-use galerkin_1d::grid::FaceType;
-use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::Side;
-use galerkin_1d::galerkin::Formulation;
 use galerkin_1d::galerkin::compute_flux;
+use galerkin_1d::galerkin::Formulation;
+use galerkin_1d::galerkin::GalerkinScheme;
+use galerkin_1d::grid;
+use galerkin_1d::grid::FaceType;
+use galerkin_1d::operators::{assemble_operators, Operators};
+use galerkin_1d::unknowns::{communicate, initialize_storage, Unknown};
+use rulinalg::vector::Vector;
+use std::f64::consts;
+use std::iter::repeat;
 
 #[derive(Debug)]
 struct EH {
@@ -78,11 +78,17 @@ impl Unknown for EH {
     type Unit = EHUnit;
 
     fn first(&self) -> Self::Unit {
-        EHUnit { E: self.E[0], H: self.H[0] }
+        EHUnit {
+            E: self.E[0],
+            H: self.H[0],
+        }
     }
 
     fn last(&self) -> Self::Unit {
-        EHUnit { E: self.E[self.E.size() - 1], H: self.H[self.H.size() - 1] }
+        EHUnit {
+            E: self.E[self.E.size() - 1],
+            H: self.H[self.H.size() - 1],
+        }
     }
 
     fn zero() -> EHUnit {
@@ -108,7 +114,10 @@ impl grid::SpatialFlux for Permittivity {
     }
 
     fn zero() -> Self::Unit {
-        Permittivity { epsilon: 0.0, mu: 0.0 }
+        Permittivity {
+            epsilon: 0.0,
+            mu: 0.0,
+        }
     }
 }
 
@@ -118,8 +127,13 @@ type Element = grid::Element<Maxwells>;
 
 type EHStorage = grid::ElementStorage<EH, Permittivity>;
 
-fn permittivityFlux(de: f64, dh: f64, f_minus: Permittivity, f_plus: Permittivity,
-                    outward_normal: f64) -> EHUnit {
+fn permittivityFlux(
+    de: f64,
+    dh: f64,
+    f_minus: Permittivity,
+    f_plus: Permittivity,
+    outward_normal: f64,
+) -> EHUnit {
     let (z_minus, z_plus) = (
         (f_minus.mu / f_minus.epsilon).sqrt(),
         (f_plus.mu / f_plus.epsilon).sqrt(),
@@ -135,8 +149,12 @@ fn permittivityFlux(de: f64, dh: f64, f_minus: Permittivity, f_plus: Permittivit
 struct MaxwellsInteriorFlux {}
 
 impl NumericalFlux<EH, Permittivity> for MaxwellsInteriorFlux {
-    fn flux(&self, minus: Side<EH, Permittivity>, plus: Side<EH, Permittivity>, outward_normal: f64)
-            -> EHUnit {
+    fn flux(
+        &self,
+        minus: Side<EH, Permittivity>,
+        plus: Side<EH, Permittivity>,
+        outward_normal: f64,
+    ) -> EHUnit {
         let (de, dh) = (minus.u.E - plus.u.E, minus.u.H - plus.u.H);
         permittivityFlux(de, dh, minus.f, plus.f, outward_normal)
     }
@@ -146,7 +164,12 @@ impl NumericalFlux<EH, Permittivity> for MaxwellsInteriorFlux {
 struct MaxwellsExteriorFlux {}
 
 impl NumericalFlux<EH, Permittivity> for MaxwellsExteriorFlux {
-    fn flux(&self, minus: Side<EH, Permittivity>, plus: Side<EH, Permittivity>, outward_normal: f64) -> EHUnit {
+    fn flux(
+        &self,
+        minus: Side<EH, Permittivity>,
+        plus: Side<EH, Permittivity>,
+        outward_normal: f64,
+    ) -> EHUnit {
         let (de, dh) = (2. * minus.u.E, 0.);
         permittivityFlux(de, dh, minus.f, plus.f, outward_normal)
     }
@@ -172,15 +195,24 @@ impl GalerkinScheme for Maxwells {
 
 fn permittivity(xs: &Vector<f64>) -> Permittivity {
     if xs[0] >= 0.0 {
-        Permittivity { epsilon: 2.0, mu: 1.0 }
+        Permittivity {
+            epsilon: 2.0,
+            mu: 1.0,
+        }
     } else {
-        Permittivity { epsilon: 1.0, mu: 1.0 }
+        Permittivity {
+            epsilon: 1.0,
+            mu: 1.0,
+        }
     }
 }
 
 fn eh_0(xs: &Vector<f64>) -> EH {
     EH {
-        E: xs.iter().map(|x: &f64| if *x < 0. { (consts::PI * x).sin() } else { 0. }).collect(),
+        E: xs
+            .iter()
+            .map(|x: &f64| if *x < 0. { (consts::PI * x).sin() } else { 0. })
+            .collect(),
         H: Vector::zeros(xs.size()),
     }
 }
@@ -189,35 +221,55 @@ pub fn maxwell_1d_example() {
     let n_p = 10;
     let reference_element = grid::ReferenceElement::legendre(n_p);
     let left_boundary_face = grid::Face {
-        face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
-            EHUnit { E: 0.0, H: other_side.H }
-        ), Permittivity { epsilon: 1.0, mu: 1.0 }),
+        face_type: FaceType::Boundary(
+            Box::new(move |_: f64, other_side: EHUnit| EHUnit {
+                E: 0.0,
+                H: other_side.H,
+            }),
+            Permittivity {
+                epsilon: 1.0,
+                mu: 1.0,
+            },
+        ),
         flux: FluxEnum::Left(MaxwellsExteriorFlux {}),
     };
     let right_boundary_face = grid::Face {
-        face_type: FaceType::Boundary(Box::new(move |_: f64, other_side: EHUnit|
-            EHUnit { E: 0.0, H: other_side.H }
-        ), Permittivity { epsilon: 2.0, mu: 1.0 }),
+        face_type: FaceType::Boundary(
+            Box::new(move |_: f64, other_side: EHUnit| EHUnit {
+                E: 0.0,
+                H: other_side.H,
+            }),
+            Permittivity {
+                epsilon: 2.0,
+                mu: 1.0,
+            },
+        ),
         flux: FluxEnum::Right(MaxwellsExteriorFlux {}),
     };
     let grid: grid::Grid<Maxwells> = grid::generate_grid(
-        -1.0, 1.0, 8, &reference_element,
+        -1.0,
+        1.0,
+        8,
+        &reference_element,
         left_boundary_face,
         right_boundary_face,
         MaxwellsInteriorFlux {},
-        &permittivity);
+        &permittivity,
+    );
     let operators = assemble_operators::<EH>(&reference_element);
 
-    maxwell_1d(&eh_0,
-               &grid,
-               &reference_element,
-               &operators);
+    maxwell_1d(&eh_0, &grid, &reference_element, &operators);
 }
 
-fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElement,
-                  operators: &Operators)
-    where Fx: Fn(&Vector<f64>) -> EH {
-//    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);
+fn maxwell_1d<Fx>(
+    eh_0: Fx,
+    grid: &Grid,
+    reference_element: &grid::ReferenceElement,
+    operators: &Operators,
+) where
+    Fx: Fn(&Vector<f64>) -> EH,
+{
+    //    let mut plotter = Plotter::create(-1.0, 1.0, -1.0, 1.0);
 
     let final_time = 200.0;
     let cfl = 0.75;
@@ -228,15 +280,13 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
 
     let mut t: f64 = 0.0;
 
-    let mut storage: Vec<EHStorage> = initialize_storage(eh_0, reference_element.n_p,
-                                                         grid, operators);
-    let mut residuals: Vec<(Vector<f64>, Vector<f64>)> =
-        repeat((
-            Vector::zeros(reference_element.n_p as usize + 1),
-            Vector::zeros(reference_element.n_p as usize + 1),
-        ))
-            .take(grid.elements.len())
-            .collect();
+    let mut storage: Vec<EHStorage> =
+        initialize_storage(eh_0, reference_element.n_p, grid, operators);
+    let mut residuals: Vec<(Vector<f64>, Vector<f64>)> = repeat((
+        Vector::zeros(reference_element.n_p as usize + 1),
+        Vector::zeros(reference_element.n_p as usize + 1),
+    )).take(grid.elements.len())
+    .collect();
 
     for epoch in 0..n_t {
         for int_rk in 0..5 {
@@ -249,10 +299,11 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
 
                 let (residuals_e, residuals_h) = {
                     let (residuals_e, residuals_h) = &(residuals[elt.index as usize]);
-                    let (rhs_e, rhs_h) = maxwell_rhs_1d(grid.elements.len() as i32, &elt, &storage, &operators);
+                    let (rhs_e, rhs_h) =
+                        maxwell_rhs_1d(grid.elements.len() as i32, &elt, &storage, &operators);
                     (
                         residuals_e * RKA[int_rk] + rhs_e * dt,
-                        residuals_h * RKA[int_rk] + rhs_h * dt
+                        residuals_h * RKA[int_rk] + rhs_h * dt,
                     )
                 };
 
@@ -269,12 +320,12 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
             }
         }
         if epoch % 20 == 0 {
-//            plotter.header();
-//            for elt in (*grid).elements.iter() {
-//                let storage = &storage[elt.index as usize];
-//                plotter.plot(&elt.x_k, &storage.u_k.E);
-//            }
-//            plotter.replot();
+            //            plotter.header();
+            //            for elt in (*grid).elements.iter() {
+            //                let storage = &storage[elt.index as usize];
+            //                plotter.plot(&elt.x_k, &storage.u_k.E);
+            //            }
+            //            plotter.replot();
         }
         t = t + dt;
     }
@@ -290,21 +341,23 @@ fn maxwell_1d<Fx>(eh_0: Fx, grid: &Grid, reference_element: &grid::ReferenceElem
     }
 }
 
-fn maxwell_rhs_1d(n_k: i32, elt: &Element, elt_storage: &EHStorage,
-                  operators: &Operators) -> (Vector<f64>, Vector<f64>) {
+fn maxwell_rhs_1d(
+    n_k: i32,
+    elt: &Element,
+    elt_storage: &EHStorage,
+    operators: &Operators,
+) -> (Vector<f64>, Vector<f64>) {
     let (flux_left, flux_right) = compute_flux(elt, elt_storage);
 
     let dr_h = &operators.d_r * &elt_storage.u_k.H;
     let flux_h = vector![flux_left.H, flux_right.H];
     let lifted_flux_h = &operators.lift * &elt_storage.r_x_at_faces.elemul(&flux_h);
-    let rhs_e = ((&elt_storage.r_x * -1.).elemul(&dr_h) + lifted_flux_h)
-        / elt.spatial_flux.epsilon;
+    let rhs_e = ((&elt_storage.r_x * -1.).elemul(&dr_h) + lifted_flux_h) / elt.spatial_flux.epsilon;
 
     let dr_e = &operators.d_r * &elt_storage.u_k.E;
     let flux_e = vector![flux_left.E, flux_right.E];
     let lifted_flux_e = &operators.lift * &elt_storage.r_x_at_faces.elemul(&flux_e);
-    let rhs_h = ((&elt_storage.r_x * -1.).elemul(&dr_e) + lifted_flux_e)
-        / elt.spatial_flux.mu;
+    let rhs_h = ((&elt_storage.r_x * -1.).elemul(&dr_e) + lifted_flux_e) / elt.spatial_flux.mu;
 
     (rhs_e, rhs_h)
 }

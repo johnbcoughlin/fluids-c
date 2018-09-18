@@ -1,7 +1,7 @@
 pub mod advec;
-mod grid;
-mod operators;
-mod unknowns;
-pub mod maxwell;
 mod flux;
 mod galerkin;
+mod grid;
+pub mod maxwell;
+mod operators;
+mod unknowns;

@@ -1,13 +1,13 @@
 extern crate rulinalg;
 
-use std::fmt;
-use functions::jacobi_polynomials::grad_legendre_roots;
 use self::rulinalg::vector::Vector;
-use galerkin_1d::unknowns::Unknown;
-use std::cell::Cell;
+use functions::jacobi_polynomials::grad_legendre_roots;
+use galerkin_1d::flux::FluxEnum;
 use galerkin_1d::flux::FluxScheme;
 use galerkin_1d::galerkin::GalerkinScheme;
-use galerkin_1d::flux::FluxEnum;
+use galerkin_1d::unknowns::Unknown;
+use std::cell::Cell;
+use std::fmt;
 
 pub trait SpatialFlux {
     type Unit: Sized + Copy;
@@ -60,7 +60,11 @@ pub struct ElementStorage<U: Unknown, F: SpatialFlux> {
 
 impl<GS: GalerkinScheme> fmt::Display for Element<GS> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "D_{}: [{:.2}, {:.2}]", self.index, self.x_left, self.x_right)
+        write!(
+            f,
+            "D_{}: [{:.2}, {:.2}]",
+            self.index, self.x_left, self.x_right
+        )
     }
 }
 
@@ -81,7 +85,13 @@ pub enum FaceType<GS: GalerkinScheme> {
 
     // A complex boundary condition which may depend on both the other side of the boundary
     // and the time parameter
-    Boundary(Box<Fn(f64, <<GS as GalerkinScheme>::U as Unknown>::Unit) -> <<GS as GalerkinScheme>::U as Unknown>::Unit>, <<GS as GalerkinScheme>::F as SpatialFlux>::Unit),
+    Boundary(
+        Box<
+            Fn(f64, <<GS as GalerkinScheme>::U as Unknown>::Unit)
+                -> <<GS as GalerkinScheme>::U as Unknown>::Unit,
+        >,
+        <<GS as GalerkinScheme>::F as SpatialFlux>::Unit,
+    ),
 }
 
 pub struct Face<GS: GalerkinScheme> {
@@ -89,7 +99,9 @@ pub struct Face<GS: GalerkinScheme> {
     pub flux: FluxEnum<GS::U, GS::F, GS::FS>,
 }
 
-pub fn freeFlowBoundary<GS: GalerkinScheme>(f: <<GS as GalerkinScheme>::F as SpatialFlux>::Unit) -> FaceType<GS> {
+pub fn freeFlowBoundary<GS: GalerkinScheme>(
+    f: <<GS as GalerkinScheme>::F as SpatialFlux>::Unit,
+) -> FaceType<GS> {
     FaceType::Boundary(Box::new(move |_, other_side| other_side), f)
 }
 
@@ -135,21 +147,28 @@ impl<GS: GalerkinScheme> fmt::Display for Grid<GS> {
         let elts = &self.elements;
         write!(f, "[ ")?;
         for (count, elt) in elts.iter().enumerate() {
-            if count != 0 { write!(f, ", ")?; }
+            if count != 0 {
+                write!(f, ", ")?;
+            }
             write!(f, "{}\n", elt)?;
         }
         write!(f, "]")
     }
 }
 
-pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
-                               reference_element: &ReferenceElement,
-                               left_boundary: Face<GS>,
-                               right_boundary: Face<GS>,
-                               interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
-                               f: Fx, ) -> Grid<GS>
-    where GS: GalerkinScheme,
-          Fx: Fn(&Vector<f64>) -> GS::F,
+pub fn generate_grid<GS, Fx>(
+    x_min: f64,
+    x_max: f64,
+    n_k: i32,
+    reference_element: &ReferenceElement,
+    left_boundary: Face<GS>,
+    right_boundary: Face<GS>,
+    interior_flux: <GS::FS as FluxScheme<GS::U, GS::F>>::Interior,
+    f: Fx,
+) -> Grid<GS>
+where
+    GS: GalerkinScheme,
+    Fx: Fn(&Vector<f64>) -> GS::F,
 {
     assert!(x_max > x_min);
     let diff = (x_max - x_min) / (n_k as f64);
@@ -213,5 +232,9 @@ pub fn generate_grid<GS, Fx, >(x_min: f64, x_max: f64, n_k: i32,
         right_outward_normal: 1.,
         spatial_flux,
     });
-    Grid { x_min, x_max, elements }
+    Grid {
+        x_min,
+        x_max,
+        elements,
+    }
 }

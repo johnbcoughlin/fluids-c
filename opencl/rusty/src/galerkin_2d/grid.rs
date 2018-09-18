@@ -1,13 +1,13 @@
 extern crate rulinalg;
 
-use rulinalg::vector::Vector;
 use distmesh::mesh::{Mesh, Triangle};
-use galerkin_2d::reference_element::ReferenceElement;
-use galerkin_2d::operators::Operators;
-use std::collections::HashMap;
-use galerkin_2d::unknowns::Unknown;
 use galerkin_2d::galerkin::GalerkinScheme;
+use galerkin_2d::operators::Operators;
+use galerkin_2d::reference_element::ReferenceElement;
+use galerkin_2d::unknowns::Unknown;
+use rulinalg::vector::Vector;
 use std::cell::Cell;
+use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
 pub enum FaceNumber {
@@ -17,8 +17,8 @@ pub enum FaceNumber {
 }
 
 pub enum FaceType<'grid, GS: GalerkinScheme>
-    where
-        <GS::U as Unknown>::Line: 'grid,
+where
+    <GS::U as Unknown>::Line: 'grid,
 {
     // An interior face with the index of the element on the other side.
     Interior(i32, FaceNumber),
@@ -29,15 +29,15 @@ pub enum FaceType<'grid, GS: GalerkinScheme>
 }
 
 pub struct Face<'grid, GS: GalerkinScheme>
-    where
-        <GS::U as Unknown>::Line: 'grid,
+where
+    <GS::U as Unknown>::Line: 'grid,
 {
     pub face_type: FaceType<'grid, GS>,
 }
 
 pub struct Element<'grid, GS: GalerkinScheme>
-    where
-        <GS::U as Unknown>::Line: 'grid,
+where
+    <GS::U as Unknown>::Line: 'grid,
 {
     pub index: i32,
     pub x_k: Vector<f64>,
@@ -79,8 +79,8 @@ pub struct ElementStorage<U: Unknown> {
 }
 
 pub struct Grid<'grid, GS: GalerkinScheme>
-    where
-        <GS::U as Unknown>::Line: 'grid,
+where
+    <GS::U as Unknown>::Line: 'grid,
 {
     pub elements: Vec<Element<'grid, GS>>,
 }
@@ -91,9 +91,9 @@ pub fn assemble_grid<'grid, GS, F>(
     mesh: &Mesh,
     boundary_condition: &'grid F,
 ) -> Grid<'grid, GS>
-    where
-        GS: GalerkinScheme,
-        F: Fn(f64) -> <GS::U as Unknown>::Line + 'grid,
+where
+    GS: GalerkinScheme,
+    F: Fn(f64) -> <GS::U as Unknown>::Line + 'grid,
 {
     let points = &mesh.points;
     let rs = &reference_element.rs;
@@ -150,9 +150,15 @@ pub fn assemble_grid<'grid, GS, F>(
             Some(EdgeType::Exterior(_, _)) => FaceType::Boundary(boundary_condition),
             None => panic!("edge_to_triangle did not contain {:?}", e),
         };
-        let face1: Face<'grid, GS> = Face { face_type: edge_to_face_type(&e1) };
-        let face2: Face<'grid, GS> = Face { face_type: edge_to_face_type(&e2) };
-        let face3: Face<'grid, GS> = Face { face_type: edge_to_face_type(&e3) };
+        let face1: Face<'grid, GS> = Face {
+            face_type: edge_to_face_type(&e1),
+        };
+        let face2: Face<'grid, GS> = Face {
+            face_type: edge_to_face_type(&e2),
+        };
+        let face3: Face<'grid, GS> = Face {
+            face_type: edge_to_face_type(&e3),
+        };
 
         elements.push(Element {
             index: i as i32,
@@ -193,7 +199,7 @@ impl Edge {
 }
 
 impl Triangle {
-    fn edges(&self) -> (Edge, Edge, Edge, ) {
+    fn edges(&self) -> (Edge, Edge, Edge) {
         (
             Edge::from(self.a, self.b),
             Edge::from(self.b, self.c),
@@ -211,9 +217,39 @@ enum EdgeType {
 impl EdgeType {
     fn with_other_triangle(&self, triangle: i32, neighbors_face_number: FaceNumber) -> EdgeType {
         match self {
-            EdgeType::Exterior(t1, t1_number) => EdgeType::Interior(*t1, *t1_number,
-                                                                    triangle, neighbors_face_number),
+            EdgeType::Exterior(t1, t1_number) => {
+                EdgeType::Interior(*t1, *t1_number, triangle, neighbors_face_number)
+            }
             EdgeType::Interior(_, _, _, _) => panic!("found an edge with more than two faces"),
         }
     }
+}
+
+pub struct Vec2 {
+    x: f64,
+    y: f64,
+}
+
+pub trait SpatialVariable {
+    type Line;
+
+    fn edge_1(&self, reference_element: &ReferenceElement) -> Self::Line;
+
+    fn edge_2(&self, reference_element: &ReferenceElement) -> Self::Line;
+
+    fn edge_3(&self, reference_element: &ReferenceElement) -> Self::Line;
+
+    fn face(&self, number: FaceNumber, reference_element: &ReferenceElement) -> Self::Line {
+        match number {
+            FaceNumber::One => self.edge_1(reference_element),
+            FaceNumber::Two => self.edge_2(reference_element),
+            FaceNumber::Three => self.edge_3(reference_element),
+        }
+    }
+
+    fn face1_zero(reference_element: &ReferenceElement) -> Self::Line;
+
+    fn face2_zero(reference_element: &ReferenceElement) -> Self::Line;
+
+    fn face3_zero(reference_element: &ReferenceElement) -> Self::Line;
 }

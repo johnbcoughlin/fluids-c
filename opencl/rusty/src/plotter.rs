@@ -1,13 +1,13 @@
-extern crate tempfile;
 extern crate rulinalg;
+extern crate tempfile;
 
-use std::fs::{OpenOptions};
-use self::tempfile::{tempdir};
 use self::rulinalg::vector::Vector;
-use std::io::{Write};
+use self::tempfile::tempdir;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::path::{PathBuf};
-use std::{thread};
+use std::thread;
 use std::time::Duration;
 
 pub struct Plotter {
@@ -17,7 +17,9 @@ pub struct Plotter {
 
 impl Plotter {
     pub fn create(x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> Plotter {
-        let dir = tempdir().expect("could not open temporary directory").into_path();
+        let dir = tempdir()
+            .expect("could not open temporary directory")
+            .into_path();
         let path = dir.join("data");
         println!("Data file: {}", path.to_str().unwrap());
         let file = OpenOptions::new()
@@ -31,10 +33,7 @@ impl Plotter {
             .spawn()
             .ok()
             .expect("Couldn't spawn gnuplot. Make sure it's installed and on the PATH");
-        let mut result = Plotter {
-            gnuplot,
-            path,
-        };
+        let mut result = Plotter { gnuplot, path };
         result.begin_plotting(x_min, x_max, y_min, y_max);
         result
     }
@@ -43,7 +42,11 @@ impl Plotter {
         let mut stdin = (&mut self.gnuplot.stdin).as_mut().expect("No stdin");
         writeln!(stdin, "set xrange [{}:{}]", x_min, x_max);
         writeln!(stdin, "set yrange [{}:{}]", y_min, y_max);
-        writeln!(stdin, "plot \"{}\" using 1:2 with lines", self.path.to_str().unwrap());
+        writeln!(
+            stdin,
+            "plot \"{}\" using 1:2 with lines",
+            self.path.to_str().unwrap()
+        );
     }
 
     pub fn header(&mut self) {

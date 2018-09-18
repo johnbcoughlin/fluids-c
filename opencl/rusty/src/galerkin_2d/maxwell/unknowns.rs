@@ -1,13 +1,13 @@
 extern crate rulinalg;
 
-use galerkin_2d::operators::{assemble_operators, Operators};
-use std::ops::{Neg, Add, Mul, Div};
-use galerkin_2d::reference_element::{ReferenceElement, };
-use galerkin_2d::grid::{Grid, ElementStorage, assemble_grid, };
 use distmesh::distmesh_2d::ellipse;
 use galerkin_2d::galerkin::GalerkinScheme;
-use galerkin_2d::unknowns::{Unknown};
+use galerkin_2d::grid::{assemble_grid, ElementStorage, Grid};
+use galerkin_2d::operators::{assemble_operators, Operators};
+use galerkin_2d::reference_element::ReferenceElement;
+use galerkin_2d::unknowns::Unknown;
 use rulinalg::vector::Vector;
+use std::ops::{Add, Div, Mul, Neg};
 
 pub type EHStorage = ElementStorage<EH>;
 
@@ -49,10 +49,7 @@ impl Unknown for EH {
     }
 
     fn zero() -> Self::Unit {
-        EHUnit {
-            E: 0.,
-            H: 0.,
-        }
+        EHUnit { E: 0., H: 0. }
     }
 
     fn face1_zero(reference_element: &ReferenceElement) -> Self::Line {

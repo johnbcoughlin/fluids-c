@@ -11,7 +11,7 @@ const P: [f64; 8] = [
     12.507343278686905,
     -0.13857109526572012,
     9.9843695780195716e-6,
-    1.5056327351493116e-7
+    1.5056327351493116e-7,
 ];
 
 // Using the Lanczos approximation to the Gamma Function
@@ -57,8 +57,8 @@ pub trait GammaFn {
 
 #[cfg(test)]
 mod tests {
-    use functions::gamma::gamma;
     use super::num::complex::Complex64;
+    use functions::gamma::gamma;
     use std::f64::consts;
 
     #[test]

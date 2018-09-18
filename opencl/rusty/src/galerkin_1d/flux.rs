@@ -1,5 +1,5 @@
-use galerkin_1d::unknowns::Unknown;
 use galerkin_1d::grid::SpatialFlux;
+use galerkin_1d::unknowns::Unknown;
 
 pub struct Side<U: Unknown, F: SpatialFlux> {
     pub u: U::Unit,
@@ -10,7 +10,11 @@ pub trait NumericalFlux<U: Unknown, F: SpatialFlux>: Copy {
     fn flux(&self, minus: Side<U, F>, plus: Side<U, F>, outward_normal: f64) -> U::Unit;
 }
 
-pub trait FluxScheme<U, F>  where U: Unknown, F: SpatialFlux {
+pub trait FluxScheme<U, F>
+where
+    U: Unknown,
+    F: SpatialFlux,
+{
     type Left: NumericalFlux<U, F>;
     type Right: NumericalFlux<U, F>;
     type Interior: NumericalFlux<U, F>;
@@ -27,9 +31,11 @@ pub struct LaxFriedrichs {
     pub alpha: f64,
 }
 
-impl<U, F> NumericalFlux<U, F> for LaxFriedrichs where
-    U: Unknown<Unit=f64>,
-    F: SpatialFlux<Unit=f64>, {
+impl<U, F> NumericalFlux<U, F> for LaxFriedrichs
+where
+    U: Unknown<Unit = f64>,
+    F: SpatialFlux<Unit = f64>,
+{
     fn flux(&self, minus: Side<U, F>, plus: Side<U, F>, outward_normal: f64) -> U::Unit {
         let f_minus = minus.u * minus.f;
         let f_plus = plus.u * plus.f;
@@ -45,9 +51,12 @@ impl<U, F> NumericalFlux<U, F> for LaxFriedrichs where
 #[derive(Clone, Copy)]
 pub struct FreeflowFlux {}
 
-impl<U, F> NumericalFlux<U, F> for FreeflowFlux where U: Unknown, F: SpatialFlux {
+impl<U, F> NumericalFlux<U, F> for FreeflowFlux
+where
+    U: Unknown,
+    F: SpatialFlux,
+{
     fn flux(&self, minus: Side<U, F>, plus: Side<U, F>, outward_normal: f64) -> U::Unit {
         U::zero()
     }
 }
-
