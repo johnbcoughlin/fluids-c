@@ -1,9 +1,6 @@
 extern crate rulinalg;
 
-use distmesh::distmesh_2d::ellipse;
-use galerkin_2d::galerkin::GalerkinScheme;
-use galerkin_2d::grid::{assemble_grid, ElementStorage, Grid};
-use galerkin_2d::operators::{assemble_operators, Operators};
+use galerkin_2d::grid::{ElementStorage, SpatialVariable};
 use galerkin_2d::reference_element::ReferenceElement;
 use galerkin_2d::unknowns::Unknown;
 use rulinalg::vector::Vector;
@@ -24,7 +21,10 @@ pub struct EH {
 }
 
 impl Unknown for EH {
-    type Unit = EHUnit;
+    type L = <Self as SpatialVariable>::Line;
+}
+
+impl SpatialVariable for EH {
     type Line = EH;
 
     fn edge_1(&self, reference_element: &ReferenceElement) -> EH {
@@ -46,10 +46,6 @@ impl Unknown for EH {
             E: self.E.select(reference_element.face3.as_slice()),
             H: self.H.select(reference_element.face3.as_slice()),
         }
-    }
-
-    fn zero() -> Self::Unit {
-        EHUnit { E: 0., H: 0. }
     }
 
     fn face1_zero(reference_element: &ReferenceElement) -> Self::Line {

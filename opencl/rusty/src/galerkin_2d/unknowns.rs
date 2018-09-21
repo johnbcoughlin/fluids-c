@@ -1,7 +1,7 @@
 extern crate rulinalg;
 
 use galerkin_2d::galerkin::GalerkinScheme;
-use galerkin_2d::grid::{ElementStorage, FaceNumber, FaceType, Grid, SpatialVariable};
+use galerkin_2d::grid::{ElementStorage, FaceType, Grid, SpatialVariable};
 use galerkin_2d::operators::Operators;
 use galerkin_2d::reference_element::ReferenceElement;
 use rulinalg::vector::Vector;
@@ -9,10 +9,14 @@ use std::cell::Cell;
 use std::fmt;
 use std::ops::{Add, Div, Mul, Neg};
 
-pub trait Unknown<L>: SpatialVariable<Line = L>
-where
-    L: Neg<Output = L> + Add<Output = L> + Mul<f64, Output = L> + Div<f64, Output = L> + fmt::Debug,
-{
+pub trait Unknown: SpatialVariable {
+    type L: Neg<Output = Self::L>
+        + Add<Output = Self::L>
+        + Mul<f64, Output = Self::L>
+        + Div<f64, Output = Self::L>
+        + fmt::Debug;
+
+    type Line = Self::L;
 }
 
 pub fn initialize_storage<GS, Fx>(

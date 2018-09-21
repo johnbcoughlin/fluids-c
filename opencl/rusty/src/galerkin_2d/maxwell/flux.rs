@@ -1,9 +1,8 @@
-use galerkin_2d::flux::FluxKey;
-use galerkin_2d::flux::{FluxScheme, NumericalFlux};
+use galerkin_2d::flux::{FluxScheme, FluxKey, NumericalFlux, Side};
+use galerkin_2d::unknowns::{Unknown};
 use galerkin_2d::grid::SpatialVariable;
-use galerkin_2d::reference_element::ReferenceElement;
-use galerkin_2d::unknowns::Unknown;
 use galerkin_2d::maxwell::unknowns::*;
+use galerkin_2d::reference_element::ReferenceElement;
 
 #[derive(Copy, Clone)]
 pub struct Permittivity {
@@ -52,15 +51,28 @@ pub enum MaxwellFluxType {
     Interior,
 }
 
-pub struct Vacuum {}
+impl FluxKey for MaxwellFluxType {}
 
-impl FluxScheme<EH, Permittivity, MaxwellFluxType> for Vacuum {
-    fn flux_type<'flux>(key: MaxwellFluxType) -> &'flux NumericalFlux<EH, Permittivity> {
+struct MaxwellInteriorFlux {
+}
+
+impl NumericalFlux<EH, Permittivity> for MaxwellInteriorFlux {
+    fn flux(&self, minus: Side<EH, Permittivity>, plus: Side<EH, Permittivity>, outward_normal: Vec2) -> <EH as Unknown>::L {
+        (minus.u + plus.u) / 2.
+    }
+}
+
+pub struct Vacuum<'flux> {
+    interior_flux: &'flux MaxwellInteriorFlux,
+}
+
+impl<'flux> FluxScheme<EH> for Vacuum<'flux> {
+    type F = Permittivity;
+    type K = MaxwellFluxType;
+
+    fn flux_type(&self, key: MaxwellFluxType) -> & NumericalFlux<EH, Permittivity> {
         match key {
-            _ => Permittivity {
-                epsilon: 1.,
-                mu: 1.,
-            }
+            _ => self.interior_flux
         }
     }
 }

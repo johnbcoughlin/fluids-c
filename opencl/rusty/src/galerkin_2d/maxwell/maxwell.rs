@@ -2,19 +2,21 @@ extern crate rulinalg;
 
 use distmesh::distmesh_2d::ellipse;
 use galerkin_2d::galerkin::GalerkinScheme;
-use galerkin_2d::grid::{assemble_grid, Grid};
+use galerkin_2d::grid::{assemble_grid, Grid, SpatialVariable};
 use galerkin_2d::maxwell::flux::*;
 use galerkin_2d::maxwell::unknowns::*;
 use galerkin_2d::operators::{assemble_operators, Operators};
 use galerkin_2d::reference_element::ReferenceElement;
-use galerkin_2d::unknowns::{communicate, initialize_storage, Unknown};
+use galerkin_2d::unknowns::{communicate, initialize_storage};
 use rulinalg::vector::Vector;
 
-pub struct Maxwell2D {}
+pub struct Maxwell2D<'flux> {
+    flux_scheme: Vacuum<'flux>,
+}
 
-impl GalerkinScheme for Maxwell2D {
+impl<'flux> GalerkinScheme for Maxwell2D<'flux> {
     type U = EH;
-    type F = Permittivity;
+    type FS = Vacuum<'flux>;
 }
 
 pub fn maxwell_2d<'grid, Fx>(

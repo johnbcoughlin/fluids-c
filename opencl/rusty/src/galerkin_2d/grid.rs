@@ -18,26 +18,26 @@ pub enum FaceNumber {
 
 pub enum FaceType<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::Line: 'grid,
+    <GS::U as Unknown>::L: 'grid,
 {
     // An interior face with the index of the element on the other side.
     Interior(i32, FaceNumber),
 
     // A complex boundary condition which may depend on the other side of the boundary and on
     // the time parameter.
-    Boundary(&'grid Fn(f64) -> <GS::U as Unknown>::Line),
+    Boundary(&'grid Fn(f64) -> <GS::U as SpatialVariable>::Line),
 }
 
 pub struct Face<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::Line: 'grid,
+    <GS::U as Unknown>::L: 'grid,
 {
     pub face_type: FaceType<'grid, GS>,
 }
 
 pub struct Element<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::Line: 'grid,
+    <GS::U as Unknown>::L: 'grid,
 {
     pub index: i32,
     pub x_k: Vector<f64>,
@@ -70,17 +70,17 @@ pub struct ElementStorage<U: Unknown> {
     pub u_k: U,
 
     // minus is interior, plus is exterior
-    pub u_face1_minus: Cell<U::Line>,
-    pub u_face1_plus: Cell<U::Line>,
-    pub u_face2_minus: Cell<U::Line>,
-    pub u_face2_plus: Cell<U::Line>,
-    pub u_face3_minus: Cell<U::Line>,
-    pub u_face3_plus: Cell<U::Line>,
+    pub u_face1_minus: Cell<U::L>,
+    pub u_face1_plus: Cell<U::L>,
+    pub u_face2_minus: Cell<U::L>,
+    pub u_face2_plus: Cell<U::L>,
+    pub u_face3_minus: Cell<U::L>,
+    pub u_face3_plus: Cell<U::L>,
 }
 
 pub struct Grid<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::Line: 'grid,
+    <GS::U as Unknown>::L: 'grid,
 {
     pub elements: Vec<Element<'grid, GS>>,
 }
@@ -93,7 +93,7 @@ pub fn assemble_grid<'grid, GS, F>(
 ) -> Grid<'grid, GS>
 where
     GS: GalerkinScheme,
-    F: Fn(f64) -> <GS::U as Unknown>::Line + 'grid,
+    F: Fn(f64) -> <GS::U as Unknown>::L + 'grid,
 {
     let points = &mesh.points;
     let rs = &reference_element.rs;
