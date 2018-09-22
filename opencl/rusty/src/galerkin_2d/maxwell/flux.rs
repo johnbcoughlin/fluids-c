@@ -1,8 +1,10 @@
-use galerkin_2d::flux::{FluxScheme, FluxKey, NumericalFlux, Side};
-use galerkin_2d::unknowns::{Unknown};
+use galerkin_2d::flux::{FluxKey, FluxScheme, NumericalFlux, Side};
 use galerkin_2d::grid::SpatialVariable;
+use galerkin_2d::grid::Vec2;
 use galerkin_2d::maxwell::unknowns::*;
 use galerkin_2d::reference_element::ReferenceElement;
+use galerkin_2d::unknowns::Unknown;
+use rulinalg::vector::Vector;
 
 #[derive(Copy, Clone)]
 pub struct Permittivity {
@@ -49,30 +51,64 @@ impl SpatialVariable for Permittivity {
 
 pub enum MaxwellFluxType {
     Interior,
+    Exterior,
 }
 
 impl FluxKey for MaxwellFluxType {}
 
-struct MaxwellInteriorFlux {
+pub struct Vacuum {
 }
 
-impl NumericalFlux<EH, Permittivity> for MaxwellInteriorFlux {
-    fn flux(&self, minus: Side<EH, Permittivity>, plus: Side<EH, Permittivity>, outward_normal: Vec2) -> <EH as Unknown>::L {
-        (minus.u + plus.u) / 2.
+impl Vacuum {
+    fn interior_flux(
+        minus: Side<EH, Permittivity>,
+        plus: Side<EH, Permittivity>,
+        outward_normal: Vec2,
+    ) -> EH {
+        let d_eh = minus.u - plus.u;
+        let (d_hx, d_hy, d_ez) = (d_eh.Hx, d_eh.Hy, d_eh.Ez);
+        Self::flux_calculation(d_hx, d_hy, d_ez, outward_normal)
+    }
+
+    fn exterior_flux(minus: Side<EH, Permittivity>,
+                     plus: Side<EH, Permittivity>,
+                     outward_normal: Vec2, ) -> EH {
+        let d_hx = Vector::zeros(minus.u.Hx.size());
+        let d_hy = Vector::zeros(minus.u.Hx.size());
+        let d_ez = minus.u.Ez * 2.;
+        Self::flux_calculation(d_hx, d_hy, d_ez, outward_normal)
+    }
+
+    fn flux_calculation(d_hx: Vector<f64>, d_hy: Vector<f64>, d_ez: Vector<f64>, outward_normal: Vec2, ) -> EH {
+        let alpha = 1.;
+        let (n_x, n_y) = (outward_normal.x, outward_normal.y);
+
+        let n_dot_dh = &d_hx * n_x + &d_hy * n_y;
+        let flux_hx = &d_ez * n_y + (&n_dot_dh * n_x - &d_hx) * alpha;
+        let flux_hy = -&d_ez * n_x + (&n_dot_dh * n_y - &d_hy) * alpha;
+        let flux_ez = -&d_hy * n_x + &d_hx * n_y - &d_ez * alpha;
+
+        EH {
+            Ez: flux_ez,
+            Hx: flux_hx,
+            Hy: flux_hy,
+        }
     }
 }
 
-pub struct Vacuum<'flux> {
-    interior_flux: &'flux MaxwellInteriorFlux,
-}
-
-impl<'flux> FluxScheme<EH> for Vacuum<'flux> {
+impl FluxScheme<EH> for Vacuum {
     type F = Permittivity;
     type K = MaxwellFluxType;
 
-    fn flux_type(&self, key: MaxwellFluxType) -> & NumericalFlux<EH, Permittivity> {
+    fn flux_type(
+        key: Self::K,
+        minus: Side<EH, Permittivity>,
+        plus: Side<EH, Permittivity>,
+        outward_normal: Vec2,
+    ) -> EH {
         match key {
-            _ => self.interior_flux
+            MaxwellFluxType::Interior => Vacuum::interior_flux(minus, plus, outward_normal),
+            MaxwellFluxType::Exterior => Vacuum::exterior_flux(minus, plus, outward_normal),
         }
     }
 }

@@ -16,8 +16,7 @@ pub fn jacobi(xs: &Vector<f64>, alpha: i32, beta: i32, n: i32) -> Vector<f64> {
     // See NUDG p. 446
     let gamma_0 = 2.0.powi(alpha + beta + 1) / (alphaf + betaf + 1.)
         * (alphaf + 1.).gamma()
-        * (betaf + 1.).gamma()
-        / (alphaf + betaf + 1.).gamma();
+        * (betaf + 1.).gamma() / (alphaf + betaf + 1.).gamma();
     let p_0 = Vector::ones(xs.size()) * (1.0 / gamma_0.sqrt());
     if n == 0 {
         return p_0;
@@ -76,7 +75,8 @@ pub fn grad_legendre_roots(n: i32) -> Vector<f64> {
             let num = (i + 1.) / i;
             let denom = (2. * i - 1.) / (i - 1.) * (i * 2. + 1.) / (i);
             (num / denom).sqrt()
-        }).collect();
+        })
+        .collect();
     let mut z = vec![];
     let mut work = vec![0.0; 4 * n as usize];
     let mut info = 0;

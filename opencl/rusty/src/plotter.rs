@@ -55,7 +55,7 @@ impl Plotter {
             .write(true)
             .open(&self.path)
             .expect("could not open file for header");
-        writeln!(file, "#\tX\tU");
+        writeln!(file, "#\tX\tU").expect("error!");
         file.flush().expect("error flushing file");
     }
 

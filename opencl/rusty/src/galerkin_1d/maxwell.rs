@@ -286,7 +286,7 @@ fn maxwell_1d<Fx>(
         Vector::zeros(reference_element.n_p as usize + 1),
         Vector::zeros(reference_element.n_p as usize + 1),
     )).take(grid.elements.len())
-    .collect();
+        .collect();
 
     for epoch in 0..n_t {
         for int_rk in 0..5 {

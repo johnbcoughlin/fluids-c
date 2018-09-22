@@ -5,6 +5,7 @@ use galerkin_2d::galerkin::GalerkinScheme;
 use galerkin_2d::operators::Operators;
 use galerkin_2d::reference_element::ReferenceElement;
 use galerkin_2d::unknowns::Unknown;
+use galerkin_2d::flux::{FluxScheme};
 use rulinalg::vector::Vector;
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -18,26 +19,29 @@ pub enum FaceNumber {
 
 pub enum FaceType<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::L: 'grid,
+    <GS::U as Unknown>::Line: 'grid,
 {
     // An interior face with the index of the element on the other side.
     Interior(i32, FaceNumber),
 
     // A complex boundary condition which may depend on the other side of the boundary and on
     // the time parameter.
-    Boundary(&'grid Fn(f64) -> <GS::U as SpatialVariable>::Line),
+    Boundary(&'grid Fn(f64) -> <GS::U as Unknown>::Line, &'grid <GS::FS as FluxScheme>::F),
 }
 
 pub struct Face<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::L: 'grid,
+    <GS::U as Unknown>::Line: 'grid,
 {
     pub face_type: FaceType<'grid, GS>,
+    pub flux_key: <GS::F as FluxScheme>::K,
+    pub surface_jacobian: Vector<f64>,
+    pub outward_normal: Vec2,
 }
 
 pub struct Element<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::L: 'grid,
+    <GS::U as Unknown>::Line: 'grid,
 {
     pub index: i32,
     pub x_k: Vector<f64>,
@@ -56,10 +60,12 @@ where
     pub jacobian: Vector<f64>,
 
     // derivatives in the other direction
-    r_x: Vector<f64>,
-    s_x: Vector<f64>,
-    r_y: Vector<f64>,
-    s_y: Vector<f64>,
+    pub r_x: Vector<f64>,
+    pub s_x: Vector<f64>,
+    pub r_y: Vector<f64>,
+    pub s_y: Vector<f64>,
+
+    pub spatial_parameters: <GS::FS as FluxScheme>::F,
 
     pub face1: Face<'grid, GS>,
     pub face2: Face<'grid, GS>,
@@ -70,30 +76,40 @@ pub struct ElementStorage<U: Unknown> {
     pub u_k: U,
 
     // minus is interior, plus is exterior
-    pub u_face1_minus: Cell<U::L>,
-    pub u_face1_plus: Cell<U::L>,
-    pub u_face2_minus: Cell<U::L>,
-    pub u_face2_plus: Cell<U::L>,
-    pub u_face3_minus: Cell<U::L>,
-    pub u_face3_plus: Cell<U::L>,
+    pub u_face1_minus: Cell<U::Line>,
+    pub u_face1_plus: Cell<U::Line>,
+    pub u_face2_minus: Cell<U::Line>,
+    pub u_face2_plus: Cell<U::Line>,
+    pub u_face3_minus: Cell<U::Line>,
+    pub u_face3_plus: Cell<U::Line>,
+
+    pub f_face1_minus: Cell<U::Line>,
+    pub f_face1_plus: Cell<U::Line>,
+    pub f_face2_minus: Cell<U::Line>,
+    pub f_face2_plus: Cell<U::Line>,
+    pub f_face3_minus: Cell<U::Line>,
+    pub f_face3_plus: Cell<U::Line>,
 }
 
 pub struct Grid<'grid, GS: GalerkinScheme>
 where
-    <GS::U as Unknown>::L: 'grid,
+    <GS::U as Unknown>::Line: 'grid,
 {
     pub elements: Vec<Element<'grid, GS>>,
 }
 
-pub fn assemble_grid<'grid, GS, F>(
+pub fn assemble_grid<'grid, GS, F, FSP>(
     reference_element: &ReferenceElement,
     operators: &Operators,
     mesh: &Mesh,
     boundary_condition: &'grid F,
+    exterior_boundary_spatial_parameter: &'grid <GS::FS as FluxScheme>::F,
+    initial_spatial_parameter: FSP,
 ) -> Grid<'grid, GS>
 where
     GS: GalerkinScheme,
-    F: Fn(f64) -> <GS::U as Unknown>::L + 'grid,
+    F: Fn(f64) -> <GS::U as Unknown>::Line + 'grid,
+    FSP: Fn(&Vector<f64>, &Vector<f64>) -> <GS::FS as FluxScheme>::F,
 {
     let points = &mesh.points;
     let rs = &reference_element.rs;
@@ -147,9 +163,11 @@ where
             } else {
                 FaceType::Interior(*a, *a_number)
             },
-            Some(EdgeType::Exterior(_, _)) => FaceType::Boundary(boundary_condition),
+            Some(EdgeType::Exterior(_, _)) => FaceType::Boundary(
+                boundary_condition, exterior_boundary_spatial_parameter),
             None => panic!("edge_to_triangle did not contain {:?}", e),
         };
+        let spatial_parameters = initial_spatial_parameter(&x, &y);
         let face1: Face<'grid, GS> = Face {
             face_type: edge_to_face_type(&e1),
         };
@@ -173,6 +191,7 @@ where
             s_x,
             r_y,
             s_y,
+            spatial_parameters,
             face1,
             face2,
             face3,
@@ -181,6 +200,9 @@ where
 
     Grid { elements }
 }
+
+fn build_face(face_number: FaceNumber,
+              x_r: &Vector<f64>,)
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 struct Edge {
@@ -225,10 +247,12 @@ impl EdgeType {
     }
 }
 
-pub struct Vec2 {
-    x: f64,
-    y: f64,
+pub struct XYTuple<T> {
+    pub x: T,
+    pub y: T,
 }
+
+pub type Vec2 = XYTuple<f64>;
 
 pub trait SpatialVariable {
     type Line;
