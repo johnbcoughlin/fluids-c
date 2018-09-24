@@ -2,12 +2,13 @@ extern crate itertools;
 extern crate rulinalg;
 
 use functions::vandermonde::{grad_vandermonde_2d, vandermonde, vandermonde_2d};
+use galerkin_2d::grid::Element;
+use galerkin_2d::grid::XYTuple;
 use galerkin_2d::reference_element::ReferenceElement;
+use galerkin_2d::unknowns::Unknown;
 use rulinalg::matrix::{BaseMatrix, BaseMatrixMut, Matrix};
 use rulinalg::vector::Vector;
-use galerkin_2d::grid::XYTuple;
-use galerkin_2d::grid::Element;
-use galerkin_2d::unknowns::Unknown;
+use galerkin_2d::grid::LocalMetric;
 
 pub struct Operators {
     // The Vandermonde matrix
@@ -30,10 +31,12 @@ pub struct FaceLift {
 }
 
 pub trait FaceLiftable: Unknown {
-    fn lift_faces(face_lift: &FaceLift,
-                  face1: &Self::Line,
-                  face2: &Self::Line,
-                  face3: &Self::Line) -> Self;
+    fn lift_faces(
+        face_lift: &FaceLift,
+        face1: &Self::Line,
+        face2: &Self::Line,
+        face3: &Self::Line,
+    ) -> Self;
 }
 
 pub fn assemble_operators(reference_element: &ReferenceElement) -> Operators {
@@ -75,7 +78,8 @@ fn assemble_lift(reference_element: &ReferenceElement) -> FaceLift {
         .iter()
         .enumerate()
         .for_each(|(j, &i)| {
-            face1.row_mut(i as usize)
+            face1
+                .row_mut(i as usize)
                 .iter_mut()
                 .zip(mass_face1.row(j).into_iter())
                 .for_each(|(dest, x)| *dest = *x)
@@ -92,7 +96,8 @@ fn assemble_lift(reference_element: &ReferenceElement) -> FaceLift {
         .iter()
         .enumerate()
         .for_each(|(j, &i)| {
-            face2.row_mut(i as usize)
+            face2
+                .row_mut(i as usize)
                 .iter_mut()
                 .zip(mass_face1.row(j).into_iter())
                 .for_each(|(dest, x)| *dest = *x)
@@ -107,40 +112,42 @@ fn assemble_lift(reference_element: &ReferenceElement) -> FaceLift {
         .iter()
         .enumerate()
         .for_each(|(j, &i)| {
-            face3.row_mut(i as usize)
+            face3
+                .row_mut(i as usize)
                 .iter_mut()
                 .zip(mass_face1.row(j).into_iter())
                 .for_each(|(dest, x)| *dest = *x)
         });
 
     FaceLift {
-        face1, face2, face3
+        face1,
+        face2,
+        face3,
     }
 }
 
-pub fn grad(u: &Vector<f64>, operators: &Operators,
-            r_x: &Vector<f64>,
-            s_x: &Vector<f64>,
-            r_y: &Vector<f64>,
-            s_y: &Vector<f64>,
+pub fn grad(
+    u: &Vector<f64>,
+    operators: &Operators,
+    local_metric: &LocalMetric,
 ) -> XYTuple<Vector<f64>> {
     let u_r = operators.d_r * u;
     let u_s = operators.d_s * u;
-    let u_x = r_x.elemul(&u_r) + s_x.elemul(&u_s);
-    let u_y = r_y.elemul(&u_r) + s_y.elemul(&u_s);
+    let u_x = local_metric.r_x.elemul(&u_r) + local_metric.s_x.elemul(&u_s);
+    let u_y = local_metric.r_y.elemul(&u_r) + local_metric.s_y.elemul(&u_s);
     XYTuple { x: u_x, y: u_y }
 }
 
-pub fn curl_2d(u_x: &Vector<f64>, u_y: &Vector<f64>, operators: &Operators,
-               r_x: &Vector<f64>,
-               s_x: &Vector<f64>,
-               r_y: &Vector<f64>,
-               s_y: &Vector<f64>,
+pub fn curl_2d(
+    u_x: &Vector<f64>,
+    u_y: &Vector<f64>,
+    operators: &Operators,
+    local_metric: &LocalMetric,
 ) -> Vector<f64> {
     let u_xr = operators.d_r * u_x;
     let u_xs = operators.d_s * u_x;
     let u_yr = operators.d_r * u_y;
     let u_ys = operators.d_s * u_y;
-    let v_z = u_yr * r_x + u_ys * s_x - u_xr * r_y - u_xs * s_y;
+    let v_z = u_yr.elemul(&local_metric.r_x) + u_ys.elemul(&local_metric.s_x) - u_xr.elemul(&local_metric.r_y) - u_xs.elemul(&local_metric.s_y);
     v_z
 }

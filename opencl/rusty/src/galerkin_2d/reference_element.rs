@@ -6,6 +6,7 @@ use functions::jacobi_polynomials;
 use functions::vandermonde;
 use std::f64::consts::PI;
 use std::iter::FromIterator;
+use galerkin_2d::grid::FaceNumber;
 
 const ALPHAS: [f64; 15] = [
     0.0000, 0.0000, 1.4152, 0.1001, 0.2751, 0.9800, 1.0999, 1.2832, 1.3648, 1.4773, 1.4959, 1.5743,
@@ -34,6 +35,14 @@ pub struct ReferenceElement {
 }
 
 impl ReferenceElement {
+    pub fn face(&self, face_number: &FaceNumber) -> &Vec<usize> {
+        match face_number {
+            FaceNumber::One => &self.face1,
+            FaceNumber::Two => &self.face2,
+            FaceNumber::Three => &self.face3,
+        }
+    }
+
     pub fn legendre(n: i32) -> ReferenceElement {
         let n_p = (n + 1) * (n + 2) / 2;
         let (x, y) = ReferenceElement::equilateral_nodes(n);

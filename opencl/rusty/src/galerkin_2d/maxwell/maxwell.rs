@@ -1,19 +1,21 @@
 extern crate rulinalg;
 
-use std::iter::repeat;
 use distmesh::distmesh_2d::ellipse;
+use galerkin_2d::flux::compute_flux;
 use galerkin_2d::galerkin::GalerkinScheme;
+use galerkin_2d::grid::Element;
 use galerkin_2d::grid::{assemble_grid, Grid, SpatialVariable};
 use galerkin_2d::maxwell::flux::*;
 use galerkin_2d::maxwell::unknowns::*;
+use galerkin_2d::operators::curl_2d;
+use galerkin_2d::operators::grad;
 use galerkin_2d::operators::{assemble_operators, Operators};
 use galerkin_2d::reference_element::ReferenceElement;
 use galerkin_2d::unknowns::{communicate, initialize_storage, Unknown};
 use rulinalg::vector::Vector;
-use galerkin_2d::grid::Element;
-use galerkin_2d::flux::compute_flux;
-use galerkin_2d::operators::grad;
-use galerkin_2d::operators::curl_2d;
+use std::iter::repeat_with;
+use galerkin_2d::grid::ElementStorage;
+use galerkin_2d::operators::FaceLiftable;
 
 pub struct Maxwell2D {
     flux_scheme: Vacuum,
@@ -39,7 +41,7 @@ pub fn maxwell_2d<'grid, Fx>(
 
     let mut t: f64 = 0.0;
 
-    let mut storage: Vec<EHStorage> = initialize_storage(
+    let mut storage: Vec<ElementStorage<Maxwell2D>> = initialize_storage(
         u_0,
         reference_element.n_p as i32,
         reference_element,
@@ -47,8 +49,9 @@ pub fn maxwell_2d<'grid, Fx>(
         operators,
     );
 
-    let mut residuals: Vec<EH> = repeat(EH::zero(reference_element))
-        .take(grid.elements.len()).collect();
+    let mut residuals: Vec<EH> = repeat_with(|| EH::zero(reference_element))
+        .take(grid.elements.len())
+        .collect();
 
     while t < final_time {
         for int_rk in 0..5 {
@@ -59,22 +62,35 @@ pub fn maxwell_2d<'grid, Fx>(
 
                 let residuals_eh = {
                     let residuals_eh = &(residuals[elt.index as usize]);
-                    let rhs = maxwell_rhs_2d(&elt, &storage, &operators);
+                    let rhs = maxwell_rhs_2d(&elt, &storage, &operators, reference_element);
                 };
             }
         }
     }
 }
 
-fn maxwell_rhs_2d<'grid>(elt: &EHElement<'grid>, elt_storage: &EHStorage, operators: &Operators) -> EH {
+fn maxwell_rhs_2d<'grid>(
+    elt: &EHElement<'grid>,
+    elt_storage: &ElementStorage<Maxwell2D>,
+    operators: &Operators,
+    reference_element: &ReferenceElement,
+) -> EH {
     let (face1_flux, face2_flux, face3_flux) = compute_flux(elt, elt_storage);
     let flux = EH::lift_faces(&operators.lift, &face1_flux, &face2_flux, &face3_flux);
 
-    let grad_ez = grad(&elt_storage.u_k.Ez, operators, &elt.r_x, &elt.s_x, &elt.r_y, &elt.s_y);
-    let curl_h = curl_2d(&elt_storage.u_k.Hx, &elt_storage.u_k.Hy, operators,
-                         &elt.r_x, &elt.s_x, &elt.r_y, &elt.s_y);
+    let grad_ez = grad(
+        &elt_storage.u_k.Ez,
+        operators,
+        &elt.local_metric,
+    );
+    let curl_h = curl_2d(
+        &elt_storage.u_k.Hx,
+        &elt_storage.u_k.Hy,
+        operators,
+        &elt.local_metric,
+    );
 
-    let Hx = -grad_ez.y +
+    EH::face1_zero(reference_element)
 }
 
 pub fn maxwell_2d_example() {
@@ -83,8 +99,16 @@ pub fn maxwell_2d_example() {
     let operators = assemble_operators(&reference_element);
     let mesh = ellipse();
     let boundary_condition = |t| EH::face1_zero(&reference_element);
-    let grid: Grid<Maxwell2D> =
-        assemble_grid(&reference_element, &operators, &mesh, &boundary_condition);
+    let grid: Grid<Maxwell2D> = assemble_grid(
+        &reference_element,
+        &operators,
+        &mesh,
+        &boundary_condition,
+        &|| (),
+        |_, _| (),
+        MaxwellFluxType::Interior,
+        MaxwellFluxType::Exterior
+    );
 }
 
 #[cfg(test)]

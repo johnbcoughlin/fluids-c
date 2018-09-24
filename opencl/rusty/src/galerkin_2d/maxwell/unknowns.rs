@@ -1,17 +1,15 @@
 extern crate rulinalg;
 
-use galerkin_2d::operators::{assemble_operators, Operators};
-use std::ops::{Neg, Add, Sub, Mul, Div};
-use galerkin_2d::reference_element::{ReferenceElement, };
-use galerkin_2d::grid::{Grid, ElementStorage, assemble_grid, };
 use distmesh::distmesh_2d::ellipse;
 use galerkin_2d::galerkin::GalerkinScheme;
-use galerkin_2d::unknowns::{Unknown};
-use rulinalg::vector::Vector;
-use galerkin_2d::operators::FaceLiftable;
+use galerkin_2d::grid::{assemble_grid, ElementStorage, Grid};
 use galerkin_2d::operators::FaceLift;
-
-pub type EHStorage = ElementStorage<EH>;
+use galerkin_2d::operators::FaceLiftable;
+use galerkin_2d::operators::{assemble_operators, Operators};
+use galerkin_2d::reference_element::ReferenceElement;
+use galerkin_2d::unknowns::Unknown;
+use rulinalg::vector::Vector;
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy)]
 pub struct EHUnit {
@@ -28,10 +26,12 @@ pub struct EH {
 }
 
 impl FaceLiftable for EH {
-    fn lift_faces(face_lift: &FaceLift,
-                  face1: &<Self as Unknown>::Line,
-                  face2: &<Self as Unknown>::Line,
-                  face3: &<Self as Unknown>::Line) -> Self {
+    fn lift_faces(
+        face_lift: &FaceLift,
+        face1: &<Self as Unknown>::Line,
+        face2: &<Self as Unknown>::Line,
+        face3: &<Self as Unknown>::Line,
+    ) -> Self {
         let face1_lifted = EH {
             Ez: face_lift.face1 * face1.Ez,
             Hx: face_lift.face1 * face1.Hx,

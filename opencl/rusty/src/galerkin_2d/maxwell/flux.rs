@@ -21,34 +21,35 @@ impl Permittivity {
     }
 }
 
-impl SpatialVariable for Permittivity {
-    type Line = Permittivity;
+impl SpatialVariable for () {
+    type Line = ();
 
-    fn edge_1(&self, reference_element: &ReferenceElement) -> Permittivity {
-        self.clone()
+    fn edge_1(&self, reference_element: &ReferenceElement) -> () {
+        ()
     }
 
-    fn edge_2(&self, reference_element: &ReferenceElement) -> Permittivity {
-        self.clone()
+    fn edge_2(&self, reference_element: &ReferenceElement) -> () {
+        ()
     }
 
-    fn edge_3(&self, reference_element: &ReferenceElement) -> Permittivity {
-        self.clone()
+    fn edge_3(&self, reference_element: &ReferenceElement) -> () {
+        ()
     }
 
-    fn face1_zero(reference_element: &ReferenceElement) -> Permittivity {
-        Permittivity::zero()
+    fn face1_zero(reference_element: &ReferenceElement) -> () {
+        ()
     }
 
-    fn face2_zero(reference_element: &ReferenceElement) -> Permittivity {
-        Permittivity::zero()
+    fn face2_zero(reference_element: &ReferenceElement) -> () {
+        ()
     }
 
-    fn face3_zero(reference_element: &ReferenceElement) -> Permittivity {
-        Permittivity::zero()
+    fn face3_zero(reference_element: &ReferenceElement) -> () {
+        ()
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum MaxwellFluxType {
     Interior,
     Exterior,
@@ -56,37 +57,46 @@ pub enum MaxwellFluxType {
 
 impl FluxKey for MaxwellFluxType {}
 
-pub struct Vacuum {
-}
+pub struct Vacuum {}
 
 impl Vacuum {
     fn interior_flux(
-        minus: Side<EH, Permittivity>,
-        plus: Side<EH, Permittivity>,
-        outward_normal: Vec2,
+        minus: Side<EH, ()>,
+        plus: Side<EH, ()>,
+        outward_normal: Vec<Vec2>,
     ) -> EH {
         let d_eh = minus.u - plus.u;
         let (d_hx, d_hy, d_ez) = (d_eh.Hx, d_eh.Hy, d_eh.Ez);
         Self::flux_calculation(d_hx, d_hy, d_ez, outward_normal)
     }
 
-    fn exterior_flux(minus: Side<EH, Permittivity>,
-                     plus: Side<EH, Permittivity>,
-                     outward_normal: Vec2, ) -> EH {
+    fn exterior_flux(
+        minus: Side<EH, ()>,
+        plus: Side<EH, ()>,
+        outward_normal: Vec<Vec2>,
+    ) -> EH {
         let d_hx = Vector::zeros(minus.u.Hx.size());
         let d_hy = Vector::zeros(minus.u.Hx.size());
         let d_ez = minus.u.Ez * 2.;
         Self::flux_calculation(d_hx, d_hy, d_ez, outward_normal)
     }
 
-    fn flux_calculation(d_hx: Vector<f64>, d_hy: Vector<f64>, d_ez: Vector<f64>, outward_normal: Vec2, ) -> EH {
+    fn flux_calculation(
+        d_hx: Vector<f64>,
+        d_hy: Vector<f64>,
+        d_ez: Vector<f64>,
+        outward_normal: Vec<Vec2>,
+    ) -> EH {
         let alpha = 1.;
-        let (n_x, n_y) = (outward_normal.x, outward_normal.y);
+        let (n_x, n_y): (Vector<f64>, Vector<f64>) = (
+            outward_normal.iter().map(|&n| n.x).collect(),
+            outward_normal.iter().map(|&n| n.y).collect(),
+        );
 
-        let n_dot_dh = &d_hx * n_x + &d_hy * n_y;
-        let flux_hx = &d_ez * n_y + (&n_dot_dh * n_x - &d_hx) * alpha;
-        let flux_hy = -&d_ez * n_x + (&n_dot_dh * n_y - &d_hy) * alpha;
-        let flux_ez = -&d_hy * n_x + &d_hx * n_y - &d_ez * alpha;
+        let n_dot_dh = &d_hx.elemul(&n_x) + &d_hy.elemul(&n_y);
+        let flux_hx = &d_ez.elemul(&n_y) + (&n_dot_dh.elemul(&n_x) - &d_hx) * alpha;
+        let flux_hy = -&d_ez.elemul(&n_x) + (&n_dot_dh.elemul(&n_y) - &d_hy) * alpha;
+        let flux_ez = -&d_hy.elemul(&n_x) + &d_hx.elemul(&n_y) - &d_ez * alpha;
 
         EH {
             Ez: flux_ez,
@@ -97,14 +107,16 @@ impl Vacuum {
 }
 
 impl FluxScheme<EH> for Vacuum {
-    type F = Permittivity;
+    // In the vacuum, we can normalize all constants to 1, and there is no spatial variation
+    // of the permittivity, so the spatial variable is ().
+    type F = ();
     type K = MaxwellFluxType;
 
     fn flux_type(
         key: Self::K,
-        minus: Side<EH, Permittivity>,
-        plus: Side<EH, Permittivity>,
-        outward_normal: Vec2,
+        minus: Side<EH, ()>,
+        plus: Side<EH, ()>,
+        outward_normal: Vec<Vec2>,
     ) -> EH {
         match key {
             MaxwellFluxType::Interior => Vacuum::interior_flux(minus, plus, outward_normal),
