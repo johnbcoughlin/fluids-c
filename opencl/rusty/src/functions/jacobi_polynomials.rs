@@ -115,7 +115,8 @@ pub fn simplex_2d_polynomial(a: &Vector<f64>, b: &Vector<f64>, i: i32, j: i32) -
     (0..i).for_each(|_| {
         x = x.elemul(&base);
     });
-    (h1.elemul(&h2) * 2.0_f64.sqrt()).elemul(&x)
+    let result = (h1.elemul(&h2) * 2.0_f64.sqrt()).elemul(&x);
+    result
 }
 
 /**

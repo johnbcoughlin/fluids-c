@@ -137,7 +137,9 @@ impl ReferenceElement {
     }
 
     pub fn rs_to_ab(rs: &Vector<f64>, ss: &Vector<f64>) -> (Vector<f64>, Vector<f64>) {
-        let a = ((rs + 1.).elediv(&(-ss + 1.))) * 2. - 1.;
+        let a: Vector<f64> = rs.iter().zip(ss.iter()).map(|(&r, &s)| {
+            if s != 1. { 2. * (r + 1.) / (1. - s) - 1. } else { -1. }
+        }).collect();
         let b = ss.clone();
         (a, b)
     }

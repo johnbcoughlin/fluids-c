@@ -33,19 +33,19 @@ impl FaceLiftable for EH {
         face3: &<Self as Unknown>::Line,
     ) -> Self {
         let face1_lifted = EH {
-            Ez: face_lift.face1 * face1.Ez,
-            Hx: face_lift.face1 * face1.Hx,
-            Hy: face_lift.face1 * face1.Hy,
+            Ez: &face_lift.face1 * &face1.Ez,
+            Hx: &face_lift.face1 * &face1.Hx,
+            Hy: &face_lift.face1 * &face1.Hy,
         };
         let face2_lifted = EH {
-            Ez: face_lift.face2 * face2.Ez,
-            Hx: face_lift.face2 * face2.Hx,
-            Hy: face_lift.face2 * face2.Hy,
+            Ez: &face_lift.face2 * &face2.Ez,
+            Hx: &face_lift.face2 * &face2.Hx,
+            Hy: &face_lift.face2 * &face2.Hy,
         };
         let face3_lifted = EH {
-            Ez: face_lift.face3 * face3.Ez,
-            Hx: face_lift.face3 * face3.Hx,
-            Hy: face_lift.face3 * face3.Hy,
+            Ez: &face_lift.face3 * &face3.Ez,
+            Hx: &face_lift.face3 * &face3.Hx,
+            Hy: &face_lift.face3 * &face3.Hy,
         };
         face1_lifted + face2_lifted + face3_lifted
     }
@@ -123,6 +123,19 @@ impl Neg for EH {
     }
 }
 
+impl<'a> Neg for &'a EH {
+    type Output = EH;
+
+    fn neg(self: &'a EH) -> EH {
+        EH {
+            // Intellij Rust is getting this one wrong
+            Ez: -(&self.Ez),
+            Hx: -(&self.Hx),
+            Hy: -(&self.Hy),
+        }
+    }
+}
+
 impl Add for EH {
     type Output = Self;
 
@@ -131,6 +144,18 @@ impl Add for EH {
             Ez: self.Ez + rhs.Ez,
             Hx: self.Hx + rhs.Hx,
             Hy: self.Hy + rhs.Hy,
+        }
+    }
+}
+
+impl<'a> Add for &'a EH {
+    type Output = EH;
+
+    fn add(self, rhs: &EH) -> EH {
+        EH {
+            Ez: &self.Ez + &rhs.Ez,
+            Hx: &self.Hx + &rhs.Hx,
+            Hy: &self.Hy + &rhs.Hy,
         }
     }
 }
@@ -147,6 +172,18 @@ impl Sub for EH {
     }
 }
 
+impl<'a> Sub for &'a EH {
+    type Output = EH;
+
+    fn sub(self, rhs: &EH) -> EH {
+        EH {
+            Ez: &self.Ez - &rhs.Ez,
+            Hx: &self.Hx - &rhs.Hx,
+            Hy: &self.Hy - &rhs.Hy,
+        }
+    }
+}
+
 impl Mul<f64> for EH {
     type Output = EH;
 
@@ -159,6 +196,18 @@ impl Mul<f64> for EH {
     }
 }
 
+impl<'a> Mul<f64> for &'a EH {
+    type Output = EH;
+
+    fn mul(self, rhs: f64) -> EH {
+        EH {
+            Ez: &self.Ez * rhs,
+            Hx: &self.Hx * rhs,
+            Hy: &self.Hy * rhs,
+        }
+    }
+}
+
 impl Div<f64> for EH {
     type Output = EH;
 
@@ -167,6 +216,18 @@ impl Div<f64> for EH {
             Ez: self.Ez / rhs,
             Hx: self.Hx / rhs,
             Hy: self.Hy / rhs,
+        }
+    }
+}
+
+impl<'a> Div<f64> for &'a EH {
+    type Output = EH;
+
+    fn div(self, rhs: f64) -> EH {
+        EH {
+            Ez: &self.Ez / rhs,
+            Hx: &self.Hx / rhs,
+            Hy: &self.Hy / rhs,
         }
     }
 }

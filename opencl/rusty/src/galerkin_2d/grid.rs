@@ -7,10 +7,12 @@ use galerkin_2d::operators::Operators;
 use galerkin_2d::reference_element::ReferenceElement;
 use galerkin_2d::unknowns::Unknown;
 use rulinalg::vector::Vector;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Debug;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum FaceNumber {
     One,
     Two,
@@ -35,6 +37,16 @@ pub enum FaceType<'grid, GS: GalerkinScheme>
     ),
 }
 
+impl<'grid, GS: GalerkinScheme> Debug for FaceType<'grid, GS> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self {
+            FaceType::Interior(i, face) => write!(f, "Interior({}, {:?})", i, face),
+            FaceType::Boundary(_, _) => write!(f, "Boundary()"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Face<'grid, GS: GalerkinScheme>
     where
         <GS::U as Unknown>::Line: 'grid,
@@ -46,6 +58,7 @@ pub struct Face<'grid, GS: GalerkinScheme>
     pub outward_normal: Vec<Vec2>,
 }
 
+#[derive(Debug)]
 pub struct LocalMetric {
     // Derivatives of the metric mapping at each point
     // dx/dr
@@ -66,6 +79,7 @@ pub struct LocalMetric {
     pub s_y: Vector<f64>,
 }
 
+#[derive(Debug)]
 pub struct Element<'grid, GS: GalerkinScheme>
     where
         <GS::U as Unknown>::Line: 'grid,
@@ -91,12 +105,12 @@ pub struct ElementStorage<GS>
     pub u_k: GS::U,
 
     // minus is interior, plus is exterior
-    pub u_face1_minus: <GS::U as Unknown>::Line,
-    pub u_face1_plus: <GS::U as Unknown>::Line,
-    pub u_face2_minus: <GS::U as Unknown>::Line,
-    pub u_face2_plus: <GS::U as Unknown>::Line,
-    pub u_face3_minus: <GS::U as Unknown>::Line,
-    pub u_face3_plus: <GS::U as Unknown>::Line,
+    pub u_face1_minus: RefCell<<GS::U as Unknown>::Line>,
+    pub u_face1_plus: RefCell<<GS::U as Unknown>::Line>,
+    pub u_face2_minus: RefCell<<GS::U as Unknown>::Line>,
+    pub u_face2_plus: RefCell<<GS::U as Unknown>::Line>,
+    pub u_face3_minus: RefCell<<GS::U as Unknown>::Line>,
+    pub u_face3_plus: RefCell<<GS::U as Unknown>::Line>,
 
     pub f_face1_minus: <<GS::FS as FluxScheme<GS::U>>::F as SpatialVariable>::Line,
     pub f_face1_plus: <<GS::FS as FluxScheme<GS::U>>::F as SpatialVariable>::Line,
@@ -106,6 +120,7 @@ pub struct ElementStorage<GS>
     pub f_face3_plus: <<GS::FS as FluxScheme<GS::U>>::F as SpatialVariable>::Line,
 }
 
+#[derive(Debug)]
 pub struct Grid<'grid, GS: GalerkinScheme>
     where
         <GS::U as Unknown>::Line: 'grid,
@@ -162,7 +177,9 @@ pub fn assemble_grid<'grid, GS, F, FExterior, FSP>(
         );
 
         let x: Vector<f64> = -(&(rs + ss) * a.x + (rs + 1.) * b.x + (ss + 1.) * c.x) * 0.5;
+        println!("x: {}", x);
         let y: Vector<f64> = -(&(rs + ss) * a.y + (rs + 1.) * b.y + (ss + 1.) * c.x) * 0.5;
+        println!("y: {}", y);
 
         let x_r = &operators.d_r * &x;
         let x_s = &operators.d_s * &x;
@@ -212,16 +229,16 @@ pub fn assemble_grid<'grid, GS, F, FExterior, FSP>(
         let ef2 = edge_to_face_type(&e2);
         let face2: Face<'grid, GS> = build_face(
             FaceNumber::Two,
-            ef1.0,
-            ef1.1,
+            ef2.0,
+            ef2.1,
             reference_element,
             &local_metric,
         );
         let ef3 = edge_to_face_type(&e3);
         let face3: Face<'grid, GS> = build_face(
             FaceNumber::Three,
-            ef1.0,
-            ef1.1,
+            ef3.0,
+            ef3.1,
             reference_element,
             &local_metric,
         );
@@ -325,6 +342,7 @@ impl EdgeType {
     }
 }
 
+#[derive(Debug)]
 pub struct XYTuple<T> {
     pub x: T,
     pub y: T,
@@ -332,7 +350,7 @@ pub struct XYTuple<T> {
 
 pub type Vec2 = XYTuple<f64>;
 
-pub trait SpatialVariable {
+pub trait SpatialVariable: Debug {
     type Line;
 
     fn edge_1(&self, reference_element: &ReferenceElement) -> Self::Line;

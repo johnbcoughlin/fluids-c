@@ -12,6 +12,13 @@ pub fn ellipse() -> Mesh {
     )
 }
 
+pub fn unit_square() -> Mesh {
+    parse_distmesh_2d(
+        include_str!("../../static/meshes_2d/unit_square_points"),
+        include_str!("../../static/meshes_2d/unit_square_triangles"),
+    )
+}
+
 pub fn parse_distmesh_2d(points_file: &str, triangles_file: &str) -> Mesh {
     let points = points_file
         .split("\n")

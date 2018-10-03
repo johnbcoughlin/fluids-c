@@ -10,13 +10,13 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
-pub struct Plotter {
+pub struct Plotter2D {
     gnuplot: Child,
     path: PathBuf,
 }
 
-impl Plotter {
-    pub fn create(x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> Plotter {
+impl Plotter2D {
+    pub fn create(x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> Plotter2D {
         let dir = tempdir()
             .expect("could not open temporary directory")
             .into_path();
@@ -33,7 +33,7 @@ impl Plotter {
             .spawn()
             .ok()
             .expect("Couldn't spawn gnuplot. Make sure it's installed and on the PATH");
-        let mut result = Plotter { gnuplot, path };
+        let mut result = Plotter2D { gnuplot, path };
         result.begin_plotting(x_min, x_max, y_min, y_max);
         result
     }
@@ -80,8 +80,84 @@ impl Plotter {
     }
 }
 
-impl Drop for Plotter {
+impl Drop for Plotter2D {
     fn drop(&mut self) {
         self.gnuplot.kill().expect("error killing gnuplot");
+    }
+}
+
+pub struct Plotter3D {
+    gnuplot: Child,
+    path: PathBuf,
+}
+
+impl Plotter3D {
+    pub fn create(x_min: f64, x_max: f64, y_min: f64, y_max: f64,
+                  z_min: f64, z_max: f64) -> Plotter3D {
+        let dir = tempdir()
+            .expect("could not open temporary directory")
+            .into_path();
+        let path = dir.join("data");
+        println!("Data file: {}", path.to_str().unwrap());
+        let file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&path)
+            .expect("could not create data file");
+        let mut gnuplot = Command::new("gnuplot")
+            .arg("-p")
+            .stdin(Stdio::piped())
+            .spawn()
+            .ok()
+            .expect("Couldn't spawn gnuplot. Make sure it's installed and on the PATH");
+        let mut result = Plotter3D { gnuplot, path };
+        result.begin_plotting(x_min, x_max, y_min, y_max, z_min, z_max);
+        result
+    }
+
+    fn begin_plotting(&mut self, x_min: f64, x_max: f64, y_min: f64, y_max: f64,
+                      z_min: f64, z_max: f64) {
+        let mut stdin = (&mut self.gnuplot.stdin).as_mut().expect("No stdin");
+        writeln!(stdin, "set xrange [{}:{}]", x_min, x_max);
+        writeln!(stdin, "set yrange [{}:{}]", y_min, y_max);
+        writeln!(stdin, "set zrange [{}:{}]", z_min, z_max);
+        writeln!(stdin, "set dgrid3d 30,30");
+        writeln!(stdin, "set hidden3d");
+        writeln!(
+            stdin,
+            "splot \"{}\" u 1:2:3 with lines",
+            self.path.to_str().unwrap()
+        );
+    }
+
+    pub fn header(&mut self) {
+        let mut file = OpenOptions::new()
+            .truncate(true)
+            .write(true)
+            .open(&self.path)
+            .expect("could not open file for header");
+        writeln!(file, "#\tX\tY\tU").expect("error!");
+        file.flush().expect("error flushing file");
+    }
+
+    pub fn plot(&mut self, xs: &Vector<f64>, ys: &Vector<f64>, zs: &Vector<f64>) {
+        assert_eq!(xs.size(), ys.size());
+        assert_eq!(xs.size(), zs.size());
+
+        let mut file = OpenOptions::new()
+            .append(true)
+            .open(&self.path)
+            .expect("could not open file for plotting");
+
+        for ((x, y), z) in xs.iter().zip(ys.iter()).zip(zs.iter()) {
+            writeln!(file, "{}\t{}\t{}", x, y, z).expect("error");
+        }
+        file.flush().expect("error flushing file");
+    }
+
+    pub fn replot(&mut self) {
+        let mut stdin = (&mut self.gnuplot.stdin).as_mut().expect("No stdin");
+        writeln!(stdin, "replot").expect("error");
+        thread::sleep(Duration::from_millis(100));
     }
 }

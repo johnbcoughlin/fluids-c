@@ -11,8 +11,9 @@ mod galerkin_2d;
 mod plotter;
 
 //use galerkin_1d::advec::advec_1d_example;
-use galerkin_1d::maxwell::maxwell_1d_example;
+//use galerkin_1d::maxwell::maxwell_1d_example;
+use galerkin_2d::maxwell::maxwell::maxwell_2d_example;
 
 fn main() {
-    maxwell_1d_example();
+    maxwell_2d_example();
 }

@@ -6,18 +6,28 @@ use galerkin_2d::grid::{ElementStorage, FaceNumber, FaceType, Grid, SpatialVaria
 use galerkin_2d::operators::Operators;
 use galerkin_2d::reference_element::ReferenceElement;
 use rulinalg::vector::Vector;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::ops::{Add, Div, Mul, Neg};
 use std::ops::Sub;
 
-pub trait Unknown {
-    type Line: Neg<Output = Self::Line>
-        + Add<Output = Self::Line>
-        + Sub<>
-        + Mul<f64, Output = Self::Line>
-        + Div<f64, Output = Self::Line>
-        + fmt::Debug;
+pub trait Unknown
+    where
+        Self::Line: Neg<Output=Self::Line>
+        + Add<Output=Self::Line>
+        + Sub<Output=Self::Line>
+        + Mul<f64, Output=Self::Line>
+        + Div<f64, Output=Self::Line>
+        + fmt::Debug,
+//        for<'a> &'a Self::Line: Neg<Output=Self::Line>
+//        + Add<Output=Self::Line>
+//        + Sub<Output=Self::Line>
+//        + Mul<f64, Output=Self::Line>
+//        + Div<f64, Output=Self::Line>
+//        + fmt::Debug,
+
+{
+    type Line;
 
     fn zero(reference_element: &ReferenceElement) -> Self;
 
@@ -49,9 +59,9 @@ pub fn initialize_storage<GS, Fx>(
     grid: &Grid<GS>,
     operators: &Operators,
 ) -> Vec<ElementStorage<GS>>
-where
-    GS: GalerkinScheme,
-    Fx: Fn(&Vector<f64>) -> GS::U,
+    where
+        GS: GalerkinScheme,
+        Fx: Fn(&Vector<f64>, &Vector<f64>) -> GS::U,
 {
     let mut result: Vec<ElementStorage<GS>> = vec![];
     for (i, elt) in grid.elements.iter().enumerate() {
@@ -92,13 +102,13 @@ where
             ),
         };
         result.push(ElementStorage {
-            u_k: u_0(&elt.x_k),
-            u_face1_minus: GS::U::face1_zero(reference_element),
-            u_face1_plus: GS::U::face1_zero(reference_element),
-            u_face2_minus: GS::U::face2_zero(reference_element),
-            u_face2_plus: GS::U::face2_zero(reference_element),
-            u_face3_minus: GS::U::face3_zero(reference_element),
-            u_face3_plus: GS::U::face3_zero(reference_element),
+            u_k: u_0(&elt.x_k, &elt.y_k),
+            u_face1_minus: RefCell::new(GS::U::face1_zero(reference_element)),
+            u_face1_plus: RefCell::new(GS::U::face1_zero(reference_element)),
+            u_face2_minus: RefCell::new(GS::U::face2_zero(reference_element)),
+            u_face2_plus: RefCell::new(GS::U::face2_zero(reference_element)),
+            u_face3_minus: RefCell::new(GS::U::face3_zero(reference_element)),
+            u_face3_plus: RefCell::new(GS::U::face3_zero(reference_element)),
 
             f_face1_minus: f_face1_minus,
             f_face1_plus: f_face1_plus,
@@ -115,12 +125,12 @@ pub fn communicate<GS>(
     t: f64,
     reference_element: &ReferenceElement,
     grid: &Grid<GS>,
-    storages: &Vec<ElementStorage<GS>>,
+    storages: &mut Vec<ElementStorage<GS>>,
 ) where
     GS: GalerkinScheme,
 {
     for (i, elt) in grid.elements.iter().enumerate() {
-        let mut storage: &ElementStorage<GS> = storages.get(i).expect("index mismatch");
+        let storage = &storages[i];
         let mut u_k: &GS::U = &storage.u_k;
 
         let face1 = u_k.edge_1(reference_element);
@@ -135,8 +145,8 @@ pub fn communicate<GS>(
                 (face1, bc(t))
             }
         };
-        storage.u_face1_minus = face1_minus;
-        storage.u_face1_plus = face1_plus;
+        storage.u_face1_minus.replace(face1_minus);
+        storage.u_face1_plus.replace(face1_plus);
 
         let face2 = u_k.edge_2(reference_element);
         let (face2_minus, face2_plus) = match elt.face2.face_type {
@@ -150,8 +160,8 @@ pub fn communicate<GS>(
                 (face2, bc(t))
             }
         };
-        storage.u_face2_minus = face2_minus;
-        storage.u_face2_plus = face2_plus;
+        storage.u_face2_minus.replace(face2_minus);
+        storage.u_face2_plus.replace(face2_plus);
 
         let face3 = u_k.edge_3(reference_element);
         let (face3_minus, face3_plus) = match elt.face3.face_type {
@@ -165,7 +175,7 @@ pub fn communicate<GS>(
                 (face3, bc(t))
             }
         };
-        storage.u_face3_minus = face3_minus;
-        storage.u_face3_plus = face3_plus;
+        storage.u_face3_minus.replace(face3_minus);
+        storage.u_face3_plus.replace(face3_plus);
     }
 }

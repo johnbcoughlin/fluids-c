@@ -15,7 +15,7 @@ use galerkin_1d::grid::{generate_grid, ReferenceElement};
 use galerkin_1d::operators::assemble_operators;
 use galerkin_1d::operators::Operators;
 use galerkin_1d::unknowns::{communicate, initialize_storage, Unknown};
-use plotter::Plotter;
+use plotter::Plotter2D;
 use std::f64::consts;
 use std::iter::repeat;
 
@@ -30,7 +30,7 @@ pub fn advec_1d<Fx>(
 where
     Fx: Fn(&Vector<f64>) -> U,
 {
-    let mut plotter = Plotter::create(0.0, 2.0, -1.0, 1.0);
+    let mut plotter = Plotter2D::create(0.0, 2.0, -1.0, 1.0);
 
     let final_time = 1.3;
 

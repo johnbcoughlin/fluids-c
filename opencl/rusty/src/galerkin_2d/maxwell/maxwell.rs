@@ -1,6 +1,7 @@
 extern crate rulinalg;
 
-use distmesh::distmesh_2d::ellipse;
+use std::f64::consts;
+use distmesh::distmesh_2d::unit_square;
 use galerkin_2d::flux::compute_flux;
 use galerkin_2d::galerkin::GalerkinScheme;
 use galerkin_2d::grid::Element;
@@ -16,7 +17,11 @@ use rulinalg::vector::Vector;
 use std::iter::repeat_with;
 use galerkin_2d::grid::ElementStorage;
 use galerkin_2d::operators::FaceLiftable;
+use functions::range_kutta::RKA;
+use functions::range_kutta::RKB;
+use plotter::Plotter3D;
 
+#[derive(Debug)]
 pub struct Maxwell2D {
     flux_scheme: Vacuum,
 }
@@ -34,10 +39,13 @@ pub fn maxwell_2d<'grid, Fx>(
     operators: &Operators,
     u_0: Fx,
 ) where
-    Fx: Fn(&Vector<f64>) -> EH,
+    Fx: Fn(&Vector<f64>, &Vector<f64>) -> EH,
 {
+//    let mut plotter = Plotter3D::create(-1., 1., -1., 1., -10., 10.);
+
     let final_time = 1.0;
-    let dt = 0.003668181816046;
+    let dt: f64 = 0.003668181816046;
+    let n_t = (final_time / dt).ceil() as i32;
 
     let mut t: f64 = 0.0;
 
@@ -53,9 +61,9 @@ pub fn maxwell_2d<'grid, Fx>(
         .take(grid.elements.len())
         .collect();
 
-    while t < final_time {
+    for epoch in 0..2 {
         for int_rk in 0..5 {
-            communicate(t, reference_element, grid, &storage);
+            communicate(t, reference_element, grid, &mut storage);
 
             for elt in (*grid).elements.iter() {
                 let mut storage = &mut storage[elt.index as usize];
@@ -63,9 +71,29 @@ pub fn maxwell_2d<'grid, Fx>(
                 let residuals_eh = {
                     let residuals_eh = &(residuals[elt.index as usize]);
                     let rhs = maxwell_rhs_2d(&elt, &storage, &operators, reference_element);
+//                    println!("{:?}", rhs);
+                    residuals_eh * RKA[int_rk] + rhs * dt
                 };
+
+                let eh = {
+                    let eh: &EH = &storage.u_k;
+                    eh + &(&residuals_eh * RKB[int_rk])
+                };
+
+                residuals[elt.index as usize] = residuals_eh;
+                storage.u_k = eh;
             }
         }
+        t = t + dt;
+//        if epoch % 20 == 0 {
+//        plotter.header();
+//        for elt in (*grid).elements.iter() {
+//            let storage = &storage[elt.index as usize];
+//            plotter.plot(&elt.x_k, &elt.y_k, &storage.u_k.Ez);
+//            println!("{}", &storage.u_k.Ez);
+//        }
+//        plotter.replot();
+//        }
     }
 }
 
@@ -77,6 +105,8 @@ fn maxwell_rhs_2d<'grid>(
 ) -> EH {
     let (face1_flux, face2_flux, face3_flux) = compute_flux(elt, elt_storage);
     let flux = EH::lift_faces(&operators.lift, &face1_flux, &face2_flux, &face3_flux);
+
+//    println!("{:?}", elt.local_metric.jacobian);
 
     let grad_ez = grad(
         &elt_storage.u_k.Ez,
@@ -90,14 +120,22 @@ fn maxwell_rhs_2d<'grid>(
         &elt.local_metric,
     );
 
-    EH::face1_zero(reference_element)
+    let Hx = -grad_ez.y + flux.Hx / 2.0;
+    let Hy = grad_ez.x + flux.Hy / 2.0;
+    let Ez = curl_h + flux.Ez / 2.0;
+
+    EH {
+        Hx,
+        Hy,
+        Ez,
+    }
 }
 
 pub fn maxwell_2d_example() {
     let n_p = 10;
     let reference_element = ReferenceElement::legendre(n_p);
     let operators = assemble_operators(&reference_element);
-    let mesh = ellipse();
+    let mesh = unit_square();
     let boundary_condition = |t| EH::face1_zero(&reference_element);
     let grid: Grid<Maxwell2D> = assemble_grid(
         &reference_element,
@@ -109,6 +147,30 @@ pub fn maxwell_2d_example() {
         MaxwellFluxType::Interior,
         MaxwellFluxType::Exterior
     );
+
+//    println!("{}", operators.lift);
+    maxwell_2d(&grid, &reference_element, &operators, &exact_cavity_solution_eh0);
+}
+
+fn exact_cavity_solution_eh0(xs: &Vector<f64>, ys: &Vector<f64>) -> EH {
+    let pi = consts::PI;
+    let omega = pi * consts::SQRT_2;
+    let t = 0.;
+    let Hx: Vector<f64> = xs.iter().zip(ys.iter()).map(|(&x, &y)| {
+        -pi / omega * (pi * x).sin() * (pi * y).cos() * (omega * t).sin()
+    }).collect();
+    let Hy: Vector<f64> = xs.iter().zip(ys.iter()).map(|(&x, &y)| {
+        pi / omega * (pi * x).cos() * (pi * y).sin() * (omega * t).sin()
+    }).collect();
+    let Ez: Vector<f64> = xs.iter().zip(ys.iter()).map(|(&x, &y)| {
+        (pi * x).sin() * (pi * y).sin() * (omega * t).cos()
+    }).collect();
+
+    EH {
+        Hx,
+        Hy,
+        Ez,
+    }
 }
 
 #[cfg(test)]

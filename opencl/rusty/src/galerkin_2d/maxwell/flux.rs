@@ -49,7 +49,7 @@ impl SpatialVariable for () {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum MaxwellFluxType {
     Interior,
     Exterior,
@@ -57,46 +57,47 @@ pub enum MaxwellFluxType {
 
 impl FluxKey for MaxwellFluxType {}
 
+#[derive(Debug)]
 pub struct Vacuum {}
 
 impl Vacuum {
     fn interior_flux(
         minus: Side<EH, ()>,
         plus: Side<EH, ()>,
-        outward_normal: Vec<Vec2>,
+        outward_normal: &Vec<Vec2>,
     ) -> EH {
         let d_eh = minus.u - plus.u;
         let (d_hx, d_hy, d_ez) = (d_eh.Hx, d_eh.Hy, d_eh.Ez);
-        Self::flux_calculation(d_hx, d_hy, d_ez, outward_normal)
+        Self::flux_calculation(&d_hx, &d_hy, &d_ez, outward_normal)
     }
 
     fn exterior_flux(
         minus: Side<EH, ()>,
         plus: Side<EH, ()>,
-        outward_normal: Vec<Vec2>,
+        outward_normal: &Vec<Vec2>,
     ) -> EH {
         let d_hx = Vector::zeros(minus.u.Hx.size());
-        let d_hy = Vector::zeros(minus.u.Hx.size());
-        let d_ez = minus.u.Ez * 2.;
-        Self::flux_calculation(d_hx, d_hy, d_ez, outward_normal)
+        let d_hy = Vector::zeros(minus.u.Hy.size());
+        let d_ez = &minus.u.Ez * 2.;
+        Self::flux_calculation(&d_hx, &d_hy, &d_ez, outward_normal)
     }
 
     fn flux_calculation(
-        d_hx: Vector<f64>,
-        d_hy: Vector<f64>,
-        d_ez: Vector<f64>,
-        outward_normal: Vec<Vec2>,
+        d_hx: &Vector<f64>,
+        d_hy: &Vector<f64>,
+        d_ez: &Vector<f64>,
+        outward_normal: &Vec<Vec2>,
     ) -> EH {
         let alpha = 1.;
         let (n_x, n_y): (Vector<f64>, Vector<f64>) = (
-            outward_normal.iter().map(|&n| n.x).collect(),
-            outward_normal.iter().map(|&n| n.y).collect(),
+            outward_normal.iter().map(|ref n| n.x).collect(),
+            outward_normal.iter().map(|ref n| n.y).collect(),
         );
 
         let n_dot_dh = &d_hx.elemul(&n_x) + &d_hy.elemul(&n_y);
-        let flux_hx = &d_ez.elemul(&n_y) + (&n_dot_dh.elemul(&n_x) - &d_hx) * alpha;
-        let flux_hy = -&d_ez.elemul(&n_x) + (&n_dot_dh.elemul(&n_y) - &d_hy) * alpha;
-        let flux_ez = -&d_hy.elemul(&n_x) + &d_hx.elemul(&n_y) - &d_ez * alpha;
+        let flux_hx = &d_ez.elemul(&n_y) + (&n_dot_dh.elemul(&n_x) - d_hx) * alpha;
+        let flux_hy = -&d_ez.elemul(&n_x) + (&n_dot_dh.elemul(&n_y) - d_hy) * alpha;
+        let flux_ez = -&d_hy.elemul(&n_x) + &d_hx.elemul(&n_y) - d_ez * alpha;
 
         EH {
             Ez: flux_ez,
@@ -116,11 +117,11 @@ impl FluxScheme<EH> for Vacuum {
         key: Self::K,
         minus: Side<EH, ()>,
         plus: Side<EH, ()>,
-        outward_normal: Vec<Vec2>,
+        outward_normal: &Vec<Vec2>,
     ) -> EH {
         match key {
-            MaxwellFluxType::Interior => Vacuum::interior_flux(minus, plus, outward_normal),
-            MaxwellFluxType::Exterior => Vacuum::exterior_flux(minus, plus, outward_normal),
+            MaxwellFluxType::Interior => Vacuum::interior_flux(minus, plus, &outward_normal),
+            MaxwellFluxType::Exterior => Vacuum::exterior_flux(minus, plus, &outward_normal),
         }
     }
 }
