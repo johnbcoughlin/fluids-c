@@ -35,7 +35,7 @@ pub struct ReferenceElement {
 }
 
 impl ReferenceElement {
-    pub fn face(&self, face_number: &FaceNumber) -> &Vec<usize> {
+    pub fn face(&self, face_number: FaceNumber) -> &Vec<usize> {
         match face_number {
             FaceNumber::One => &self.face1,
             FaceNumber::Two => &self.face2,

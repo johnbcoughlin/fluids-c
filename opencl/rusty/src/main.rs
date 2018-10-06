@@ -8,7 +8,7 @@ mod distmesh;
 mod functions;
 mod galerkin_1d;
 mod galerkin_2d;
-mod plotter;
+mod plot;
 
 //use galerkin_1d::advec::advec_1d_example;
 //use galerkin_1d::maxwell::maxwell_1d_example;

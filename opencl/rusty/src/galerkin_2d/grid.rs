@@ -55,6 +55,7 @@ pub struct Face<'grid, GS: GalerkinScheme>
     pub face_type: FaceType<'grid, GS>,
     pub flux_key: <GS::FS as FluxScheme<GS::U>>::K,
     pub surface_jacobian: Vector<f64>,
+    pub f_scale: Vector<f64>,
     pub outward_normal: Vec<Vec2>,
 }
 
@@ -175,22 +176,40 @@ pub fn assemble_grid<'grid, GS, F, FExterior, FSP>(
             &points[triangle.b as usize],
             &points[triangle.c as usize],
         );
+        let x: Vector<f64> = (&(-rs - ss) * a.x + (rs + 1.) * b.x + (ss + 1.) * c.x) * 0.5;
+        let y: Vector<f64> = (&(-rs - ss) * a.y + (rs + 1.) * b.y + (ss + 1.) * c.y) * 0.5;
+        if i == 0 {
+//            println!("rs: {}", rs);
+//            println!("ss: {}", ss);
+//            println!("a: {}, b: {}, c: {}", a, b, c);
+//            println!("x: {}", x);
+//            println!("y: {}", y);
+        }
 
-        let x: Vector<f64> = -(&(rs + ss) * a.x + (rs + 1.) * b.x + (ss + 1.) * c.x) * 0.5;
-        println!("x: {}", x);
-        let y: Vector<f64> = -(&(rs + ss) * a.y + (rs + 1.) * b.y + (ss + 1.) * c.x) * 0.5;
-        println!("y: {}", y);
+
 
         let x_r = &operators.d_r * &x;
         let x_s = &operators.d_s * &x;
         let y_r = &operators.d_r * &y;
         let y_s = &operators.d_s * &y;
         let jacobian = x_r.elemul(&y_s) - &(x_s.elemul(&y_r));
+//        if i == 0 {
+//            println!("x_r: {}", x_r);
+//            println!("x_s: {}", x_s);
+//            println!("y_r: {}", y_r);
+//            println!("y_s: {}", y_s);
+//        }
 
         let r_x = y_s.elediv(&jacobian);
         let s_x = -y_r.elediv(&jacobian);
-        let r_y = x_s.elediv(&jacobian);
-        let s_y = -x_r.elediv(&jacobian);
+        let r_y = -x_s.elediv(&jacobian);
+        let s_y = x_r.elediv(&jacobian);
+//        if i == 0 {
+//            println!("r_x: {}", r_x);
+//            println!("s_x: {}", s_x);
+//            println!("r_y: {}", r_y);
+//            println!("s_y: {}", s_y);
+//        }
 
         let (e1, e2, e3) = triangle.edges();
         let edge_to_face_type = |e: &Edge| match edges_to_triangle.get(e) {
@@ -267,7 +286,7 @@ fn build_face<'grid, GS>(
     where
         GS: GalerkinScheme
 {
-    let slice = reference_element.face(&face_number).as_slice();
+    let slice = reference_element.face(face_number).as_slice();
     let x_r_face = local_metric.x_r.select(slice);
     let x_s_face = local_metric.x_s.select(slice);
     let y_r_face = local_metric.y_r.select(slice);
@@ -286,6 +305,8 @@ fn build_face<'grid, GS>(
     let surface_jacobian: Vector<f64> = (&(nx.elemul(&nx)) + &(ny.elemul(&ny))).iter()
         .map(|&f| f.sqrt())
         .collect();
+    let f_scale: Vector<f64> = surface_jacobian.elediv(&local_metric.jacobian.select(
+        reference_element.face(face_number).as_slice()));
     let nx = nx.elediv(&surface_jacobian);
     let ny = ny.elediv(&surface_jacobian);
     let outward_normal: Vec<Vec2> = nx.into_iter().zip(ny.into_iter())
@@ -295,6 +316,7 @@ fn build_face<'grid, GS>(
         face_type,
         flux_key,
         surface_jacobian,
+        f_scale,
         outward_normal,
     }
 }

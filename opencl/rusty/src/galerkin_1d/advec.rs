@@ -15,7 +15,7 @@ use galerkin_1d::grid::{generate_grid, ReferenceElement};
 use galerkin_1d::operators::assemble_operators;
 use galerkin_1d::operators::Operators;
 use galerkin_1d::unknowns::{communicate, initialize_storage, Unknown};
-use plotter::Plotter2D;
+use plot::plot2d::Plotter2D;
 use std::f64::consts;
 use std::iter::repeat;
 

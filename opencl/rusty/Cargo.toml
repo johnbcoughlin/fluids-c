@@ -28,5 +28,7 @@ gnuplot = "0.0.26"
 tempfile = "3.0.3"
 itertools = "0.7.8"
 
+#glium = "0.22.0"
+
 [profile.release]
 debug = true

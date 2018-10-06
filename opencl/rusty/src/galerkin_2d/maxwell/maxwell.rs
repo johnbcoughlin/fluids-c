@@ -19,7 +19,7 @@ use galerkin_2d::grid::ElementStorage;
 use galerkin_2d::operators::FaceLiftable;
 use functions::range_kutta::RKA;
 use functions::range_kutta::RKB;
-use plotter::Plotter3D;
+use plot::plot3d::{Plotter3D, GnuplotPlotter3D};
 
 #[derive(Debug)]
 pub struct Maxwell2D {
@@ -41,9 +41,9 @@ pub fn maxwell_2d<'grid, Fx>(
 ) where
     Fx: Fn(&Vector<f64>, &Vector<f64>) -> EH,
 {
-//    let mut plotter = Plotter3D::create(-1., 1., -1., 1., -10., 10.);
+    let mut plotter = GnuplotPlotter3D::create(-1., 1., -1., 1., -1., 1.);
 
-    let final_time = 1.0;
+    let final_time = 10.0;
     let dt: f64 = 0.003668181816046;
     let n_t = (final_time / dt).ceil() as i32;
 
@@ -61,7 +61,7 @@ pub fn maxwell_2d<'grid, Fx>(
         .take(grid.elements.len())
         .collect();
 
-    for epoch in 0..2 {
+    for epoch in 0..n_t {
         for int_rk in 0..5 {
             communicate(t, reference_element, grid, &mut storage);
 
@@ -84,16 +84,17 @@ pub fn maxwell_2d<'grid, Fx>(
                 storage.u_k = eh;
             }
         }
+        println!("epoch: {}", epoch);
         t = t + dt;
-//        if epoch % 20 == 0 {
-//        plotter.header();
-//        for elt in (*grid).elements.iter() {
-//            let storage = &storage[elt.index as usize];
-//            plotter.plot(&elt.x_k, &elt.y_k, &storage.u_k.Ez);
-//            println!("{}", &storage.u_k.Ez);
-//        }
-//        plotter.replot();
-//        }
+        if epoch % 20 == 0 {
+            plotter.header();
+            for elt in (*grid).elements.iter() {
+                let storage = &storage[elt.index as usize];
+                plotter.plot(&elt.x_k, &elt.y_k, &storage.u_k.Ez);
+//                println!("{}", &storage.u_k.Hx);
+            }
+            plotter.replot();
+        }
     }
 }
 
@@ -104,7 +105,19 @@ fn maxwell_rhs_2d<'grid>(
     reference_element: &ReferenceElement,
 ) -> EH {
     let (face1_flux, face2_flux, face3_flux) = compute_flux(elt, elt_storage);
-    let flux = EH::lift_faces(&operators.lift, &face1_flux, &face2_flux, &face3_flux);
+
+    let flux = EH::lift_faces(
+        &operators.lift,
+        &(face1_flux * &elt.face1.f_scale),
+        &(face2_flux * &elt.face2.f_scale),
+        &(face3_flux * &elt.face3.f_scale),
+    );
+
+    if elt.index == 0 {
+//        println!("flux: {}", flux);
+//        println!("current_value: {}", elt_storage.u_k);
+    }
+
 
 //    println!("{:?}", elt.local_metric.jacobian);
 
@@ -145,7 +158,7 @@ pub fn maxwell_2d_example() {
         &|| (),
         |_, _| (),
         MaxwellFluxType::Interior,
-        MaxwellFluxType::Exterior
+        MaxwellFluxType::Exterior,
     );
 
 //    println!("{}", operators.lift);

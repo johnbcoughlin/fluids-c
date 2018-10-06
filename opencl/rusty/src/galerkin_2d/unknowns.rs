@@ -17,6 +17,7 @@ pub trait Unknown
         + Add<Output=Self::Line>
         + Sub<Output=Self::Line>
         + Mul<f64, Output=Self::Line>
+        + for<'a> Mul<&'a Vector<f64>, Output=Self::Line>
         + Div<f64, Output=Self::Line>
         + fmt::Debug,
 //        for<'a> &'a Self::Line: Neg<Output=Self::Line>

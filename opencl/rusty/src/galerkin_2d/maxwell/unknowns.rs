@@ -10,6 +10,7 @@ use galerkin_2d::reference_element::ReferenceElement;
 use galerkin_2d::unknowns::Unknown;
 use rulinalg::vector::Vector;
 use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::fmt;
 
 #[derive(Debug, Clone, Copy)]
 pub struct EHUnit {
@@ -23,6 +24,16 @@ pub struct EH {
     pub Ez: Vector<f64>,
     pub Hx: Vector<f64>,
     pub Hy: Vector<f64>,
+}
+
+impl fmt::Display for EH {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        writeln!(f, "EH {{")?;
+        writeln!(f, "  Ez: {}", self.Ez)?;
+        writeln!(f, "  Hx: {}", self.Hx)?;
+        writeln!(f, "  Hy: {}", self.Hy)?;
+        writeln!(f, "}}")
+    }
 }
 
 impl FaceLiftable for EH {
@@ -204,6 +215,18 @@ impl<'a> Mul<f64> for &'a EH {
             Ez: &self.Ez * rhs,
             Hx: &self.Hx * rhs,
             Hy: &self.Hy * rhs,
+        }
+    }
+}
+
+impl<'a> Mul<&'a Vector<f64>> for EH {
+    type Output = EH;
+
+    fn mul(self, rhs: &Vector<f64>) -> EH {
+        EH {
+            Ez: self.Ez.elemul(&rhs),
+            Hx: self.Hx.elemul(&rhs),
+            Hy: self.Hy.elemul(&rhs),
         }
     }
 }
